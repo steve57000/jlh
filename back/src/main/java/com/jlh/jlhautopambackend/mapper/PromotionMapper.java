@@ -19,6 +19,7 @@ public abstract class PromotionMapper {
     @Mapping(target = "idPromotion",    ignore = true)
     @Mapping(target = "administrateur", ignore = true)
     @Mapping(target = "description",    source = "dto.description")
+    @Mapping(target = "imageUrl",       source = "dto.imageUrl")
     public abstract Promotion toEntity(PromotionRequest dto);
 
     /**

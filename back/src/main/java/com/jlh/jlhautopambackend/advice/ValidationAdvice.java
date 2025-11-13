@@ -17,4 +17,12 @@ public class ValidationAdvice {
                 "errors", errors
         ));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", ex.getMessage() != null ? ex.getMessage() : "Requête invalide."
+        ));
+    }
 }

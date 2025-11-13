@@ -10,4 +10,8 @@ public class ClientSummaryDto {
     private String email;
     private String immatriculation;
     private String telephone;
+    private String adresseLigne1;
+    private String adresseLigne2;
+    private String adresseCodePostal;
+    private String adresseVille;
 }

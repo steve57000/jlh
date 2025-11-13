@@ -43,6 +43,9 @@ public class ServiceServiceImpl implements ServiceService {
     @Transactional
     public ServiceResponse create(ServiceRequest request) {
         Service toSave = mapper.toEntity(request);
+        if (toSave.getQuantiteMax() == null || toSave.getQuantiteMax() < 1) {
+            toSave.setQuantiteMax(1);
+        }
         Service saved  = repo.save(toSave);
         return mapper.toResponse(saved);
     }
@@ -55,10 +58,23 @@ public class ServiceServiceImpl implements ServiceService {
                     existing.setLibelle(request.getLibelle());
                     existing.setDescription(request.getDescription());
                     existing.setPrixUnitaire(request.getPrixUnitaire());
+                    Integer newMax = request.getQuantiteMax();
+                    if (newMax == null || newMax < 1) {
+                        newMax = 1;
+                    }
+                    existing.setQuantiteMax(newMax);
                     existing.setArchived(false);
                     Service saved = repo.save(existing);
                     var associations = demandeServiceRepository.findByService_IdService(id);
-                    associations.forEach(ds -> ds.snapshotFromService(saved));
+                    associations.forEach(ds -> {
+                        ds.snapshotFromService(saved);
+                        if (saved.getQuantiteMax() != null && saved.getQuantiteMax() > 0) {
+                            int current = ds.getQuantite() != null ? ds.getQuantite() : 1;
+                            if (current > saved.getQuantiteMax()) {
+                                ds.setQuantite(saved.getQuantiteMax());
+                            }
+                        }
+                    });
                     demandeServiceRepository.saveAll(associations);
                     return mapper.toResponse(saved);
                 });

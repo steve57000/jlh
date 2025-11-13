@@ -32,6 +32,9 @@ public class Service {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal prixUnitaire;
 
+    @Column(name = "quantite_max", nullable = false)
+    private Integer quantiteMax;
+
     @Column(nullable = false)
     private boolean archived = false;
 }

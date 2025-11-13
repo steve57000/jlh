@@ -4,14 +4,17 @@ import com.jlh.jlhautopambackend.config.GarageProperties;
 import com.jlh.jlhautopambackend.dto.ClientStatsDto;
 import com.jlh.jlhautopambackend.dto.DemandeRequest;
 import com.jlh.jlhautopambackend.dto.DemandeResponse;
+import com.jlh.jlhautopambackend.dto.DemandeServiceDto;
 import com.jlh.jlhautopambackend.dto.ProchainRdvDto;
 import com.jlh.jlhautopambackend.mapper.DemandeMapper;
 import com.jlh.jlhautopambackend.modeles.Client;
 import com.jlh.jlhautopambackend.modeles.Demande;
+import com.jlh.jlhautopambackend.modeles.DemandeService;
 import com.jlh.jlhautopambackend.modeles.StatutDemande;
 import com.jlh.jlhautopambackend.modeles.TypeDemande;
 import com.jlh.jlhautopambackend.repository.ClientRepository;
 import com.jlh.jlhautopambackend.repository.DemandeRepository;
+import com.jlh.jlhautopambackend.repository.DemandeServiceRepository;
 import com.jlh.jlhautopambackend.repository.RendezVousRepository;
 import com.jlh.jlhautopambackend.repository.StatutDemandeRepository;
 import com.jlh.jlhautopambackend.repository.TypeDemandeRepository;
@@ -20,8 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +38,7 @@ public class DemandeServiceImpl implements DemandeService {
     private final DemandeMapper           mapper;
     private final RendezVousRepository    rendezVousRepo;
     private final GarageProperties        garageProps;
+    private final DemandeServiceRepository demandeServiceRepository;
 
     public DemandeServiceImpl(
             DemandeRepository repo,
@@ -43,7 +47,8 @@ public class DemandeServiceImpl implements DemandeService {
             StatutDemandeRepository statutRepo,
             DemandeMapper mapper,
             RendezVousRepository rendezVousRepo,
-            GarageProperties garageProps
+            GarageProperties garageProps,
+            DemandeServiceRepository demandeServiceRepository
     ) {
         this.repo = repo;
         this.clientRepo = clientRepo;
@@ -52,6 +57,7 @@ public class DemandeServiceImpl implements DemandeService {
         this.mapper = mapper;
         this.rendezVousRepo = rendezVousRepo;
         this.garageProps = garageProps;
+        this.demandeServiceRepository = demandeServiceRepository;
     }
 
     private static final String STATUT_BROUILLON  = "Brouillon";
@@ -195,19 +201,146 @@ public class DemandeServiceImpl implements DemandeService {
     @Override
     public Optional<DemandeResponse> update(Integer id, DemandeRequest request) {
         return repo.findById(id).map(existing -> {
-            if (request.getDateDemande() != null) existing.setDateDemande(request.getDateDemande());
+            if (request.getDateDemande() != null) {
+                existing.setDateDemande(request.getDateDemande());
+            }
+
             if (request.getClientId() != null) {
                 existing.setClient(
                         clientRepo.findById(request.getClientId())
                                 .orElseThrow(() -> new IllegalArgumentException("Client introuvable: " + request.getClientId()))
                 );
             }
-            if (request.getCodeType() != null)   existing.setTypeDemande(getTypeOrThrow(request.getCodeType()));
-            if (request.getCodeStatut() != null) existing.setStatutDemande(getStatutOrThrow(request.getCodeStatut()));
+
+            if (request.getCodeType() != null && !request.getCodeType().isBlank()) {
+                existing.setTypeDemande(getTypeOrThrow(request.getCodeType()));
+            }
+            if (request.getCodeStatut() != null && !request.getCodeStatut().isBlank()) {
+                existing.setStatutDemande(getStatutOrThrow(request.getCodeStatut()));
+            }
+
+            updateClientContact(existing, request);
+            List<DemandeService> updatedLines = updateServiceLines(existing, request.getServices());
 
             ensureDateDemandeSet(existing);
-            return mapper.toResponse(repo.save(existing));
+            Demande saved = repo.save(existing);
+            if (!updatedLines.isEmpty()) {
+                demandeServiceRepository.saveAll(updatedLines);
+            }
+
+            return mapper.toResponse(saved);
         });
+    }
+
+    private void updateClientContact(Demande demande, DemandeRequest request) {
+        Client client = demande.getClient();
+        if (client == null) {
+            return;
+        }
+
+        boolean dirty = false;
+
+        if (request.getImmatriculation() != null && !request.getImmatriculation().isBlank()) {
+            client.setImmatriculation(request.getImmatriculation().trim());
+            dirty = true;
+        }
+        if (request.getTelephone() != null && !request.getTelephone().isBlank()) {
+            client.setTelephone(request.getTelephone().trim());
+            dirty = true;
+        }
+        if (request.getAdresseLigne1() != null) {
+            String value = request.getAdresseLigne1();
+            client.setAdresseLigne1(value != null && !value.isBlank() ? value.trim() : null);
+            dirty = true;
+        }
+        if (request.getAdresseLigne2() != null) {
+            String value = request.getAdresseLigne2();
+            client.setAdresseLigne2(value != null && !value.isBlank() ? value.trim() : null);
+            dirty = true;
+        }
+        if (request.getAdresseCodePostal() != null) {
+            String value = request.getAdresseCodePostal();
+            client.setAdresseCodePostal(value != null && !value.isBlank() ? value.trim() : null);
+            dirty = true;
+        }
+        if (request.getAdresseVille() != null) {
+            String value = request.getAdresseVille();
+            client.setAdresseVille(value != null && !value.isBlank() ? value.trim() : null);
+            dirty = true;
+        }
+
+        if (dirty) {
+            clientRepo.save(client);
+        }
+    }
+
+    private List<DemandeService> updateServiceLines(
+            Demande demande,
+            List<DemandeServiceDto> payload
+    ) {
+        if (payload == null || payload.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<DemandeService> current =
+                demande.getServices() != null ? demande.getServices() : Collections.emptyList();
+        Map<Integer, DemandeService> indexed = new HashMap<>();
+        for (DemandeService ds : current) {
+            Integer sid = null;
+            if (ds.getService() != null) {
+                sid = ds.getService().getIdService();
+            }
+            if (sid == null && ds.getId() != null) {
+                sid = ds.getId().getIdService();
+            }
+            if (sid != null) {
+                indexed.putIfAbsent(sid, ds);
+            }
+        }
+
+        List<DemandeService> updated = new ArrayList<>();
+
+        for (DemandeServiceDto dto : payload) {
+            if (dto == null || dto.getIdService() == null) {
+                continue;
+            }
+            DemandeService line = indexed.get(dto.getIdService());
+            if (line == null) {
+                continue;
+            }
+
+            if (dto.getQuantite() != null) {
+                int newQty = Math.max(1, dto.getQuantite());
+                Integer max = line.getService() != null ? line.getService().getQuantiteMax() : null;
+                if (max != null && max > 0 && newQty > max) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "La quantité demandée pour le service %s dépasse le maximum autorisé (%d).",
+                                    line.getLibelleService() != null ? line.getLibelleService() : dto.getLibelle(),
+                                    max
+                            )
+                    );
+                }
+                line.setQuantite(newQty);
+            }
+
+            if (dto.getLibelle() != null && !dto.getLibelle().isBlank()) {
+                line.setLibelleService(dto.getLibelle().trim());
+            }
+
+            if (dto.getDescription() != null) {
+                line.setDescriptionService(dto.getDescription());
+            }
+
+            BigDecimal prix = dto.getPrixUnitaire();
+            if (prix != null) {
+                line.setPrixUnitaireService(prix);
+            }
+
+            updated.add(line);
+        }
+
+        return updated;
     }
 
     @Override

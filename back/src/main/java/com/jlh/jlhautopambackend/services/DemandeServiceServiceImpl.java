@@ -62,9 +62,18 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
         var key = new DemandeServiceKey(req.getDemandeId(), req.getServiceId());
         var existing = dsRepo.findById(key).orElse(null);
 
+        int requestedQty = req.getQuantite() == null ? 1 : Math.max(1, req.getQuantite());
+        Integer maxQty = serviceEntity.getQuantiteMax();
+        if (maxQty != null && maxQty > 0 && requestedQty > maxQty) {
+            throw new IllegalArgumentException("Quantité demandée supérieure au maximum autorisé pour ce service.");
+        }
+
         if (existing != null) {
-            int q = (existing.getQuantite() == null ? 0 : existing.getQuantite())
-                    + (req.getQuantite() == null ? 1 : req.getQuantite());
+            int base = existing.getQuantite() == null ? 0 : existing.getQuantite();
+            int q = base + requestedQty;
+            if (maxQty != null && maxQty > 0 && q > maxQty) {
+                throw new IllegalArgumentException("La quantité totale dépasse la limite pour ce service.");
+            }
             existing.setQuantite(q);
             existing.snapshotFromService(serviceEntity);
             return mapper.toDto(dsRepo.save(existing));
@@ -72,7 +81,7 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
 
         DemandeService entity = mapper.toEntity(req);
         // defaults robustes
-        entity.setQuantite(entity.getQuantite() == null ? 1 : entity.getQuantite());
+        entity.setQuantite(requestedQty);
         entity.setDemande(demande);
         entity.setService(serviceEntity);
         entity.snapshotFromService(serviceEntity);
@@ -85,7 +94,12 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
         DemandeServiceKey key = new DemandeServiceKey(demandeId, serviceId);
         return dsRepo.findById(key)
                 .map(entity -> {
-                    entity.setQuantite(req.getQuantite());
+                    int requested = req.getQuantite() == null ? 1 : Math.max(1, req.getQuantite());
+                    Integer maxQty = entity.getService() != null ? entity.getService().getQuantiteMax() : null;
+                    if (maxQty != null && maxQty > 0 && requested > maxQty) {
+                        throw new IllegalArgumentException("Quantité demandée supérieure au maximum autorisé pour ce service.");
+                    }
+                    entity.setQuantite(requested);
                     if (entity.getService() != null) {
                         entity.snapshotFromService(entity.getService());
                     }

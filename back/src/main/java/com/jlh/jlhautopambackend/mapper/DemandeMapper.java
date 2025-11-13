@@ -22,6 +22,10 @@ public interface DemandeMapper {
     @Mapping(target = "email", source = "email")
     @Mapping(target = "telephone", source = "telephone")
     @Mapping(target = "immatriculation", source = "immatriculation")
+    @Mapping(target = "adresseLigne1", source = "adresseLigne1")
+    @Mapping(target = "adresseLigne2", source = "adresseLigne2")
+    @Mapping(target = "adresseCodePostal", source = "adresseCodePostal")
+    @Mapping(target = "adresseVille", source = "adresseVille")
     ClientSummaryDto toClientSummaryDto(Client client);
 
     // DemandeService -> DemandeServiceDto
@@ -36,6 +40,9 @@ public interface DemandeMapper {
     default void ensureServiceFallback(DemandeService source, @MappingTarget DemandeServiceDto target) {
         if (source == null || target == null) {
             return;
+        }
+        if (target.getQuantiteMax() == null && source.getService() != null) {
+            target.setQuantiteMax(source.getService().getQuantiteMax());
         }
         if (target.getLibelle() == null && source.getService() != null) {
             target.setLibelle(source.getService().getLibelle());
