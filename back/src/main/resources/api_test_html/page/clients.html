@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Clients API</title>
+  <script src="../js/init.js"></script>
+  <link rel="stylesheet" href="../css/common.css" />
+  <style>
+    .api-doc table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+    .api-doc th, .api-doc td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
+    .api-doc th { background: #f5f5f5; }
+    .api-doc code { background: #eee; padding: 2px 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<h1>Test Clients API</h1>
+
+<section class="api-doc">
+  <h2>Documentation de l’API</h2>
+  <table>
+    <thead>
+    <tr><th>Méthode</th><th>Endpoint</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+    <tr><td>GET</td><td><code>/clients</code></td><td>Liste tous les clients.</td></tr>
+    <tr><td>GET</td><td><code>/clients/{id}</code></td><td>Récupère un client par son ID.</td></tr>
+    <tr><td>POST</td><td><code>/clients</code></td><td>Crée un nouveau client.</td></tr>
+    <tr><td>PUT</td><td><code>/clients/{id}</code></td><td>Met à jour un client existant.</td></tr>
+    <tr><td>DELETE</td><td><code>/clients/{id}</code></td><td>Supprime un client.</td></tr>
+    </tbody>
+  </table>
+  <h3>Modèle JSON (request / response)</h3>
+  <pre>{
+  "id": 1,
+  "nom": "Durand",
+  "prenom": "Marie",
+  "email": "marie.durand@example.com",
+  "telephone": "0123456789",
+  "adresse": "1 Rue de Paris, 75000 Paris"
+}</pre>
+</section>
+
+<section>
+  <h2>GET /clients</h2>
+  <button onclick="fetchGetAll()">GET All</button>
+  <pre id="getAllOutput"></pre>
+</section>
+
+<section>
+  <h2>GET /clients/{id}</h2>
+  ID: <input type="text" id="getId" />
+  <button onclick="fetchGetById()">GET by ID</button>
+  <pre id="getByIdOutput"></pre>
+</section>
+
+<section>
+  <h2>POST /clients</h2>
+  Body (JSON):<br/>
+  <textarea id="postBody">{}</textarea><br/>
+  <button onclick="fetchPost()">POST</button>
+  <pre id="postOutput"></pre>
+</section>
+
+<section>
+  <h2>PUT /clients/{id}</h2>
+  ID: <input type="text" id="putId" /><br/>
+  Body (JSON):<br/>
+  <textarea id="putBody">{}</textarea><br/>
+  <button onclick="fetchPut()">PUT</button>
+  <pre id="putOutput"></pre>
+</section>
+
+<section>
+  <h2>DELETE /clients/{id}</h2>
+  ID: <input type="text" id="deleteId" />
+  <button onclick="fetchDelete()">DELETE</button>
+  <pre id="deleteOutput"></pre>
+</section>
+
+<script>
+  const basePath = '/clients';
+
+  function fetchGetAll() {
+    apiFetch(basePath)
+            .then(data => document.getElementById('getAllOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchGetAll', err));
+  }
+
+  function fetchGetById() {
+    const id = document.getElementById('getId').value;
+    apiFetch(`${basePath}/${id}`)
+            .then(data => document.getElementById('getByIdOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchGetById', err));
+  }
+
+  function fetchPost() {
+    const body = document.getElementById('postBody').value;
+    apiFetch(basePath, { method: 'POST', body })
+            .then(data => document.getElementById('postOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchPost', err));
+  }
+
+  function fetchPut() {
+    const id = document.getElementById('putId').value;
+    const body = document.getElementById('putBody').value;
+    apiFetch(`${basePath}/${id}`, { method: 'PUT', body })
+            .then(data => document.getElementById('putOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchPut', err));
+  }
+
+  function fetchDelete() {
+    const id = document.getElementById('deleteId').value;
+    apiFetch(`${basePath}/${id}`, { method: 'DELETE' })
+            .then(() => document.getElementById('deleteOutput')
+                    .textContent = 'Deleted')
+            .catch(err => console.error('fetchDelete', err));
+  }
+</script>
+</body>
+</html>

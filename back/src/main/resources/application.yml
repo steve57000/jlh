@@ -1,0 +1,26 @@
+garage:
+  name: "JLH Auto Pam"
+  address: "27 Av. Général de Gaulle, 54700 Pont-à-Mousson"
+  organizerEmail: "contact@jlh-autopam.fr"
+  timezone: "Europe/Paris"
+
+app:
+  baseUrl: http://localhost:8080
+  frontendUrl: http://localhost:4200
+  email:
+    from: "JLH Auto Pam <contact@jlh-autopam.fr>"
+    verificationExpiryHours: 24
+  upload-dir: ${APP_UPLOAD_DIR:uploads}  # par défaut 'uploads' si non défini
+
+spring:
+  application:
+    name: jlh
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# JWT commun (tu peux aussi les sortir en variables d'env)
+jwt:
+  secret: 4iIbn4bkJ/impQN7d01VKZsYOw2/S4QcSY5aVwk1Js/OwNGT+IoDt1dJBecj/CMcbO5WPz41HwQtjcOpWVSg/A==
+  expiration: 86400000

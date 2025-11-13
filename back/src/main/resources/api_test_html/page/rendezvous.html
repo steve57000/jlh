@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Rendezvous API</title>
+  <script src="../js/init.js"></script>
+  <link rel="stylesheet" href="../css/common.css" />
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<h1>Test Rendezvous API</h1>
+
+<section>
+  <h2>GET /rendezvous</h2>
+  <button onclick="fetchGetAll()">GET All</button>
+  <pre id="getAllOutput"></pre>
+</section>
+
+<section>
+  <h2>GET /rendezvous/{id}</h2>
+  ID: <input type="text" id="getId" />
+  <button onclick="fetchGetById()">GET by ID</button>
+  <pre id="getByIdOutput"></pre>
+</section>
+
+<section>
+  <h2>POST /rendezvous</h2>
+  Body (JSON):<br />
+  <textarea id="postBody">{}</textarea><br />
+  <button onclick="fetchPost()">POST</button>
+  <pre id="postOutput"></pre>
+</section>
+
+<section>
+  <h2>PUT /rendezvous/{id}</h2>
+  ID: <input type="text" id="putId" /><br />
+  Body (JSON):<br />
+  <textarea id="putBody">{}</textarea><br />
+  <button onclick="fetchPut()">PUT</button>
+  <pre id="putOutput"></pre>
+</section>
+
+<section>
+  <h2>DELETE /rendezvous/{id}</h2>
+  ID: <input type="text" id="deleteId" />
+  <button onclick="fetchDelete()">DELETE</button>
+  <pre id="deleteOutput"></pre>
+</section>
+
+<script>
+  const basePath = '/rendezvous';
+
+  function fetchGetAll() {
+    apiFetch(basePath)
+            .then(data => document.getElementById('getAllOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchGetAll', err));
+  }
+
+  function fetchGetById() {
+    const id = document.getElementById('getId').value;
+    apiFetch(`${basePath}/${id}`)
+            .then(data => document.getElementById('getByIdOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchGetById', err));
+  }
+
+  function fetchPost() {
+    const body = document.getElementById('postBody').value;
+    apiFetch(basePath, { method: 'POST', body })
+            .then(data => document.getElementById('postOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchPost', err));
+  }
+
+  function fetchPut() {
+    const id = document.getElementById('putId').value;
+    const body = document.getElementById('putBody').value;
+    apiFetch(`${basePath}/${id}`, { method: 'PUT', body })
+            .then(data => document.getElementById('putOutput')
+                    .textContent = JSON.stringify(data, null, 2))
+            .catch(err => console.error('fetchPut', err));
+  }
+
+  function fetchDelete() {
+    const id = document.getElementById('deleteId').value;
+    apiFetch(`${basePath}/${id}`, { method: 'DELETE' })
+            .then(() => document.getElementById('deleteOutput').textContent = 'Deleted')
+            .catch(err => console.error('fetchDelete', err));
+  }
+</script>
+</body>
+</html>

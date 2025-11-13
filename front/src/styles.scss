@@ -1,0 +1,165 @@
+@use '@angular/material' as mat;
+@use 'styles/variables' as v;
+@use 'styles/mixins' as m;
+@use 'styles/reset';
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden;
+}
+
+html {
+  @include mat.theme((
+    color: ( primary: mat.$azure-palette, tertiary: mat.$blue-palette ),
+    typography: Roboto,
+    density: 0,
+  ));
+  color-scheme: light;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+}
+
+body {
+  font-family: v.$font-body;
+  background: v.$color-quaternary;
+  color: v.$color-primary;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body.admin-modal-open {
+  overflow: hidden;
+}
+
+h1, h2, h3 { font-family: v.$font-title; }
+h4, h5, h6 { font-family: v.$font-subtitle; }
+
+h2 { font-size: 2.1rem; margin-bottom: 48px; }
+
+a {
+  color: v.$color-secondary;
+  text-decoration: none;
+  transition: color v.$transition-fast;
+  &:hover:not(.cta-btn-secondary) { color: v.$color-tertiary; }
+}
+
+a.cta-btn-secondary { text-align: center; }
+
+// Base commune pour les boutons
+%btn-base {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-width: 120px; padding: .6rem .9rem;
+  border-radius: v.$border-radius-small; text-decoration: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  cursor: pointer;
+  box-shadow: v.$shadow-btn;
+  transition: box-shadow v.$transition-fast, transform .06s ease, filter .12s ease;
+}
+
+/* CTA principal */
+.cta-btn {
+  @extend %btn-base;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)), /* lustre */
+    v.$color-tertiary;
+  color: v.$color-quaternary;
+  font-family: v.$font-cta; font-size: 1rem; font-weight: 500;
+
+  @include m.hover-fill-center(v.$btn-hover-bg, .3s);
+  @include m.btn-3d-chrome(v.$color-tertiary);
+  @include m.press-depth(1px);
+
+  &:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; &::before{display:none;} }
+}
+
+/* CTA secondaire */
+.cta-btn-secondary {
+  @extend %btn-base;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)),
+    v.$color-secondary;
+  color: v.$color-quaternary;
+  font-family: v.$font-body; font-size: 1rem; font-weight: 500;
+
+  @include m.hover-fill-center-secondary(v.$btn-hover-bg-secondary, .3s);
+  @include m.btn-3d-chrome(v.$color-secondary);
+  @include m.press-depth(2px);
+
+  &:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; &::before{display:none;} }
+}
+
+/* Danger */
+.secondary-btn {
+  @extend %btn-base;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)),
+    v.$color-tertiary;
+  color: v.$color-quaternary;
+  font-family: v.$font-cta; font-weight: 700; width: 180px;
+
+  @include m.hover-fill-center(v.$btn-delete-gradient, .5s);
+  @include m.btn-3d-chrome(v.$color-tertiary);
+  @include m.press-depth(2px);
+
+  &:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; &::before{display:none;} }
+}
+
+
+/* — Mobile : on limite l’anim coûteuse — */
+@media (hover: none) {
+  .cta-btn::after,
+  .cta-btn-secondary::after,
+  .secondary-btn::after { transform: none !important; }
+}
+
+/* — Accessibilité : réduit les animations — */
+@media (prefers-reduced-motion: reduce) {
+  .cta-btn, .cta-btn-secondary, .secondary-btn {
+    transition: none;
+    &::after { transition: none; }
+  }
+}
+
+/* Layout global */
+.header .container-max {
+  display: flex;         /* si pas déjà défini */
+  min-width: 0;          /* IMPORTANT : évite les overflow des enfants */
+}
+
+.header .container-max .logo,
+.header .container-max nav {
+  min-width: 0;          /* idem sur les enfants flex */
+}
+
+.container-main { min-height: 100vh; }
+.container-max {
+  display: flex; flex-direction: row;
+  max-width: 1480px; width: 100%; height: 100%;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+@media (max-width: 1024px) {
+  .container-max {
+    padding-inline: clamp(1rem, 5vw, 1.75rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .container-max {
+    padding: clamp(0.75rem, 5vw, 1.25rem);
+  }
+}
+
+@media (min-width: 1600px) {
+  .container-max {
+    max-width: 1680px;
+  }
+}
+
+
