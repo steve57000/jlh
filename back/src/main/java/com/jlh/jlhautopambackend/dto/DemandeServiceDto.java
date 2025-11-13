@@ -12,4 +12,5 @@ public class DemandeServiceDto {
     private String description;
     private Integer quantite;
     private java.math.BigDecimal prixUnitaire;
+    private Integer quantiteMax;
 }

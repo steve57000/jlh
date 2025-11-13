@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.dto;
 
 import lombok.*;
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -14,4 +15,11 @@ public class DemandeRequest {
     private String codeType;
     /** Code du statut de la demande (clé primaire de StatutDemande) */
     private String codeStatut;
+    private String immatriculation;
+    private String telephone;
+    private String adresseLigne1;
+    private String adresseLigne2;
+    private String adresseCodePostal;
+    private String adresseVille;
+    private List<DemandeServiceDto> services;
 }

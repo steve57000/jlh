@@ -14,4 +14,5 @@ public class ServiceResponse {
     private String description;
     private BigDecimal prixUnitaire;
     private boolean archived;
+    private Integer quantiteMax;
 }
