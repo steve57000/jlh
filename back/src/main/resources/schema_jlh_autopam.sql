@@ -1,3 +1,5 @@
+-- fichier : schema_jlh_autopam.sql
+
 -- Table des clients
 CREATE TABLE Client (
   id_client      INT AUTO_INCREMENT PRIMARY KEY,

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "statut_demande")
+@Table(name = "Statut_Demande")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class StatutDemande {
     @Id

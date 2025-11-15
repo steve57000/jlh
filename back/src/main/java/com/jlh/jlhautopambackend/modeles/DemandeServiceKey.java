@@ -1,20 +1,16 @@
 package com.jlh.jlhautopambackend.modeles;
 
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.io.Serializable;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Embeddable
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class DemandeServiceKey implements Serializable {
+    @Column(name="id_demande")
     private Integer idDemande;
+
+    @Column(name="id_service")
     private Integer idService;
 }

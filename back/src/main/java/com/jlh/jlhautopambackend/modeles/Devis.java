@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "devis")
+@Table(name = "Devis")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class Devis {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

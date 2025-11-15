@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "disponibilite")
+@Table(name = "Disponibilite")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class Disponibilite {
     @EmbeddedId

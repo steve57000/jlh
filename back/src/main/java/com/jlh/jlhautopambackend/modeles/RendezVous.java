@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "rendez_vous")
+@Table(name = "RendezVous")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class RendezVous {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

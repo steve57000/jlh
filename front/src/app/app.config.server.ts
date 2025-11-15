@@ -5,7 +5,6 @@ import { serverRoutes } from './app.routes.server';
 
 const serverConfig: ApplicationConfig = {
   providers: [
-    // uniquement les routes et prerender
     provideServerRendering(withRoutes(serverRoutes))
   ]
 };

@@ -3,7 +3,7 @@ package com.jlh.jlhautopambackend.modeles;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity @Table(name = "type_demande")
+@Entity @Table(name = "Type_Demande")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class TypeDemande {
     @Id

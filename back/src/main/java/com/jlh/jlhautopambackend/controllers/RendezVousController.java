@@ -1,89 +1,152 @@
 package com.jlh.jlhautopambackend.controllers;
 
-import com.jlh.jlhautopambackend.dto.RendezVousRequest;
-import com.jlh.jlhautopambackend.dto.RendezVousResponse;
-import com.jlh.jlhautopambackend.services.RendezVousService;
-import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
+import com.jlh.jlhautopambackend.modeles.*;
+import com.jlh.jlhautopambackend.repositories.*;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/api/rendezvous")
 public class RendezVousController {
 
-    private final RendezVousService service;
-    private final AuthenticatedClientResolver clientResolver;
+    private final RendezVousRepository rvRepo;
+    private final DemandeRepository demandeRepo;
+    private final AdministrateurRepository adminRepo;
+    private final CreneauRepository creneauRepo;
+    private final StatutRendezVousRepository statutRepo;
 
-    public RendezVousController(RendezVousService service, AuthenticatedClientResolver clientResolver) {
-        this.service = service;
-        this.clientResolver = clientResolver;
-    }
-
-    @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN')") // ajuste si besoin
-    public List<RendezVousResponse> getAll() {
-        return service.findAll();
-    }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
-    public ResponseEntity<RendezVousResponse> getById(@PathVariable Integer id) {
-        return service.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
-    public ResponseEntity<RendezVousResponse> create(@Valid @RequestBody RendezVousRequest req) {
-        RendezVousResponse resp = service.create(req);
-        return ResponseEntity
-                .created(URI.create("/api/rendezvous/" + resp.getIdRdv()))
-                .body(resp);
-    }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
-    public ResponseEntity<RendezVousResponse> update(
-            @PathVariable Integer id,
-            @Valid @RequestBody RendezVousRequest req) {
-        return service.update(id, req)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Valide/soumet un RDV : passe la Demande liée de 'Brouillon' → 'En_attente'.
-     * - CLIENT : ne peut soumettre que ses propres demandes.
-     * - ADMIN  : peut soumettre n'importe quelle demande.
-     */
-    @PatchMapping("/{id}/submit")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
-    public ResponseEntity<RendezVousResponse> submit(@PathVariable Integer id, Authentication auth) {
-        Integer clientIdOrNullIfAdmin = null;
-
-        boolean isClient = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
-        if (isClient) {
-            clientIdOrNullIfAdmin = clientResolver.requireCurrentClient(auth).getIdClient();
+    public RendezVousController(
+        RendezVousRepository rvRepo,
+        DemandeRepository demandeRepo,
+        AdministrateurRepository adminRepo,
+        CreneauRepository creneauRepo,
+        StatutRendezVousRepository statutRepo)
+        {
+            this.rvRepo = rvRepo;
+            this.demandeRepo = demandeRepo;
+            this.adminRepo = adminRepo;
+            this.creneauRepo = creneauRepo;
+            this.statutRepo = statutRepo;
         }
 
-        return service.submit(id, clientIdOrNullIfAdmin)
+    // LISTE TOUS LES RDV
+    @GetMapping
+    public List<RendezVous> getAll() {
+        return rvRepo.findAll();
+    }
+
+    // RÉCUPÈRE UN RDV PAR ID
+    @GetMapping("/{id}")
+    public ResponseEntity<RendezVous> getById(@PathVariable Integer id) {
+        return rvRepo.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // CRÉE UN NOUVEAU RDV
+    @PostMapping
+    public ResponseEntity<RendezVous> create(@Valid @RequestBody RendezVous dto) {
+        Integer demandeId   = dto.getDemande().getIdDemande();
+        Integer adminId     = dto.getAdministrateur().getIdAdmin();
+        Integer creneauId   = dto.getCreneau().getIdCreneau();
+        String statutCode   = dto.getStatut().getCodeStatut();
+
+        // Charger et vérifier existence de chaque entité liée
+        Optional<Demande> optDemande = demandeRepo.findById(demandeId);
+        Optional<Administrateur> optAdmin = adminRepo.findById(adminId);
+        Optional<Creneau> optCreneau = creneauRepo.findById(creneauId);
+        Optional<StatutRendezVous> optStatut = statutRepo.findById(statutCode);
+
+        if (optDemande.isEmpty() || optAdmin.isEmpty() ||
+                optCreneau.isEmpty() || optStatut.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Contrainte one-to-one unique
+        if (rvRepo.existsByDemandeIdDemande(demandeId) ||
+                rvRepo.existsByCreneauIdCreneau(creneauId)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        // Tous les Optionals sont présents : on peut safely .get()
+        RendezVous toSave = RendezVous.builder()
+                .demande(optDemande.get())
+                .administrateur(optAdmin.get())
+                .creneau(optCreneau.get())
+                .statut(optStatut.get())
+                .build();
+
+        RendezVous saved = rvRepo.save(toSave);
+        return ResponseEntity
+                .created(URI.create("/api/rendezvous/" + saved.getIdRdv()))
+                .body(saved);
+    }
+
+    // MET À JOUR UN RDV EXISTANT
+    @PutMapping("/{id}")
+    public ResponseEntity<RendezVous> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody RendezVous dto
+    ) {
+        return rvRepo.findById(id).map(existing -> {
+            // -> Demande
+            Integer newDemandeId = dto.getDemande().getIdDemande();
+            if (!existing.getDemande().getIdDemande().equals(newDemandeId)) {
+                Optional<Demande> optNewDemande = demandeRepo.findById(newDemandeId);
+                if (optNewDemande.isEmpty() ||
+                        rvRepo.existsByDemandeIdDemande(newDemandeId)) {
+                    return ResponseEntity.badRequest().<RendezVous>build();
+                }
+                existing.setDemande(optNewDemande.get());
+            }
+            // -> Administrateur
+            Integer newAdminId = dto.getAdministrateur().getIdAdmin();
+            if (!existing.getAdministrateur().getIdAdmin().equals(newAdminId)) {
+                Optional<Administrateur> optNewAdmin = adminRepo.findById(newAdminId);
+                if (optNewAdmin.isEmpty()) {
+                    return ResponseEntity.badRequest().<RendezVous>build();
+                }
+                existing.setAdministrateur(optNewAdmin.get());
+            }
+            // -> Créneau
+            Integer newCreneauId = dto.getCreneau().getIdCreneau();
+            if (!existing.getCreneau().getIdCreneau().equals(newCreneauId)) {
+                Optional<Creneau> optNewCreneau = creneauRepo.findById(newCreneauId);
+                if (optNewCreneau.isEmpty() ||
+                        rvRepo.existsByCreneauIdCreneau(newCreneauId)) {
+                    return ResponseEntity.badRequest().<RendezVous>build();
+                }
+                existing.setCreneau(optNewCreneau.get());
+            }
+            // -> Statut
+            String newStatutCode = dto.getStatut().getCodeStatut();
+            if (!existing.getStatut().getCodeStatut().equals(newStatutCode)) {
+                Optional<StatutRendezVous> optNewStatut = statutRepo.findById(newStatutCode);
+                if (optNewStatut.isEmpty()) {
+                    return ResponseEntity.badRequest().<RendezVous>build();
+                }
+                existing.setStatut(optNewStatut.get());
+            }
+
+            RendezVous updated = rvRepo.save(existing);
+            return ResponseEntity.ok(updated);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    // SUPPRIME UN RDV
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        return service.delete(id)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
+        if (!rvRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        rvRepo.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

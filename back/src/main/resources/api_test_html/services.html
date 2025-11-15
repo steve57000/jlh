@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Services API</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    section { margin-bottom: 40px; }
+    textarea { width: 100%; height: 100px; }
+    pre { background: #f4f4f4; padding: 10px; overflow: auto; }
+  </style>
+</head>
+<body>
+<nav style="margin-bottom:20px;">
+<a href="index.html">Menu d'Accueil</a> |
+<select onchange="if(this.value) window.location.href=this.value;">
+<option value="">-- Sélectionner --</option>
+  <option value="clients.html">Clients</option>
+  <option value="services.html">Services</option>
+  <option value="types-demande.html">Types Demande</option>
+  <option value="demandes.html">Demandes</option>
+  <option value="administrateurs.html">Administrateurs</option>
+  <option value="creneaux.html">Creneaux</option>
+  <option value="demandes-services.html">Demandes Services</option>
+  <option value="devis.html">Devis</option>
+  <option value="disponibilites.html">Disponibilites</option>
+  <option value="rendezvous.html">Rendezvous</option>
+  <option value="statuts-creneau.html">Statuts Creneau</option>
+  <option value="statuts-demande.html">Statuts Demande</option>
+  <option value="statuts-rendezvous.html">Statuts Rendezvous</option>
+</select>
+</nav>
+
+  <h1>Test Services API</h1>
+  <section>
+    <h2>GET All</h2>
+    <button onclick="fetchGetAll()">GET All</button>
+    <pre id="getAllOutput"></pre>
+  </section>
+  <section>
+    <h2>GET by ID</h2>
+    ID: <input type="text" id="getId" />
+    <button onclick="fetchGetById()">GET by ID</button>
+    <pre id="getByIdOutput"></pre>
+  </section>
+  <section>
+    <h2>POST</h2>
+    Body (JSON):<br/>
+    <textarea id="postBody">{}</textarea><br/>
+    <button onclick="fetchPost()">POST</button>
+    <pre id="postOutput"></pre>
+  </section>
+  <section>
+    <h2>PUT</h2>
+    ID: <input type="text" id="putId" /><br/>
+    Body (JSON):<br/>
+    <textarea id="putBody">{}</textarea><br/>
+    <button onclick="fetchPut()">PUT</button>
+    <pre id="putOutput"></pre>
+  </section>
+  <section>
+    <h2>DELETE</h2>
+    ID: <input type="text" id="deleteId" />
+    <button onclick="fetchDelete()">DELETE</button>
+    <pre id="deleteOutput"></pre>
+  </section>
+  <script src="config.js"></script>
+  <script>
+    const baseUrl = `${API_BASE_URL}/api/services`;
+    async function fetchGetAll() {
+      const res = await fetch(baseUrl);
+      const data = await res.json();
+      document.getElementById('getAllOutput').textContent = JSON.stringify(data, null, 2);
+    }
+    async function fetchGetById() {
+      const id = document.getElementById('getId').value;
+      const res = await fetch(`${baseUrl}/${id}`);
+      const data = await (res.ok ? res.json() : res.text());
+      document.getElementById('getByIdOutput').textContent = JSON.stringify(data, null, 2);
+    }
+    async function fetchPost() {
+      const body = document.getElementById('postBody').value;
+      const res = await fetch(baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      const data = await (res.ok ? res.json() : res.text());
+      document.getElementById('postOutput').textContent = JSON.stringify(data, null, 2);
+    }
+    async function fetchPut() {
+      const id = document.getElementById('putId').value;
+      const body = document.getElementById('putBody').value;
+      const res = await fetch(`${baseUrl}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      const data = await (res.ok ? res.json() : res.text());
+      document.getElementById('putOutput').textContent = JSON.stringify(data, null, 2);
+    }
+    async function fetchDelete() {
+      const id = document.getElementById('deleteId').value;
+      const res = await fetch(`${baseUrl}/${id}`, { method: 'DELETE' });
+      document.getElementById('deleteOutput').textContent = res.status === 204 ? 'Deleted' : await res.text();
+    }
+  </script>
+</body>
+</html>
