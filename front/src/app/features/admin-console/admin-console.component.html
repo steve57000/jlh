@@ -1,0 +1,166 @@
+<section class="panel">
+  <header>
+    <p class="eyebrow">Espace administrateur</p>
+    <h2>Suivi des dossiers clients</h2>
+    <p>
+      Cette console consomme directement les nouvelles routes REST (demandes, devis, rendez-vous, clients) exposées par le backend.
+      Elle permet de contrôler les mises à jour et de vérifier en un coup d'œil l'état des dossiers.
+    </p>
+  </header>
+
+  <p class="feedback" *ngIf="status() as feedback" [class.error]="feedback.type === 'error'">
+    {{ feedback.message }}
+  </p>
+
+  <div class="form-grid">
+    <article>
+      <h3>Créer un rendez-vous</h3>
+      <form [formGroup]="rendezVousForm" (ngSubmit)="submitRendezVous()">
+        <label>ID demande<input type="number" formControlName="demandeId" min="1" required /></label>
+        <label>ID administrateur<input type="number" formControlName="adminId" min="1" required /></label>
+        <label>ID créneau<input type="number" formControlName="creneauId" min="1" required /></label>
+        <label>Statut (code)<input type="text" formControlName="statutCode" required /></label>
+        <button type="submit">Planifier</button>
+      </form>
+    </article>
+
+    <article>
+      <h3>Mettre à jour une demande</h3>
+      <form [formGroup]="demandeUpdateForm" (ngSubmit)="submitDemandeUpdate()">
+        <label>ID demande<input type="number" formControlName="demandeId" min="1" required /></label>
+        <label>ID client<input type="number" formControlName="clientId" min="1" required /></label>
+        <label>Type (code)<input type="text" formControlName="typeCode" required /></label>
+        <label>Statut (code)<input type="text" formControlName="statutCode" required /></label>
+        <label>Date de soumission<input type="datetime-local" formControlName="dateSoumission" required /></label>
+        <button type="submit">Enregistrer</button>
+      </form>
+    </article>
+
+    <article>
+      <h3>Créer un devis</h3>
+      <form [formGroup]="devisForm" (ngSubmit)="submitDevisCreation()">
+        <label>ID demande<input type="number" formControlName="demandeId" min="1" required /></label>
+        <label>Date du devis<input type="datetime-local" formControlName="dateDevis" required /></label>
+        <label>Montant (€)<input type="number" min="0" step="0.01" formControlName="montantTotal" required /></label>
+        <button type="submit">Créer</button>
+      </form>
+    </article>
+
+    <article>
+      <h3>Modifier un devis</h3>
+      <form [formGroup]="devisUpdateForm" (ngSubmit)="submitDevisUpdate()">
+        <label>ID devis<input type="number" formControlName="devisId" min="1" required /></label>
+        <label>ID demande<input type="number" formControlName="demandeId" min="1" required /></label>
+        <label>Date du devis<input type="datetime-local" formControlName="dateDevis" required /></label>
+        <label>Montant (€)<input type="number" min="0" step="0.01" formControlName="montantTotal" required /></label>
+        <button type="submit">Mettre à jour</button>
+      </form>
+    </article>
+  </div>
+
+  <div class="tables">
+    <article>
+      <h3>Clients</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let client of clients()">
+            <td>{{ client.idClient }}</td>
+            <td>{{ client.prenom }} {{ client.nom }}</td>
+            <td>{{ client.email }}</td>
+            <td>{{ client.telephone || '—' }}</td>
+          </tr>
+          <tr *ngIf="!clients().length">
+            <td colspan="4">Aucun client enregistré.</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article>
+      <h3>Demandes</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Client</th>
+            <th>Type</th>
+            <th>Statut</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let demande of demandes()">
+            <td>{{ demande.idDemande }}</td>
+            <td>{{ demande.client?.idClient }}</td>
+            <td>{{ demande.typeDemande?.codeType }}</td>
+            <td>{{ demande.statutDemande?.codeStatut }}</td>
+            <td>{{ demande.dateSoumission | date: 'short' }}</td>
+          </tr>
+          <tr *ngIf="!demandes().length">
+            <td colspan="5">Aucune demande.</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article>
+      <h3>Devis</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Demande</th>
+            <th>Montant</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let devisItem of devis()">
+            <td>{{ devisItem.idDevis }}</td>
+            <td>{{ devisItem.demande?.idDemande }}</td>
+            <td>{{ devisItem.montantTotal | number: '1.2-2' }} €</td>
+            <td>{{ devisItem.dateDevis | date: 'short' }}</td>
+          </tr>
+          <tr *ngIf="!devis().length">
+            <td colspan="4">Aucun devis.</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article>
+      <h3>Rendez-vous</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Demande</th>
+            <th>Admin</th>
+            <th>Créneau</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rdv of rendezVous()">
+            <td>{{ rdv.idRdv }}</td>
+            <td>{{ rdv.demande?.idDemande }}</td>
+            <td>{{ rdv.administrateur?.idAdmin }}</td>
+            <td>{{ rdv.creneau?.idCreneau }}</td>
+            <td>{{ rdv.statut?.codeStatut }}</td>
+          </tr>
+          <tr *ngIf="!rendezVous().length">
+            <td colspan="5">Aucun rendez-vous planifié.</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+  </div>
+</section>
