@@ -9,6 +9,4 @@ import { AdminConsoleComponent } from './features/admin-console/admin-console.co
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
-  protected readonly title = signal('jlh-autopam-frontend');
-}
+export class App {}
