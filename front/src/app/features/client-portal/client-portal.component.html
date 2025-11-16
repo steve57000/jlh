@@ -1,0 +1,94 @@
+<section class="panel">
+  <header>
+    <p class="eyebrow">Espace client</p>
+    <h2>Créer un compte et déposer vos demandes</h2>
+    <p>
+      Toutes les informations demandées correspondent aux champs présents dans l'entité
+      <strong>Client</strong> et aux nouvelles ressources exposées par l'API Spring Boot.
+      Utilisez l'identifiant client généré pour rattacher vos demandes et vos devis.
+    </p>
+  </header>
+
+  <div class="form-grid">
+    <article>
+      <h3>1. Création de compte</h3>
+      <form [formGroup]="clientForm" (ngSubmit)="submitClient()" aria-label="Formulaire de création de client">
+        <label>
+          Nom*
+          <input type="text" formControlName="nom" required />
+        </label>
+        <label>
+          Prénom*
+          <input type="text" formControlName="prenom" required />
+        </label>
+        <label>
+          Email*
+          <input type="email" formControlName="email" required />
+        </label>
+        <label>
+          Téléphone
+          <input type="tel" formControlName="telephone" />
+        </label>
+        <label>
+          Adresse
+          <textarea rows="3" formControlName="adresse"></textarea>
+        </label>
+        <button type="submit">Créer le compte</button>
+      </form>
+      <p class="feedback" *ngIf="clientFeedback() as feedback" [class.error]="feedback.type === 'error'">
+        {{ feedback.message }}
+      </p>
+      <pre *ngIf="latestClient() as client">{{ client | json }}</pre>
+    </article>
+
+    <article>
+      <h3>2. Demande / prise de rendez-vous</h3>
+      <form [formGroup]="demandeForm" (ngSubmit)="submitDemande()" aria-label="Formulaire de demande">
+        <label>
+          ID client*
+          <input type="number" formControlName="clientId" min="1" required />
+        </label>
+        <label>
+          Type de demande (code)*
+          <input type="text" formControlName="typeCode" placeholder="EX: REVISION" required />
+        </label>
+        <label>
+          Statut (code)*
+          <input type="text" formControlName="statutCode" placeholder="EX: EN_ATTENTE" required />
+        </label>
+        <label>
+          Date de soumission*
+          <input type="datetime-local" formControlName="dateSoumission" required />
+        </label>
+        <button type="submit">Enregistrer la demande</button>
+      </form>
+      <p class="feedback" *ngIf="demandeFeedback() as feedback" [class.error]="feedback.type === 'error'">
+        {{ feedback.message }}
+      </p>
+      <pre *ngIf="latestDemande() as demande">{{ demande | json }}</pre>
+    </article>
+
+    <article>
+      <h3>3. Génération de devis</h3>
+      <form [formGroup]="devisForm" (ngSubmit)="submitDevis()" aria-label="Formulaire de devis">
+        <label>
+          ID de la demande*
+          <input type="number" formControlName="demandeId" min="1" required />
+        </label>
+        <label>
+          Date du devis*
+          <input type="datetime-local" formControlName="dateDevis" required />
+        </label>
+        <label>
+          Montant estimé (€)*
+          <input type="number" step="0.01" min="0" formControlName="montantTotal" required />
+        </label>
+        <button type="submit">Demander le devis</button>
+      </form>
+      <p class="feedback" *ngIf="devisFeedback() as feedback" [class.error]="feedback.type === 'error'">
+        {{ feedback.message }}
+      </p>
+      <pre *ngIf="latestDevis() as devis">{{ devis | json }}</pre>
+    </article>
+  </div>
+</section>
