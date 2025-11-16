@@ -2,7 +2,10 @@ package com.jlh.jlhautopambackend.controllers;
 
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import com.jlh.jlhautopambackend.dto.DemandeDto;
+import com.jlh.jlhautopambackend.mapper.DemandeMapper;
 import com.jlh.jlhautopambackend.modeles.Demande;
 import com.jlh.jlhautopambackend.repositories.DemandeRepository;
 
@@ -12,41 +15,46 @@ import com.jlh.jlhautopambackend.repositories.DemandeRepository;
 public class DemandeController {
 
     private final DemandeRepository repo;
+    private final DemandeMapper mapper;
 
-    public DemandeController(DemandeRepository repo) {
+    public DemandeController(DemandeRepository repo, DemandeMapper mapper) {
         this.repo = repo;
+        this.mapper = mapper;
     }
 
+    @Transactional(readOnly = true)
     @GetMapping
-    public List<Demande> getAll() {
-        return repo.findAll();
+    public List<DemandeDto> getAll() {
+        return mapper.toDtos(repo.findAll());
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/{id}")
-    public ResponseEntity<Demande> getById(@PathVariable Integer id) {
+    public ResponseEntity<DemandeDto> getById(@PathVariable Integer id) {
         return repo.findById(id)
+                .map(mapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Demande> create(@RequestBody Demande d) {
+    public ResponseEntity<DemandeDto> create(@RequestBody Demande d) {
         Demande saved = repo.save(d);
-        return ResponseEntity.status(201).body(saved);
+        return ResponseEntity.status(201).body(mapper.toDto(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Demande> update(@PathVariable Integer id,
-                                          @RequestBody Demande input) {
+    public ResponseEntity<DemandeDto> update(@PathVariable Integer id,
+                                             @RequestBody Demande input) {
         return repo.findById(id)
                 .map(existing -> {
-                    // votre entité utilise Instant pour dateSoumission
                     existing.setDateSoumission(input.getDateSoumission());
                     existing.setClient(input.getClient());
                     existing.setTypeDemande(input.getTypeDemande());
                     existing.setStatutDemande(input.getStatutDemande());
                     existing.setServices(input.getServices());
-                    return ResponseEntity.ok(repo.save(existing));
+                    Demande updated = repo.save(existing);
+                    return ResponseEntity.ok(mapper.toDto(updated));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
