@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { ClientPortalComponent } from './features/client-portal/client-portal.component';
 import { AdminConsoleComponent } from './features/admin-console/admin-console.component';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, ClientPortalComponent, AdminConsoleComponent],
+  imports: [RouterOutlet, ClientPortalComponent, AdminConsoleComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
