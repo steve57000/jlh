@@ -127,6 +127,11 @@
     white-space: nowrap;
   }
 
+  .pill.sync {
+    --pill-accent: var(--french-violet);
+    background: color-mix(in srgb, var(--pill-accent) 12%, transparent);
+  }
+
   .pill:hover {
     background: color-mix(in srgb, var(--pill-accent) 15%, transparent);
   }
@@ -178,6 +183,36 @@
       width: 100%;
       background: var(--red-to-pink-to-purple-horizontal-gradient);
       margin-block: 1.5rem;
+    }
+  }
+  .sync-wrapper {
+    margin-top: 4rem;
+    border-radius: 2rem;
+    padding: 2.5rem;
+    background: color-mix(in srgb, white 75%, var(--gray-400));
+    box-shadow: 0 30px 80px rgb(15 23 42 / 14%);
+  }
+
+  .sync-wrapper h2 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    color: var(--gray-900);
+  }
+
+  .sync-wrapper p {
+    font-size: 1rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .sync-columns {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 900px) {
+    .sync-columns {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>
@@ -264,6 +299,20 @@
             </svg>
           </a>
         }
+        <a class="pill sync" href="#portails">
+          <span>Portails client &amp; admin</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="14"
+            viewBox="0 -960 960 960"
+            width="14"
+            fill="currentColor"
+          >
+            <path
+              d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
+            />
+          </svg>
+        </a>
       </div>
       <div class="social-links">
         <a
@@ -328,6 +377,18 @@
       </div>
     </div>
   </div>
+  <section class="sync-wrapper" id="portails">
+    <h2>Synchronisation front/back</h2>
+    <p>
+      Ces formulaires reprennent les entités Client, Demande, Devis et Rendez-vous telles qu'elles existent dans le backend. Ils
+      permettent de tester rapidement la création d'un compte client ainsi que les actions côté administrateur sans quitter
+      cette page.
+    </p>
+    <div class="sync-columns">
+      <app-client-portal></app-client-portal>
+      <app-admin-console></app-admin-console>
+    </div>
+  </section>
 </main>
 
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
