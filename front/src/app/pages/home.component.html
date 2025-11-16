@@ -1,0 +1,17 @@
+<div class="container-main">
+  <app-promotions-slider class="app-promotions-slider" [promotions]="promotions"></app-promotions-slider>
+  <app-intro-accueil></app-intro-accueil>
+
+  <app-metiers-pictos [items]="metiersPictos"></app-metiers-pictos>
+
+  <div #sectionAgrements>
+    <app-section-caroussel
+      [title]="'Nos agréments'"
+      [background]="'gradient'"
+      [cards]="agrementsCards"
+      [activeIndex]="activeIndexAgrements">
+    </app-section-caroussel>
+  </div>
+
+  <app-brands></app-brands>
+</div>

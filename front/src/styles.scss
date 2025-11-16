@@ -1,1 +1,332 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+@use 'styles/variables' as v;
+@use 'styles/mixins' as m;
+@use 'styles/reset';
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden;
+}
+
+html {
+  @include mat.theme((
+    color: ( primary: mat.$azure-palette, tertiary: mat.$blue-palette ),
+    typography: Roboto,
+    density: 0,
+  ));
+  color-scheme: light;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+}
+
+body {
+  font-family: v.$font-body;
+  background: v.$color-quaternary;
+  color: v.$color-primary;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body.admin-modal-open {
+  overflow: hidden;
+}
+
+h1, h2, h3 { font-family: v.$font-title; }
+h4, h5, h6 { font-family: v.$font-subtitle; }
+
+h2 { font-size: 2.1rem; margin-bottom: 48px; }
+
+a {
+  color: v.$color-secondary;
+  text-decoration: none;
+  transition: color v.$transition-fast;
+  &:hover:not(.cta-btn):not(.cta-btn-secondary) { color: v.$color-tertiary; }
+}
+
+a.cta-btn-secondary { text-align: center; }
+
+// Base commune pour les boutons
+%btn-base {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-width: 120px; padding: .6rem .9rem;
+  border-radius: v.$border-radius-small; text-decoration: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  cursor: pointer;
+  box-shadow: v.$shadow-btn;
+  transition: box-shadow v.$transition-fast, transform .06s ease, filter .12s ease;
+}
+
+/* CTA principal */
+.cta-btn {
+  @extend %btn-base;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)), /* lustre */
+    v.$color-tertiary;
+  color: v.$color-quaternary;
+  font-family: v.$font-cta; font-size: 1rem; font-weight: 500;
+
+  @include m.hover-fill-center(v.$btn-hover-bg, .3s);
+  @include m.btn-3d-chrome(v.$color-tertiary);
+  @include m.press-depth(1px);
+
+  &:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; &::before{display:none;} }
+}
+
+/* CTA secondaire */
+.cta-btn-secondary {
+  @extend %btn-base;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)),
+    v.$color-secondary;
+  color: v.$color-quaternary;
+  font-family: v.$font-body; font-size: 1rem; font-weight: 500;
+
+  @include m.hover-fill-center-secondary(v.$btn-hover-bg-secondary, .3s);
+  @include m.btn-3d-chrome(v.$color-secondary);
+  @include m.press-depth(2px);
+
+  &:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; &::before{display:none;} }
+}
+
+/* Danger */
+.secondary-btn {
+  @extend %btn-base;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)),
+    v.$color-tertiary;
+  color: v.$color-quaternary;
+  font-family: v.$font-cta; font-weight: 700; width: 180px;
+
+  @include m.hover-fill-center(v.$btn-delete-gradient, .5s);
+  @include m.btn-3d-chrome(v.$color-tertiary);
+  @include m.press-depth(2px);
+
+  &:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; &::before{display:none;} }
+}
+
+
+/* — Mobile : on limite l’anim coûteuse — */
+@media (hover: none) {
+  .cta-btn::after,
+  .cta-btn-secondary::after,
+  .secondary-btn::after { transform: none !important; }
+}
+
+/* — Accessibilité : réduit les animations — */
+@media (prefers-reduced-motion: reduce) {
+  .cta-btn, .cta-btn-secondary, .secondary-btn {
+    transition: none;
+    &::after { transition: none; }
+  }
+}
+
+/* Layout global */
+.header .container-max {
+  display: flex;         /* si pas déjà défini */
+  min-width: 0;          /* IMPORTANT : évite les overflow des enfants */
+}
+
+.header .container-max .logo,
+.header .container-max nav {
+  min-width: 0;          /* idem sur les enfants flex */
+}
+
+.container-main { min-height: 100vh; }
+.container-max {
+  display: flex; flex-direction: row;
+  max-width: 1480px; width: 100%; height: 100%;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+@media (max-width: 1024px) {
+  .container-max {
+    padding-inline: clamp(1rem, 5vw, 1.75rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .container-max {
+    padding: clamp(0.75rem, 5vw, 1.25rem);
+  }
+}
+
+@media (min-width: 1600px) {
+  .container-max {
+    max-width: 1680px;
+  }
+}
+
+/* -----------------------------------------------------
+   Layout générique pour les pages de contenu éditorial
+----------------------------------------------------- */
+
+.page {
+  background: v.$linear-bg;
+  color: v.$color-quaternary;
+  padding-block: clamp(3.5rem, 8vw, 6rem);
+}
+
+.page__container {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  width: 100%;
+}
+
+.page__intro {
+  display: grid;
+  gap: 1rem;
+  max-width: min(880px, 100%);
+}
+
+.page__eyebrow {
+  font-family: v.$font-subtitle;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: rgba(v.$color-quaternary, 0.7);
+}
+
+.page__lead {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.page__section {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.page__section-title {
+  font-family: v.$font-title;
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  margin: 0;
+}
+
+.page__grid {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.page__grid--two {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.page__grid--three {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.page-card {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: v.$border-radius-high;
+  box-shadow: v.$shadow-small-light;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  display: grid;
+  gap: 0.75rem;
+  backdrop-filter: blur(12px);
+}
+
+.page-card__title {
+  font-family: v.$font-subtitle;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$color-tertiary;
+  margin: 0;
+}
+
+.page-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.page-card__list li {
+  position: relative;
+  padding-left: 1.5rem;
+  line-height: 1.55;
+}
+
+.page-card__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: v.$color-tertiary;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+.page__cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.page__highlight {
+  border-left: 4px solid v.$color-tertiary;
+  padding-left: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 760px;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding-block: clamp(2.5rem, 10vw, 4rem);
+  }
+
+  .page__cta-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.page--document {
+  background: linear-gradient(120deg, rgba(77, 134, 141, 0.85), rgba(64, 64, 64, 0.95));
+  color: v.$color-primary;
+
+  .page__intro {
+    color: v.$color-quaternary;
+  }
+
+  .document-card {
+    background: rgba(v.$color-quaternary, 0.95);
+    color: v.$color-primary;
+    border-radius: v.$border-radius-high;
+    padding: clamp(2rem, 5vw, 3rem);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .document-card h2 {
+    font-family: v.$font-title;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    color: v.$color-secondary;
+    margin: 0;
+  }
+
+  .document-card p {
+    margin: 0;
+    line-height: 1.8;
+  }
+
+  .document-card a {
+    color: v.$color-secondary;
+    text-decoration: underline;
+  }
+}
+
+

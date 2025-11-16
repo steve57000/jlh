@@ -1,0 +1,273 @@
+@use '../../styles/variables' as variables;
+
+.header {
+  position: relative;
+  background: variables.$color-quaternary;
+  color: variables.$color-primary;
+  height: 100px;
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: clamp(1rem, 3vw, 2.5rem);
+  border-bottom: 1px solid variables.$color-primary;
+  box-shadow: 0 4px 8px rgba(variables.$color-primary, 45%);
+  z-index: 100;
+
+  .container-max {
+    align-items: center;
+    justify-content: space-between;
+
+    .logo {
+      position: relative;
+      z-index: 201;
+      display: flex;
+      align-items: center;
+      // Correction espace dans le SVG (décale vers la gauche)
+      transform: translateX(-12px); // Ajuste ici selon le "blanc" du SVG !
+      transition: all 0.2s;
+      cursor: pointer;
+
+      &:hover {
+        transform: translateX(-16px) scale(1.05); // le même translateX pour garder l’alignement
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        width: clamp(180px, 18vw, 245px);
+        transition: width 0.2s, filter 0.2s;
+        filter: brightness(1.1);
+        display: block;
+
+        &:hover {
+          filter: brightness(1.30) drop-shadow(1px 2px 1px rgba(64, 64, 64, 0.25));
+        }
+      }
+    }
+
+    .burger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      padding: 0; // Enlève le padding pour que ce soit plus compact en mobile
+      margin-left: 1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      z-index: 200;
+
+      span {
+        display: block;
+        height: 3px;
+        width: 100%;
+        background: variables.$color-primary;
+        border-radius: 3px;
+        transition: all 0.3s;
+
+      }
+      & span.open:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+      }
+      & span.open:nth-child(2) {
+        opacity: 0;
+      }
+      & span.open:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+      }
+
+      &:hover span{
+        background: variables.$color-secondary;
+      }
+
+      &:focus-visible {
+        outline: 2px solid variables.$color-tertiary;
+        outline-offset: 3px;
+      }
+    }
+
+    nav {
+      display: flex;
+      gap: clamp(0.75rem, 2vw, 1.5rem);
+      align-items: center;
+      justify-content: flex-end;
+
+      a {
+        justify-content: center;
+        font-family: variables.$font-subtitle;
+        color: variables.$color-primary;
+        font-weight: 600;
+        transition: color 0.2s;
+        display: inline-block;
+        margin: 0;
+
+        &:hover,
+        &.active {
+          color: variables.$color-secondary;
+          text-decoration: underline 6px variables.$color-secondary;
+        }
+
+        &:focus-visible {
+          outline: 2px solid variables.$color-secondary;
+          outline-offset: 4px;
+          border-radius: variables.$border-radius-small;
+        }
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header .container-max .logo,
+  .header .container-max .logo img,
+  .header .container-max nav a {
+    transition: none;
+  }
+}
+
+// Logo responsive
+@media (max-width: 1200px) {
+  .header {
+    height: 92px;
+  }
+  .logo img { width: clamp(160px, 16vw, 200px); }
+}
+@media (max-width: 900px) {
+  .header {
+    height: 88px;
+  }
+  .logo img { width: clamp(150px, 22vw, 190px); }
+}
+
+@media (max-width: 1024px) {
+  .header {
+    .container-max {
+      gap: clamp(0.5rem, 2vw, 1.5rem);
+
+      nav {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        row-gap: 0.75rem;
+
+        a {
+          font-size: clamp(0.85rem, 1.8vw, 1rem);
+        }
+      }
+    }
+  }
+}
+
+// MENU BURGER RESPONSIVE
+@media (max-width: 719px) {
+  .header {
+    height: 80px; // Hauteur réduite pour un mobile plus compact
+
+    .container-max {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      padding: 0 0.7rem; // Moins de padding à gauche/droite
+
+      .logo {
+        transform: translateX(-12px); // Décale moins sur mobile si besoin
+        &:hover {
+          transform: translateX(-12px) scale(1.02);
+        }
+
+        img:hover {
+          filter: brightness(1.20) drop-shadow(1px 2px 1px rgba(64, 64, 64, 0.25));
+        }
+      }
+
+      .burger {
+        display: flex;
+        margin-left: auto;
+        margin-right: 0;
+        padding: 0.4rem;
+      }
+
+      nav {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: variables.$color-quaternary;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(5rem, 18vh, 12rem) clamp(1.5rem, 6vw, 3rem) clamp(3rem, 8vh, 5rem);
+
+        /* état fermé */
+        transform: translateX(100%);
+        transition: transform 0.3s, visibility 0s linear 0.3s; /* différer la visibilité après l’anim */
+        z-index: 150;
+        gap: 2rem;
+        visibility: hidden;          /* masquer visuellement */
+        pointer-events: none;        /* bloquer les clics */
+        will-change: transform;      /* perf */
+        backface-visibility: hidden; /* évite des artefacts sur GPU */
+        overflow-y: auto;
+
+        &.open {
+          display: flex;
+          transform: translateX(0%);
+          visibility: visible;
+          pointer-events: auto;
+          transition: transform 0.3s; /* visibilité immédiate à l’ouverture */
+        }
+
+
+        a {
+          margin: 0.9rem 0;
+          font-size: clamp(1.5rem, 4vw, 2rem);
+          color: variables.$color-primary;
+          font-family: variables.$font-subtitle;
+        }
+      }
+    }
+
+    &.menu-open .container-max  {
+      position: absolute;
+      width: 100vw;
+      z-index: 250;
+      display: flex;
+      justify-content: center;
+    }
+
+    &.menu-open .container-max .logo {
+      position: absolute;
+      max-width: 300px;
+      width: 100%;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+
+      &:hover {
+        transform: translateX(-50%) scale(1.02);
+      }
+
+      img {
+        width: 100%;
+
+        &:hover {
+          filter: brightness(1.20) drop-shadow(1px 2px 1px rgba(64, 64, 64, 0.25));
+        }
+      }
+    }
+
+    &.menu-open .container-max nav {
+      padding-top: clamp(16rem, 36vh, 24rem); // égale à la hauteur du logo+header
+    }
+  }
+}
+
+/* Bloque le scroll body quand menu ouvert */
+body.menu-open {
+  overflow: hidden !important;
+}
