@@ -14,7 +14,13 @@ import {MetiersPictosComponent} from '../features/metiers-pictos.component';
 
 import { BrandsComponent } from '../shared/brands/brands.component';
 
-const DEFAULT_METIERS_PICTOS = [
+type MetiersPicto = {
+  img: string;
+  label: string;
+  description: string;
+};
+
+const DEFAULT_METIERS_PICTOS: MetiersPicto[] = [
   {
     img: 'assets/icons/picto-metier-pneu.png',
     label: 'Pneumatiques',
@@ -75,7 +81,7 @@ const DEFAULT_METIERS_PICTOS = [
     label: 'Vidange',
     description: `Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.`
   },
-] as const;
+];
 
 @Component({
   selector: 'app-home',
@@ -144,7 +150,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   ];
 
-  metiersPictos = [...DEFAULT_METIERS_PICTOS];
+  metiersPictos: MetiersPicto[] = [...DEFAULT_METIERS_PICTOS];
 
 
   ngOnInit() {
@@ -211,7 +217,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private buildMetiersFromServices(services: ServiceDto[]) {
+  private buildMetiersFromServices(services: ServiceDto[]): MetiersPicto[] {
     return services
       .filter(service => typeof service.icon === 'string' && service.icon.trim().length > 0)
       .map(service => ({
