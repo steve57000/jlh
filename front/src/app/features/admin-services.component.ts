@@ -35,6 +35,7 @@ export class AdminServicesComponent implements OnInit {
     this.form = this.fb.group({
       libelle: ['', [Validators.required, Validators.maxLength(100)]],
       description: ['', [Validators.maxLength(2000)]],
+      icon: ['', [Validators.maxLength(255)]],
       prixUnitaire: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
     });
   }
@@ -70,6 +71,7 @@ export class AdminServicesComponent implements OnInit {
     this.form.patchValue({
       libelle: service.libelle,
       description: service.description,
+      icon: service.icon ?? '',
       prixUnitaire: service.prixUnitaire,
     });
     this.iconPreview = service.icon ?? null;
@@ -111,8 +113,9 @@ export class AdminServicesComponent implements OnInit {
       return;
     }
 
-    const { libelle, description, prixUnitaire } = this.form.value;
+    const { libelle, description, prixUnitaire, icon } = this.form.value;
     const prixValue = typeof prixUnitaire === 'number' ? prixUnitaire : Number(prixUnitaire);
+    const iconValue = typeof icon === 'string' ? icon.trim() : '';
     const body = {
       libelle,
       description,
