@@ -57,6 +57,28 @@ SET @ddl := IF(@exists = 0,
             );
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+-- Ajout colonne icon sur les services (optionnelle)
+SET @exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'service' AND COLUMN_NAME = 'icon'
+);
+SET @ddl := IF(@exists = 0,
+               'ALTER TABLE service ADD COLUMN icon VARCHAR(255) NULL',
+               'SELECT 1'
+            );
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Ajout colonne commentaire sur les rendez-vous (optionnelle)
+SET @exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'rendez_vous' AND COLUMN_NAME = 'commentaire'
+);
+SET @ddl := IF(@exists = 0,
+               'ALTER TABLE rendez_vous ADD COLUMN commentaire TEXT NULL',
+               'SELECT 1'
+            );
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 -- Valorise username à partir de l'e-mail pour les administrateurs existants
 UPDATE administrateur
 SET username = concat(prenom, '.', nom, substr(nom, 1,1))
@@ -89,21 +111,26 @@ INSERT INTO statut_rendez_vous (code_statut, libelle) VALUES
 -- ==================================================
 -- 2) Services
 -- ==================================================
-INSERT INTO service (id_service, libelle, description, prix_unitaire, quantite_max, archived) VALUES
+INSERT INTO service (id_service, libelle, description, icon, prix_unitaire, quantite_max, archived) VALUES
                                                                           (1, 'Vidange',
                                                                            'Vidange moteur complète avec huile synthétique haute performance et remplacement du filtre à huile pour optimiser la longévité de votre moteur',
+                                                                           'assets/icons/picto-metier-vidange.png',
                                                                            59.90, 1, 0),
                                                                           (2, 'Révision',
                                                                            'Révision générale incluant le contrôle et le remplacement des courroies, filtres (air, habitacle, carburant) et bougies, ainsi que la vérification des niveaux de liquide',
+                                                                           'assets/icons/picto-metier-revision_constructeur.png',
                                                                            129.90, 1, 0),
                                                                           (3, 'Freinage',
                                                                            'Remplacement des plaquettes de frein avant par des plaquettes haute performance, contrôle des disques et purge complète du circuit de freinage pour une sécurité maximale',
+                                                                           'assets/icons/picto-metier-freinage.png',
                                                                            199.00, 2, 0),
                                                                           (4, 'Pneumatiques',
                                                                            'Montage et équilibrage de quatre pneus toutes saisons, vérification de la géométrie et conseil personnalisé pour un confort et une adhérence optimaux',
+                                                                           'assets/icons/picto-metier-pneu.png',
                                                                            449.00, 4, 0),
                                                                           (5, 'Diagnostic',
                                                                            'Diagnostic électronique multimarque complet avec intervention valise électronique, analyse des défauts et remise d’un rapport détaillé',
+                                                                           'assets/icons/picto-metier-pre_controle.png',
                                                                            79.00, 1, 0);
 
 -- ==================================================
@@ -254,10 +281,10 @@ INSERT INTO devis (id_devis, id_demande, date_devis, montant_total) VALUES
 -- ==================================================
 -- 10) Rendez-vous (statut propre RDV)
 -- ==================================================
-INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut) VALUES
-                                                                                    (1,3,1,1,'Confirme'),
-                                                                                    (2,4,1,3,'Reporte'),
-                                                                                    (3,6,1,6,'Annule');
+INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire) VALUES
+                                                                                    (1,3,1,1,'Confirme', 'Contrôle général avant départ en vacances.'),
+                                                                                    (2,4,1,3,'Reporte', 'Demande de vérification du freinage.'),
+                                                                                    (3,6,1,6,'Annule', NULL);
 
 -- ==================================================
 -- 10) Documents et timeline des demandes
@@ -315,5 +342,5 @@ INSERT INTO disponibilite (id_admin, id_creneau)
 VALUES (1, 7);
 
 -- RDV Confirmé pour Alice (future date => visible par findUpcomingByClientId)
-INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut)
-VALUES (4, 7, 1, 7, 'Confirme');
+INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire)
+VALUES (4, 7, 1, 7, 'Confirme', 'Révision complète avant contrôle technique.');
