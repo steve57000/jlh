@@ -13,6 +13,7 @@ CREATE TABLE Service (
   id_service     INT AUTO_INCREMENT PRIMARY KEY,
   libelle        VARCHAR(100) NOT NULL,
   description    TEXT,
+  icon           VARCHAR(255),
   prix_unitaire  DECIMAL(10,2) NOT NULL,
   quantite_max   INT NOT NULL DEFAULT 1,
   archived       TINYINT(1) NOT NULL DEFAULT 0
@@ -135,6 +136,7 @@ CREATE TABLE RendezVous (
   id_admin       INT NOT NULL,
   id_creneau     INT UNIQUE NOT NULL,
   code_statut    VARCHAR(20) NOT NULL DEFAULT 'Confirme',
+  commentaire    TEXT,
   FOREIGN KEY (id_demande)  REFERENCES Demande(id_demande),
   FOREIGN KEY (id_admin)    REFERENCES Administrateur(id_admin),
   FOREIGN KEY (id_creneau)  REFERENCES Creneau(id_creneau),
