@@ -150,7 +150,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   ];
 
-  metiersPictos: MetiersPicto[] = [...DEFAULT_METIERS_PICTOS];
+  metiersPictos: MetiersPicto[] = [];
 
 
   ngOnInit() {
@@ -158,12 +158,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.servicesService.getPublicServices().subscribe({
       next: services => {
         const fromServices = this.buildMetiersFromServices(services || []);
-        if (fromServices.length > 0) {
-          this.metiersPictos = fromServices;
-        }
+        this.metiersPictos = fromServices.length > 0 ? fromServices : [...DEFAULT_METIERS_PICTOS];
       },
       error: () => {
-        // fallback to defaults
+        this.metiersPictos = [...DEFAULT_METIERS_PICTOS];
       }
     });
   }
@@ -220,6 +218,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private buildMetiersFromServices(services: ServiceDto[]): MetiersPicto[] {
     return services
       .filter(service => typeof service.icon === 'string' && service.icon.trim().length > 0)
+      .sort((a, b) => (a.idService ?? 0) - (b.idService ?? 0))
       .map(service => ({
         img: service.icon!.trim(),
         label: service.libelle,

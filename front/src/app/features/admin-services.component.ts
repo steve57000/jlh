@@ -20,6 +20,7 @@ export class AdminServicesComponent implements OnInit {
   editingService: ServiceDto | null = null;
   form: FormGroup;
   showModal = false;
+  iconPreview: string | null = null;
 
   loading = false;
   errorMsg = '';
@@ -61,6 +62,7 @@ export class AdminServicesComponent implements OnInit {
   openAjoutService() {
     this.editingService = null;
     this.form.reset();
+    this.iconPreview = null;
     this.showModal = true;
   }
 
@@ -72,6 +74,7 @@ export class AdminServicesComponent implements OnInit {
       icon: service.icon ?? '',
       prixUnitaire: service.prixUnitaire,
     });
+    this.iconPreview = service.icon ?? null;
     this.showModal = true;
   }
 
@@ -79,6 +82,29 @@ export class AdminServicesComponent implements OnInit {
     this.showModal = false;
     this.editingService = null;
     this.form.reset();
+    this.iconPreview = null;
+  }
+
+  onIconSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('Le fichier doit être une image.');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.iconPreview = typeof reader.result === 'string' ? reader.result : null;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  clearIcon() {
+    this.iconPreview = null;
   }
 
   submitForm() {
@@ -93,7 +119,7 @@ export class AdminServicesComponent implements OnInit {
     const body = {
       libelle,
       description,
-      icon: iconValue.length > 0 ? iconValue : null,
+      icon: this.iconPreview,
       prixUnitaire: prixValue
     };
 

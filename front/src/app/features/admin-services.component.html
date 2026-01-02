@@ -58,10 +58,16 @@
             <label for="service-icon">Icône (optionnel)</label>
             <input
               id="service-icon"
-              formControlName="icon"
-              maxlength="255"
-              placeholder="assets/icons/picto-metier-vidange.png"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              (change)="onIconSelected($event)"
             />
+            @if (iconPreview) {
+              <div class="service-icon-preview">
+                <img [src]="iconPreview" alt="Aperçu de l'icône du service" />
+                <button type="button" class="link danger" (click)="clearIcon()">Retirer l'icône</button>
+              </div>
+            }
           </div>
           <div class="field">
             <label for="service-prix">Prix unitaire (€)</label>

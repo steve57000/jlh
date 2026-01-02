@@ -112,26 +112,54 @@ INSERT INTO statut_rendez_vous (code_statut, libelle) VALUES
 -- 2) Services
 -- ==================================================
 INSERT INTO service (id_service, libelle, description, icon, prix_unitaire, quantite_max, archived) VALUES
-                                                                          (1, 'Vidange',
-                                                                           'Vidange moteur complète avec huile synthétique haute performance et remplacement du filtre à huile pour optimiser la longévité de votre moteur',
-                                                                           'assets/icons/picto-metier-vidange.png',
-                                                                           59.90, 1, 0),
-                                                                          (2, 'Révision',
-                                                                           'Révision générale incluant le contrôle et le remplacement des courroies, filtres (air, habitacle, carburant) et bougies, ainsi que la vérification des niveaux de liquide',
-                                                                           'assets/icons/picto-metier-revision_constructeur.png',
-                                                                           129.90, 1, 0),
-                                                                          (3, 'Freinage',
-                                                                           'Remplacement des plaquettes de frein avant par des plaquettes haute performance, contrôle des disques et purge complète du circuit de freinage pour une sécurité maximale',
+                                                                          (1, 'Pneumatiques',
+                                                                           'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
+                                                                           'assets/icons/picto-metier-pneu.png',
+                                                                           89.00, 4, 0),
+                                                                          (2, 'Véhicules hybrides',
+                                                                           'Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.',
+                                                                           'assets/icons/picto-metier-hybride.png',
+                                                                           149.00, 1, 0),
+                                                                          (3, 'Géométrie',
+                                                                           'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
+                                                                           'assets/icons/picto-metier-geometrie.png',
+                                                                           99.00, 1, 0),
+                                                                          (4, 'Freinage',
+                                                                           'Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.',
                                                                            'assets/icons/picto-metier-freinage.png',
                                                                            199.00, 2, 0),
-                                                                          (4, 'Pneumatiques',
-                                                                           'Montage et équilibrage de quatre pneus toutes saisons, vérification de la géométrie et conseil personnalisé pour un confort et une adhérence optimaux',
-                                                                           'assets/icons/picto-metier-pneu.png',
-                                                                           449.00, 4, 0),
-                                                                          (5, 'Diagnostic',
-                                                                           'Diagnostic électronique multimarque complet avec intervention valise électronique, analyse des défauts et remise d’un rapport détaillé',
+                                                                          (5, 'Embrayage',
+                                                                           'Diagnostic et remplacement des embrayages, volants moteurs et butées pour une transmission souple et fiable.',
+                                                                           'assets/icons/picto-metier-embrayage.png',
+                                                                           349.00, 1, 0),
+                                                                          (6, 'Échappement',
+                                                                           'Inspection, réparation et remplacement des lignes d’échappement et filtres à particules pour un moteur sain.',
+                                                                           'assets/icons/picto-metier-echappement.png',
+                                                                           129.00, 1, 0),
+                                                                          (7, 'Distribution',
+                                                                           'Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.',
+                                                                           'assets/icons/picto-metier-distribution.png',
+                                                                           699.00, 1, 0),
+                                                                          (8, 'Climatisation',
+                                                                           'Entretien complet du circuit : recharge, nettoyage, contrôle d’étanchéité et désinfection de l’habitacle.',
+                                                                           'assets/icons/picto-metier-climatisation.png',
+                                                                           79.00, 1, 0),
+                                                                          (9, 'Amortisseurs',
+                                                                           'Remplacement des amortisseurs, ressorts et biellettes pour une conduite confortable et maîtrisée.',
+                                                                           'assets/icons/picto-metier-amortisseur.png',
+                                                                           249.00, 2, 0),
+                                                                          (10, 'Pré-contrôle technique',
+                                                                           'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
                                                                            'assets/icons/picto-metier-pre_controle.png',
-                                                                           79.00, 1, 0);
+                                                                           59.00, 1, 0),
+                                                                          (11, 'Révision constructeur',
+                                                                           'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
+                                                                           'assets/icons/picto-metier-revision_constructeur.png',
+                                                                           129.90, 1, 0),
+                                                                          (12, 'Vidange',
+                                                                           'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
+                                                                           'assets/icons/picto-metier-vidange.png',
+                                                                           59.90, 1, 0);
 
 -- ==================================================
 -- 3) Clients (mots de passe déjà hashés)
@@ -232,23 +260,23 @@ INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (1, 1, 1,
+    (1, 12, 1,
      'Vidange',
-     'Vidange moteur complète avec huile synthétique haute performance et remplacement du filtre à huile pour optimiser la longévité de votre moteur',
+     'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
      59.90),
-    (1, 5, 1,
-     'Diagnostic',
-     'Diagnostic électronique multimarque complet avec intervention valise électronique, analyse des défauts et remise d’un rapport détaillé',
-     79.00);
+    (1, 10, 1,
+     'Pré-contrôle technique',
+     'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
+     59.00);
 
 -- Demande 2 : Bob veut Révision
 INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (2, 2, 1,
-     'Révision',
-     'Révision générale incluant le contrôle et le remplacement des courroies, filtres (air, habitacle, carburant) et bougies, ainsi que la vérification des niveaux de liquide',
+    (2, 11, 1,
+     'Révision constructeur',
+     'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
      129.90);
 
 -- Demande 3 : Claire veut Changement pneus x4
@@ -256,26 +284,26 @@ INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (3, 4, 1,
+    (3, 1, 1,
      'Pneumatiques',
-     'Montage et équilibrage de quatre pneus toutes saisons, vérification de la géométrie et conseil personnalisé pour un confort et une adhérence optimaux',
-     449.00);
+     'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
+     89.00);
 
 -- Demande 5 : Eva voulait Diagnostic
 INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (5, 5, 1,
-     'Diagnostic',
-     'Diagnostic électronique multimarque complet avec intervention valise électronique, analyse des défauts et remise d’un rapport détaillé',
-     79.00);
+    (5, 3, 1,
+     'Géométrie',
+     'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
+     99.00);
 
 -- ==================================================
 -- 9) Devis
 -- ==================================================
 INSERT INTO devis (id_devis, id_demande, date_devis, montant_total) VALUES
-                                                                        (1,1,'2025-06-21 14:00:00', 59.90 + 79.00),
+                                                                        (1,1,'2025-06-21 14:00:00', 59.90 + 59.00),
                                                                         (2,2,'2025-06-20 15:00:00', 129.90);
 
 -- ==================================================
@@ -328,9 +356,9 @@ INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 )
-VALUES (7, 2, 1,
-        'Révision',
-        'Révision générale incluant le contrôle et le remplacement des courroies, filtres (air, habitacle, carburant) et bougies, ainsi que la vérification des niveaux de liquide',
+VALUES (7, 11, 1,
+        'Révision constructeur',
+        'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
         129.90);
 
 -- Créneau réservé pour ce RDV (futur)
