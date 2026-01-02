@@ -1,20 +1,49 @@
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { DemandesServiceService } from '../services/demandes-services.service';
-import { DemandeWithServices, ServiceItem } from '../modeles/demande.model';
+import { DemandeWithServices, ServiceItem, DemandeDocumentDto, RendezVousSummary } from '../modeles/demande.model';
 import {FormsModule} from '@angular/forms';
 import { ToastService } from '../shared/toast/toast.service';
+import { LookupsService } from '../services/lookups.service';
+import { ServicesService } from '../services/services.service';
+import { ServiceDto } from '../modeles/service.model';
+import { RendezVousService, RendezVousUpsertPayload } from '../services/rendezvous.service';
+
+type TypeFilterValue = 'Tous' | DemandeWithServices['code_type'] | string;
+type StatutFilterValue = 'Tous' | DemandeWithServices['code_statut'] | string;
+
+interface FilterOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+interface NewServiceSelection {
+  serviceId: number | null;
+  quantite: number;
+  prix: number | null;
+}
+
+interface RendezVousFormState {
+  idRdv: number | null;
+  dateDebut: string;
+  dateFin: string;
+  codeStatut: string;
+  commentaire: string | null;
+}
 
 @Component({
   selector: 'admin-demandes',
   templateUrl: './admin-demandes.component.html',
   styleUrls: ['./admin-demandes.component.scss'],
-  imports: [DatePipe, FormsModule],
+  imports: [CommonModule, DatePipe, FormsModule],
   standalone: true
 })
 export class AdminDemandesComponent implements OnInit, OnDestroy {
   private api = inject(DemandesServiceService);
   private readonly toast = inject(ToastService);
+  private readonly lookups = inject(LookupsService);
+  private readonly servicesApi = inject(ServicesService);
+  private readonly rendezVousApi = inject(RendezVousService);
 
   // Données
   loading = signal(true);
@@ -25,8 +54,8 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   feedbackType = signal<'success' | 'error' | null>(null);
 
   // Filtres
-  type = signal<'Tous'|'Devis'|'Service'|'RendezVous'>('Tous');
-  statut = signal<'Tous'|'En_attente'|'Traitee'|'Annulee'>('Tous');
+  type = signal<TypeFilterValue>('Tous');
+  statut = signal<StatutFilterValue>('Tous');
   q = signal('');
   dateFrom = signal<string | null>(null); // 'YYYY-MM-DD'
   dateTo = signal<string | null>(null);
@@ -36,9 +65,46 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   private draft = signal<DemandeWithServices | null>(null);
   private original = signal<DemandeWithServices | null>(null);
 
-  // Liste des types/statuts pour le template
-  readonly types = ['Tous','Devis','Service','RendezVous'] as const;
-  readonly statuts = ['Tous','En_attente','Traitee','Annulee'] as const;
+  private readonly fallbackTypeOptions: Array<FilterOption<TypeFilterValue>> = [
+    { value: 'Devis', label: 'Devis' },
+    { value: 'Service', label: 'Service' },
+    { value: 'RendezVous', label: 'Rendez-vous' }
+  ];
+
+  private readonly fallbackStatutOptions: Array<FilterOption<StatutFilterValue>> = [
+    { value: 'Brouillon', label: 'Brouillon' },
+    { value: 'En_attente', label: 'En attente' },
+    { value: 'Traitee', label: 'Traitée' },
+    { value: 'Annulee', label: 'Annulée' }
+  ];
+
+  private readonly fallbackRdvStatuses: Array<FilterOption<string>> = [
+    { value: 'Confirme', label: 'Confirmé' },
+    { value: 'Reporte', label: 'Reporté' },
+    { value: 'Annule', label: 'Annulé' }
+  ];
+
+  readonly typeOptions = signal<Array<FilterOption<TypeFilterValue>>>([
+    { value: 'Tous', label: 'Tous' },
+    ...this.fallbackTypeOptions
+  ]);
+
+  readonly statutOptions = signal<Array<FilterOption<StatutFilterValue>>>([
+    { value: 'Tous', label: 'Tous' },
+    ...this.fallbackStatutOptions
+  ]);
+
+  readonly rdvStatusOptions = signal<Array<FilterOption<string>>>([...this.fallbackRdvStatuses]);
+
+  serviceCatalog = signal<ServiceDto[]>([]);
+  newServiceSelection = signal<NewServiceSelection>({ serviceId: null, quantite: 1, prix: null });
+
+  documentUploading = signal(false);
+  documentError = signal<string | null>(null);
+
+  rdvForm = signal<RendezVousFormState | null>(null);
+  rdvSaving = signal(false);
+  rdvFeedback = signal<string | null>(null);
 
   filtered = computed(() => {
     const t = this.type();
@@ -86,12 +152,86 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
+    this.loadLookups();
+    this.loadServicesCatalog();
     this.reload();
+  }
+
+  private loadLookups() {
+    this.lookups.getTypeDemandes().subscribe({
+      next: rows => {
+        const mapped = Array.isArray(rows)
+          ? rows.map(row => ({
+            value: (row.codeType as TypeFilterValue) ?? 'Devis',
+            label: row.libelle || row.codeType
+          }))
+          : [];
+        const combined = [...this.fallbackTypeOptions, ...mapped];
+        this.typeOptions.set([
+          { value: 'Tous', label: 'Tous' },
+          ...this.dedupeOptions(combined, 'Tous')
+        ]);
+      },
+      error: () => {
+        // default options kept
+      }
+    });
+
+    this.lookups.getStatutDemandes().subscribe({
+      next: rows => {
+        const mapped = Array.isArray(rows)
+          ? rows.map(row => ({
+            value: (row.codeStatut as StatutFilterValue) ?? 'En_attente',
+            label: row.libelle || row.codeStatut
+          }))
+          : [];
+        const combined = [...this.fallbackStatutOptions, ...mapped];
+        this.statutOptions.set([
+          { value: 'Tous', label: 'Tous' },
+          ...this.dedupeOptions(combined, 'Tous')
+        ]);
+      },
+      error: () => {
+        // default options kept
+      }
+    });
+
+    this.lookups.getStatutRendezVous().subscribe({
+      next: rows => {
+        const mapped = Array.isArray(rows)
+          ? rows.map(row => ({
+            value: String(row.codeStatut ?? ''),
+            label: row.libelle || row.codeStatut
+          }))
+          : [];
+        const combined = [...this.fallbackRdvStatuses, ...mapped];
+        this.rdvStatusOptions.set(this.dedupeOptions(combined, ''));
+      },
+      error: () => {
+        // default RDV options kept
+      }
+    });
+  }
+
+  private loadServicesCatalog() {
+    this.servicesApi.getAll().subscribe({
+      next: rows => this.serviceCatalog.set(Array.isArray(rows) ? rows : []),
+      error: () => this.serviceCatalog.set([])
+    });
+  }
+
+  private dedupeOptions<T extends string>(items: Array<FilterOption<T>>, skip: string) {
+    const seen = new Set<string>([skip]);
+    return items.filter(item => {
+      if (!item.value || seen.has(item.value)) return false;
+      seen.add(item.value);
+      return true;
+    });
   }
 
   reload() {
     this.loading.set(true); this.error.set(null);
-    this.api.getAll().subscribe({
+    this.api.getAll({ silentError: true }).subscribe({
       next: (rows: DemandeWithServices[]) => {
         this.demandes.set(rows);
         this.loading.set(false);
@@ -126,6 +266,9 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.original.set(this.clone(selected));
     this.feedback.set(null);
     this.feedbackType.set(null);
+    this.documentError.set(null);
+    this.newServiceSelection.set({ serviceId: null, quantite: 1, prix: null });
+    this.syncRendezVousForm(clone.rendezVous ?? null);
     this.setBodyScrollLock(true);
   }
 
@@ -139,6 +282,8 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.original.set(null);
     this.feedback.set(null);
     this.feedbackType.set(null);
+    this.rdvForm.set(null);
+    this.rdvFeedback.set(null);
     this.setBodyScrollLock(false);
   }
 
@@ -193,12 +338,124 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     });
   }
 
+  removeService(index: number) {
+    this.updateDraft(d => {
+      d.services = d.services.filter((_, i) => i !== index);
+    });
+  }
+
+  setNewServiceField(field: keyof NewServiceSelection, value: string | number | null) {
+    const current = this.newServiceSelection();
+    const next: NewServiceSelection = { ...current };
+    if (field === 'serviceId') {
+      next.serviceId = value == null ? null : Number(value);
+    } else if (field === 'quantite') {
+      const num = Number(value);
+      next.quantite = Number.isFinite(num) && num > 0 ? Math.round(num) : 1;
+    } else if (field === 'prix') {
+      const num = value == null || value === '' ? null : Number(value);
+      next.prix = Number.isFinite(num as number) ? Number((num as number).toFixed(2)) : null;
+    }
+    this.newServiceSelection.set(next);
+  }
+
+  addServiceLineFromSelection() {
+    const selection = this.newServiceSelection();
+    const catalog = this.serviceCatalog();
+    const svc = catalog.find(item => item.idService === selection.serviceId);
+    if (!svc || !svc.idService) {
+      this.toast.error('Sélectionnez un service à ajouter.');
+      return;
+    }
+
+    const prixValue = selection.prix ?? Number(svc.prixUnitaire ?? 0);
+    this.updateDraft(d => {
+      d.services = [
+        ...d.services,
+        {
+          id_service: svc.idService!,
+          libelle: svc.libelle,
+          quantite: selection.quantite || 1,
+          prix_unitaire: Number.isFinite(prixValue) ? Number(prixValue.toFixed(2)) : undefined
+        }
+      ];
+    });
+
+    this.newServiceSelection.set({ serviceId: null, quantite: 1, prix: null });
+  }
+
+  onDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0] ?? null;
+    if (input) {
+      input.value = '';
+    }
+    const id = this.selectedId();
+    if (!file || id == null) {
+      return;
+    }
+
+    this.documentUploading.set(true);
+    this.documentError.set(null);
+
+    this.api.uploadDocument(id, file, { visibleClient: true }).subscribe({
+      next: doc => {
+        this.updateDraft(d => {
+          const docs = Array.isArray(d.documents) ? d.documents : [];
+          d.documents = [...docs, doc];
+        });
+        this.demandes.update(list =>
+          list.map(item => this.getDemandeId(item) === id
+            ? { ...item, documents: [...(item.documents ?? []), doc] }
+            : item
+          )
+        );
+        this.documentError.set(null);
+        this.toast.success('Document ajouté à la demande.');
+      },
+      error: err => {
+        const msg = err?.error?.message || err.message || 'Téléversement impossible.';
+        this.documentError.set(msg);
+        this.toast.error('Erreur', msg);
+        this.documentUploading.set(false);
+      },
+      complete: () => this.documentUploading.set(false)
+    });
+  }
+
+  removeDocument(doc: DemandeDocumentDto) {
+    const id = this.selectedId();
+    if (!doc?.idDocument || id == null) {
+      return;
+    }
+    this.api.deleteDocument(id, doc.idDocument).subscribe({
+      next: () => {
+        this.updateDraft(d => {
+          d.documents = (d.documents ?? []).filter(item => item.idDocument !== doc.idDocument);
+        });
+        this.demandes.update(list =>
+          list.map(item => this.getDemandeId(item) === id
+            ? { ...item, documents: (item.documents ?? []).filter(existing => existing.idDocument !== doc.idDocument) }
+            : item
+          )
+        );
+        this.toast.info('Document supprimé.');
+      },
+      error: err => {
+        const msg = err?.error?.message || err.message || 'Suppression impossible.';
+        this.toast.error('Erreur', msg);
+      }
+    });
+  }
+
   resetDraft() {
     const original = this.original();
     if (!original) return;
     this.draft.set(this.clone(original));
     this.feedback.set(null);
     this.feedbackType.set(null);
+    this.documentError.set(null);
+    this.syncRendezVousForm(original.rendezVous ?? null);
   }
 
   saveChanges() {
@@ -317,12 +574,20 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       : base.services;
 
     const client = this.mergeClient(base.client, (response as any)?.client);
+    const documents = Array.isArray((response as any)?.documents)
+      ? (response as any).documents as DemandeDocumentDto[]
+      : base.documents;
+    const rendezVous = 'rendezVous' in (response as any)
+      ? (response as any).rendezVous ?? null
+      : base.rendezVous ?? null;
 
     return this.clone({
       ...base,
       ...response,
       client: client ?? undefined,
-      services
+      services,
+      documents,
+      rendezVous
     } as DemandeWithServices);
   }
 
@@ -446,6 +711,145 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     const merged = { ...base, ...updates };
     return this.trimClientStrings(merged) ?? merged;
   }
+
+  private syncRendezVousForm(rdv: RendezVousSummary | null) {
+    const template: RendezVousFormState = {
+      idRdv: rdv?.idRdv ?? null,
+      dateDebut: this.formatDateInput(rdv?.dateDebut ?? null),
+      dateFin: this.formatDateInput(rdv?.dateFin ?? null),
+      codeStatut: rdv?.codeStatut ?? (this.rdvStatusOptions()[0]?.value ?? 'Confirme'),
+      commentaire: rdv?.commentaire ?? null
+    };
+    this.rdvForm.set(template);
+  }
+
+  setRdvField(field: keyof RendezVousFormState, value: string) {
+    const current = this.rdvForm();
+    if (!current) return;
+    const next = { ...current };
+    if (field === 'commentaire') {
+      next.commentaire = value?.trim().length ? value : null;
+    } else {
+      (next as any)[field] = value;
+    }
+    this.rdvForm.set(next);
+  }
+
+  saveRendezVous() {
+    const form = this.rdvForm();
+    const demandeId = this.selectedId();
+    if (!form || demandeId == null || this.rdvSaving()) {
+      return;
+    }
+
+    if (!form.dateDebut || !form.dateFin) {
+      this.rdvFeedback.set('Veuillez renseigner les dates de début et de fin.');
+      this.toast.error('Erreur', 'Dates de rendez-vous incomplètes.');
+      return;
+    }
+
+    const dateDebutIso = this.parseDateInput(form.dateDebut);
+    const dateFinIso = this.parseDateInput(form.dateFin);
+
+    if (!dateDebutIso || !dateFinIso) {
+      this.rdvFeedback.set('Format de date invalide.');
+      this.toast.error('Erreur', 'Format de date invalide.');
+      return;
+    }
+
+    const payload: RendezVousUpsertPayload = {
+      demandeId,
+      dateDebut: dateDebutIso,
+      dateFin: dateFinIso,
+      codeStatut: form.codeStatut || 'Confirme',
+      commentaire: form.commentaire
+    };
+
+    this.rdvSaving.set(true);
+    this.rdvFeedback.set(null);
+
+    const request = form.idRdv
+      ? this.rendezVousApi.update(form.idRdv, payload)
+      : this.rendezVousApi.create(payload);
+
+    request.subscribe({
+      next: rdv => {
+        this.rdvSaving.set(false);
+        const rendezVous = rdv ?? null;
+        this.syncRendezVousForm(rendezVous);
+        this.updateDraft(d => { d.rendezVous = rendezVous ?? undefined; });
+        this.demandes.update(list =>
+          list.map(item => this.getDemandeId(item) === demandeId
+            ? { ...item, rendezVous }
+            : item
+          )
+        );
+        this.rdvFeedback.set('Rendez-vous mis à jour et client informé.');
+        this.toast.success('Rendez-vous confirmé.');
+      },
+      error: err => {
+        this.rdvSaving.set(false);
+        const msg = err?.error?.message || err.message || 'Impossible de mettre à jour le rendez-vous.';
+        this.rdvFeedback.set(msg);
+        this.toast.error('Erreur', msg);
+      }
+    });
+  }
+
+  private formatDateInput(value: string | null): string {
+    if (!value) {
+      return '';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  private parseDateInput(value: string | null): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+
+  // ⚠️ ADAPTÉ : utilise maintenant tailleOctets (backend) pour déduire la taille en Ko / Mo
+  documentSize(doc: DemandeDocumentDto | undefined): string | null {
+    if (!doc) return null;
+
+    const bytes = Number((doc as any).tailleOctets ?? 0);
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+      return null;
+    }
+
+    const ko = bytes / 1024;
+    if (ko >= 1024) {
+      const mo = ko / 1024;
+      return `${mo.toFixed(1)} Mo`;
+    }
+    return `${ko.toFixed(0)} Ko`;
+  }
+
+  openAdminDocument(doc: DemandeDocumentDto, d: DemandeWithServices) {
+    const id = this.getDemandeId(d);
+    if (!id || !doc.idDocument) return;
+
+    this.api.downloadDocumentResponse(id, doc.idDocument).subscribe({
+      next: res => {
+        const blob = res.body!;
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        window.open(blobUrl, "_blank");
+
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      },
+      error: err => {
+        this.toast.error('Impossible de lire le document', err?.error?.message);
+      }
+    });
+  }
+
 
   @HostListener('document:keydown.escape')
   onEscape() {

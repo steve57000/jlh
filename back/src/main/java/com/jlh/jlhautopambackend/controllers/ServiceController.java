@@ -1,37 +1,59 @@
 package com.jlh.jlhautopambackend.controllers;
 
-import java.util.List;
+import com.jlh.jlhautopambackend.dto.*;
+import com.jlh.jlhautopambackend.services.ServiceService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.jlh.jlhautopambackend.modeles.Service;
-import com.jlh.jlhautopambackend.repositories.ServiceRepository;
-import jakarta.validation.Valid;
 
-@CrossOrigin
+
+import java.net.URI;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/services")
 public class ServiceController {
-    private final ServiceRepository repo;
-    public ServiceController(ServiceRepository repo) { this.repo = repo; }
-    @GetMapping public List<Service> getAll() { return repo.findAll(); }
-    @GetMapping("/{id}") public ResponseEntity<Service> getById(@PathVariable Integer id) {
-        return repo.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+
+    private final ServiceService service;
+
+    public ServiceController(ServiceService service) {
+        this.service = service;
     }
-    @PostMapping public Service create(@Valid @RequestBody Service s) { return repo.save(s); }
-    @PutMapping("/{id}") public ResponseEntity<Service> update(@PathVariable Integer id,
-                                                               @Valid @RequestBody Service input) {
-        return repo.findById(id)
-                .map(e -> {
-                    e.setLibelle(input.getLibelle());
-                    e.setDescription(input.getDescription());
-                    e.setPrixUnitaire(input.getPrixUnitaire());
-                    return ResponseEntity.ok(repo.save(e));
-                })
+
+    @GetMapping
+    public List<ServiceResponse> getAll() {
+        return service.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ServiceResponse> getById(@PathVariable Integer id) {
+        return service.findById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    @DeleteMapping("/{id}") public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        return repo.findById(id)
-                .map(e -> { repo.deleteById(id); return ResponseEntity.noContent().<Void>build(); })
+
+    @PostMapping
+    public ResponseEntity<ServiceResponse> create(
+            @Valid @RequestBody ServiceRequest req) {
+        ServiceResponse created = service.create(req);
+        return ResponseEntity
+                .created(URI.create("/api/services/" + created.getIdService()))
+                .body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ServiceResponse> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody ServiceRequest req) {
+        return service.update(id, req)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        return service.delete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }

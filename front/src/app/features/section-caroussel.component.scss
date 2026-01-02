@@ -3,17 +3,20 @@
 .carousel-section {
   width: 100%;
   min-height: 520px;
-  padding: 44px 0;
+  padding-block: clamp(48px, 8vh, 96px);
+  padding-inline: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  position: relative;
 
   &.gradient {
     background: v.$linear-bg;
   }
   &.white {
-    background: #fff;
+    background: linear-gradient(180deg, rgba(13, 13, 15, 0.02), rgba(13, 13, 15, 0.06));
   }
+
   .container-max{
     flex-direction: column;
   }
@@ -23,9 +26,20 @@
     font-weight: 600;
     margin-left: 0;
     margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+  .carousel-subtitle {
+    font-family: v.$font-body;
+    color: rgba(v.$color-quaternary, 0.88);
+    margin: 0 0 1.6rem;
+    max-width: 560px;
+    line-height: 1.5;
   }
   &.white .carousel-title {
     color: v.$color-primary;
+  }
+  &.white .carousel-subtitle {
+    color: rgba(v.$color-primary, 0.75);
   }
   .carousel {
     width: 100%;
@@ -130,7 +144,6 @@
 
 @media (max-width: 660px) {
   .carousel-section {
-    padding: 0;
     .carousel-card {
       width: 320px;
       padding: 16px;
@@ -143,10 +156,8 @@
 
 @media (max-width: 420px) {
   .carousel-section {
-    padding: 0;
     .carousel-card {
       width: 300px;
     }
   }
 }
-

@@ -5,7 +5,7 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@Table(name = "Administrateur")
+@Table(name = "administrateur")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class Administrateur {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,6 +19,9 @@ public class Administrateur {
 
     private String nom;
     private String prenom;
+
+    @Column(unique=true)
+    private String email;
 
     @OneToMany(mappedBy = "administrateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Disponibilite> disponibilites;

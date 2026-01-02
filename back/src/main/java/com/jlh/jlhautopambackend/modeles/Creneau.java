@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Entity
-@Table(name = "Creneau")
+@Table(name = "creneau")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class Creneau {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

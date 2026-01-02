@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
 
-@Entity @Table(name = "Statut_Creneau")
+@Entity @Table(name = "statut_creneau")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class StatutCreneau {
     @Id

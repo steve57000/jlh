@@ -3,6 +3,7 @@ target/
 
 .DS_Store
 .env
+.env.prod
 
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

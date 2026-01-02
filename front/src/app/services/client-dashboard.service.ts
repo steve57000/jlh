@@ -1,29 +1,20 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {HttpClient, HttpErrorResponse, HttpHeaders} from '@angular/common/http';
+import {Observable, throwError} from 'rxjs';
 import { environment } from '../../environments/environment';
+import type {
+  ClientSummaryDto,
+  DemandeDocumentDto,
+  DemandeResponse,
+  DemandeServiceDto,
+  DemandeTimelineEntryDto,
+  RendezVousSummary
+} from '../modeles/demande.model';
+import {DemandeServiceRequest, DemandeServiceResponse} from '../modeles/demande-service.model';
+import {catchError} from 'rxjs/operators';
 
 interface RequestOptions {
   silentError?: boolean;
-}
-
-// Types déjà utilisés côté composant
-export interface DemandeServiceDto {
-  idService: number;
-  libelle: string;
-  prixUnitaire: number;
-  quantite: number;
-}
-export interface TypeDemandeDto { codeType: string; libelle?: string; }
-export interface StatutDemandeDto { codeStatut: string; libelle?: string; }
-
-export interface DemandeResponse {
-  idDemande: number;
-  dateDemande?: string;
-  dateSoumission?: string;
-  typeDemande?: TypeDemandeDto;
-  statutDemande?: StatutDemandeDto;
-  services?: DemandeServiceDto[];
 }
 
 export interface ClientStatsDto {
@@ -75,4 +66,34 @@ export class ClientDashboardService {
       })
     });
   }
+
+  getRendezVousIcs(rdvId: number) {
+    return this.http.get(`${this.base}/rendezvous/${rdvId}/ics`, {
+      responseType: 'blob',
+      observe: 'response',
+      headers: new HttpHeaders({
+        'Accept': 'text/calendar, text/plain, */*'
+      })
+    });
+  }
+
+  downloadDocumentResponse(demandeId: number, documentId: number) {
+    const url = `${this.base}/${demandeId}/documents/client/${documentId}`;
+
+    // NE PAS ajouter manuellement Authorization : l'interceptor s'en charge.
+    return this.http.get(url, {
+      observe: 'response',
+      responseType: 'blob',
+    });
+  }
+
 }
+
+export type {
+  DemandeResponse,
+  DemandeServiceDto,
+  ClientSummaryDto,
+  DemandeDocumentDto,
+  DemandeTimelineEntryDto,
+  RendezVousSummary
+} from '../modeles/demande.model';

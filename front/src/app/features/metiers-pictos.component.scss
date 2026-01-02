@@ -4,11 +4,14 @@
 @use '../../styles/animations' as anim;
 
 .section-pictos-metiers {
-  background: #fff;
+  background: linear-gradient(180deg, rgba(v.$color-secondary, 0.06), rgba(v.$color-primary, 0.02));
   width: 100%;
+  position: relative;
+  padding-block: clamp(48px, 8vh, 96px);
 
   // Masquer le titre et le wrapper par défaut
   .section-title,
+  .section-subtitle,
   .pictos-wrapper {
     opacity: 0;
   }
@@ -20,6 +23,12 @@
     animation-delay: .1s;
   }
 
+  .section-subtitle.in-view {
+    opacity: 1;
+    @include anim.fade-in-up(.6s, ease-out, forwards, 16px);
+    animation-delay: .2s;
+  }
+
   // Wrapper : on le rend visible, puis on anime les enfants
   .pictos-wrapper.in-view {
     opacity: 1; // <— indispensable pour afficher les picto-blocs
@@ -28,20 +37,24 @@
 
   .container-max {
     flex-direction: column;
-    padding-top: 44px;
-    padding-bottom: 44px;
     margin: 0 auto;
 
     h2.section-title {
-      margin-bottom: 48px;
+      margin-bottom: 0.6rem;
       font-size: 29.4px;
+    }
+    .section-subtitle {
+      margin: 0 0 2.4rem;
+      max-width: 640px;
+      color: rgba(v.$color-primary, 0.72);
+      line-height: 1.6;
+      font-size: 1.02rem;
     }
 
     .pictos-wrapper {
-      max-width: 860px;
       width: 100%;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 2.5rem 2rem;
       justify-items: stretch;
       align-items: stretch;
@@ -128,12 +141,15 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  opacity: 0;
+  animation: modal-fade-in 0.24s ease-out forwards;
 
   .service-modal__backdrop {
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, .6);
     backdrop-filter: blur(2px);
+    transition: opacity .2s ease;
   }
 
   .service-modal__dialog {
@@ -151,6 +167,10 @@
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    opacity: 0;
+    animation: modal-pop-in 0.28s ease-out forwards;
+    transition: transform .2s ease, opacity .2s ease;
+    will-change: transform, opacity;
   }
 
   .service-modal__close {
@@ -203,6 +223,33 @@
   .service-modal__cta {
     margin-top: .5rem;
   }
+
+  &.is-closing {
+    .service-modal__backdrop {
+      opacity: 0;
+    }
+
+    .service-modal__dialog {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+  }
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 // Responsive
@@ -218,7 +265,6 @@
   .section-pictos-metiers {
     .container-max {
       .pictos-wrapper {
-        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
         gap: 2.3rem 1rem;
       }
       .picto-button {
@@ -240,7 +286,7 @@
     .container-max {
       .pictos-wrapper {
         grid-template-columns: repeat(2, 1fr);
-        gap: 2rem .8rem;
+        gap: 1rem .8rem;
       }
     }
   }
@@ -259,6 +305,17 @@
 
     .service-modal__description {
       font-size: .95rem;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .section-pictos-metiers {
+    .container-max {
+      .pictos-wrapper {
+        grid-template-columns: repeat(1, 1fr);
+        gap: .6rem .6rem;
+      }
     }
   }
 }

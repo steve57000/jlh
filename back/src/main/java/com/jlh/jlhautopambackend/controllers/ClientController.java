@@ -1,62 +1,59 @@
 package com.jlh.jlhautopambackend.controllers;
 
-import java.util.List;
+import com.jlh.jlhautopambackend.dto.ClientRequest;
+import com.jlh.jlhautopambackend.dto.ClientResponse;
+import com.jlh.jlhautopambackend.services.ClientService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.jlh.jlhautopambackend.modeles.Client;
-import com.jlh.jlhautopambackend.repositories.ClientRepository;
 
-@CrossOrigin
+import java.net.URI;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/clients")
 public class ClientController {
 
-    private final ClientRepository repo;
+    private final ClientService service;
 
-    public ClientController(ClientRepository repo) {
-        this.repo = repo;
+    public ClientController(ClientService service) {
+        this.service = service;
     }
 
     @GetMapping
-    public List<Client> getAll() {
-        return repo.findAll();
+    public List<ClientResponse> getAll() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Client> getById(@PathVariable Integer id) {
-        return repo.findById(id)
+    public ResponseEntity<ClientResponse> getById(@PathVariable Integer id) {
+        return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Client> create(@RequestBody Client c) {
-        Client saved = repo.save(c);
-        return ResponseEntity.status(201).body(saved);
+    public ResponseEntity<ClientResponse> create(
+            @Valid @RequestBody ClientRequest request) {
+        ClientResponse created = service.create(request);
+        return ResponseEntity
+                .created(URI.create("/api/clients/" + created.getIdClient()))
+                .body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Client> update(@PathVariable Integer id,
-                                         @RequestBody Client input) {
-        return repo.findById(id)
-                .map(existing -> {
-                    existing.setNom(input.getNom());
-                    existing.setPrenom(input.getPrenom());
-                    existing.setEmail(input.getEmail());
-                    existing.setTelephone(input.getTelephone());
-                    existing.setAdresse(input.getAdresse());
-                    return ResponseEntity.ok(repo.save(existing));
-                })
+    public ResponseEntity<ClientResponse> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody ClientRequest request) {
+        return service.update(id, request)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        return repo.findById(id)
-                .map(e -> {
-                    repo.deleteById(id);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+        return service.delete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }

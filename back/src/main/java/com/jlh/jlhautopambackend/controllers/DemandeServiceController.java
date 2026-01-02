@@ -1,91 +1,130 @@
 package com.jlh.jlhautopambackend.controllers;
 
-import com.jlh.jlhautopambackend.modeles.DemandeService;
-import com.jlh.jlhautopambackend.modeles.DemandeServiceKey;
-import com.jlh.jlhautopambackend.repositories.DemandeServiceRepository;
-import com.jlh.jlhautopambackend.repositories.DemandeRepository;
-import com.jlh.jlhautopambackend.repositories.ServiceRepository;
+import com.jlh.jlhautopambackend.dto.*;
+import com.jlh.jlhautopambackend.repository.DemandeRepository;
+import com.jlh.jlhautopambackend.services.DemandeServiceService;
+import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
+import java.util.*;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/demandes-services")
 public class DemandeServiceController {
 
-    private final DemandeServiceRepository dsRepo;
+    private final DemandeServiceService service;
     private final DemandeRepository demandeRepo;
-    private final ServiceRepository serviceRepo;
+    private final AuthenticatedClientResolver clientResolver;
 
-    public DemandeServiceController(DemandeServiceRepository dsRepo,
-                                    DemandeRepository demandeRepo,
-                                    ServiceRepository serviceRepo) {
-        this.dsRepo = dsRepo;
+    public DemandeServiceController(
+            DemandeServiceService service,
+            DemandeRepository demandeRepo,
+            AuthenticatedClientResolver clientResolver
+    ) {
+        this.service = service;
         this.demandeRepo = demandeRepo;
-        this.serviceRepo = serviceRepo;
+        this.clientResolver = clientResolver;
     }
 
-    // GET all
+    /* ==================== ADMIN ==================== */
+
     @GetMapping
-    public List<DemandeService> getAll() {
-        return dsRepo.findAll();
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<DemandeServiceResponse> getAll() {
+        return service.findAll();
     }
 
-    // GET by composite key
     @GetMapping("/{demandeId}/{serviceId}")
-    public ResponseEntity<DemandeService> getById(@PathVariable Integer demandeId,
-                                                  @PathVariable Integer serviceId) {
-        DemandeServiceKey key = new DemandeServiceKey(demandeId, serviceId);
-        return dsRepo.findById(key)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DemandeServiceResponse> getByKey(
+            @PathVariable Integer demandeId,
+            @PathVariable Integer serviceId) {
+        return service.findByKey(demandeId, serviceId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST create
+    /* ==================== CLIENT (ownership) ==================== */
+
     @PostMapping
-    public ResponseEntity<DemandeService> create(@Valid @RequestBody DemandeService ds) {
-        Integer demandeId = ds.getDemande().getIdDemande();
-        Integer serviceId = ds.getService().getIdService();
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENT')")
+    public ResponseEntity<DemandeServiceResponse> create(
+            Authentication auth,
+            @Valid @RequestBody DemandeServiceRequest req) {
 
-        return demandeRepo.findById(demandeId).flatMap(demande ->
-                serviceRepo.findById(serviceId).map(service -> {
-                    ds.setDemande(demande);
-                    ds.setService(service);
-                    ds.setId(new DemandeServiceKey(demandeId, serviceId));
-                    DemandeService saved = dsRepo.save(ds);
-                    return ResponseEntity
-                            .created(URI.create("/api/demandes-services/" + demandeId + "/" + serviceId))
-                            .body(saved);
-                })
-        ).orElseGet(() -> ResponseEntity.badRequest().build());
-    }
-
-    // PUT update (only quantite)
-    @PutMapping("/{demandeId}/{serviceId}")
-    public ResponseEntity<DemandeService> update(@PathVariable Integer demandeId,
-                                                 @PathVariable Integer serviceId,
-                                                 @Valid @RequestBody DemandeService dto) {
-        DemandeServiceKey key = new DemandeServiceKey(demandeId, serviceId);
-        return dsRepo.findById(key).map(existing -> {
-            existing.setQuantite(dto.getQuantite());
-            DemandeService updated = dsRepo.save(existing);
-            return ResponseEntity.ok(updated);
-        }).orElse(ResponseEntity.notFound().build());
-    }
-
-    // DELETE by composite key
-    @DeleteMapping("/{demandeId}/{serviceId}")
-    public ResponseEntity<Void> delete(@PathVariable Integer demandeId,
-                                       @PathVariable Integer serviceId) {
-        DemandeServiceKey key = new DemandeServiceKey(demandeId, serviceId);
-        if (!dsRepo.existsById(key)) {
-            return ResponseEntity.notFound().build();
+        if (!isAdmin(auth)) {
+            Integer clientId = getClientIdFromAuth(auth);
+            // ownership: la demande doit appartenir au client
+            boolean ok = demandeRepo.findById(req.getDemandeId())
+                    .map(d -> d.getClient() != null && Objects.equals(d.getClient().getIdClient(), clientId))
+                    .orElse(false);
+            if (!ok) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        dsRepo.deleteById(key);
-        return ResponseEntity.noContent().build();
+
+        DemandeServiceResponse resp = service.create(req);
+        String path = String.format("/api/demandes-services/%d/%d",
+                resp.getId().getIdDemande(),
+                resp.getId().getIdService());
+        return ResponseEntity.created(URI.create(path)).body(resp);
+    }
+
+    @PutMapping("/{demandeId}/{serviceId}")
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENT')")
+    public ResponseEntity<DemandeServiceResponse> update(
+            Authentication auth,
+            @PathVariable Integer demandeId,
+            @PathVariable Integer serviceId,
+            @Valid @RequestBody DemandeServiceRequest req) {
+
+        if (!isAdmin(auth)) {
+            Integer clientId = getClientIdFromAuth(auth);
+            boolean ok = demandeRepo.findById(demandeId)
+                    .map(d -> d.getClient() != null && Objects.equals(d.getClient().getIdClient(), clientId))
+                    .orElse(false);
+            if (!ok) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return service.update(demandeId, serviceId, req)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{demandeId}/{serviceId}")
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENT')")
+    public ResponseEntity<Void> delete(
+            Authentication auth,
+            @PathVariable Integer demandeId,
+            @PathVariable Integer serviceId) {
+
+        if (!isAdmin(auth)) {
+            Integer clientId = getClientIdFromAuth(auth);
+            boolean ok = demandeRepo.findById(demandeId)
+                    .map(d -> d.getClient() != null && Objects.equals(d.getClient().getIdClient(), clientId))
+                    .orElse(false);
+            if (!ok) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return service.delete(demandeId, serviceId)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
+    }
+
+    /* ==================== Utils ==================== */
+
+    private Integer getClientIdFromAuth(Authentication auth) {
+        return clientResolver.requireCurrentClient(auth).getIdClient();
+    }
+
+    private boolean isAdmin(Authentication auth) {
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
     }
 }

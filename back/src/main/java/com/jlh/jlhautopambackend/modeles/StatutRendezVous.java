@@ -3,7 +3,7 @@ package com.jlh.jlhautopambackend.modeles;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity @Table(name = "Statut_RendezVous")
+@Entity @Table(name = "statut_rendez_vous")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class StatutRendezVous {
     @Id

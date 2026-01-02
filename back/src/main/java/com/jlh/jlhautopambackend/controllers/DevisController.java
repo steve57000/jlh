@@ -1,9 +1,8 @@
 package com.jlh.jlhautopambackend.controllers;
 
-import com.jlh.jlhautopambackend.modeles.Devis;
-import com.jlh.jlhautopambackend.modeles.Demande;
-import com.jlh.jlhautopambackend.repositories.DevisRepository;
-import com.jlh.jlhautopambackend.repositories.DemandeRepository;
+import com.jlh.jlhautopambackend.dto.DevisRequest;
+import com.jlh.jlhautopambackend.dto.DevisResponse;
+import com.jlh.jlhautopambackend.services.DevisService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,90 +11,59 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/devis")
 public class DevisController {
 
-    private final DevisRepository devisRepo;
-    private final DemandeRepository demandeRepo;
+    private final DevisService service;
 
-    public DevisController(DevisRepository devisRepo,
-                           DemandeRepository demandeRepo) {
-        this.devisRepo = devisRepo;
-        this.demandeRepo = demandeRepo;
+    public DevisController(DevisService service) {
+        this.service = service;
     }
 
-    // GET /api/devis
     @GetMapping
-    public List<Devis> getAll() {
-        return devisRepo.findAll();
+    public List<DevisResponse> getAll() {
+        return service.findAll();
     }
 
-    // GET /api/devis/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<Devis> getById(@PathVariable Integer id) {
-        return devisRepo.findById(id)
+    public ResponseEntity<DevisResponse> getById(@PathVariable Integer id) {
+        Optional<DevisResponse> optional = service.findById(id);
+        return optional
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST /api/devis
     @PostMapping
-    public ResponseEntity<Devis> create(@Valid @RequestBody Devis dto) {
-        Integer demandeId = dto.getDemande().getIdDemande();
-        Optional<Demande> maybeDemande = demandeRepo.findById(demandeId);
-        if (maybeDemande.isEmpty()) {
+    public ResponseEntity<DevisResponse> create(
+            @Valid @RequestBody DevisRequest request) {
+        try {
+            DevisResponse resp = service.create(request);
+            URI location = URI.create("/api/devis/" + resp.getIdDevis());
+            return ResponseEntity.created(location).body(resp);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
-        // Vérifier qu'aucun devis n'existe déjà pour cette demande (unicité one-to-one)
-        if (devisRepo.findAll().stream()
-                .anyMatch(d -> d.getDemande().getIdDemande().equals(demandeId))) {
-            return ResponseEntity.status(409).build(); // Conflict
-        }
-
-        dto.setDemande(maybeDemande.get());
-        Devis saved = devisRepo.save(dto);
-        return ResponseEntity
-                .created(URI.create("/api/devis/" + saved.getIdDevis()))
-                .body(saved);
     }
 
-    // PUT /api/devis/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Devis> update(
+    public ResponseEntity<DevisResponse> update(
             @PathVariable Integer id,
-            @Valid @RequestBody Devis dto
-    ) {
-        return devisRepo.findById(id).map(existing -> {
-            // Si on change la demande associée, vérifier son existence et l'unicité
-            Integer newDemandeId = dto.getDemande().getIdDemande();
-            if (!existing.getDemande().getIdDemande().equals(newDemandeId)) {
-                Optional<Demande> maybeNewDemande = demandeRepo.findById(newDemandeId);
-                if (maybeNewDemande.isEmpty()) {
-                    return ResponseEntity.badRequest().<Devis>build();
-                }
-                boolean conflict = devisRepo.findAll().stream()
-                        .anyMatch(d -> d.getDemande().getIdDemande().equals(newDemandeId));
-                if (conflict) {
-                    return ResponseEntity.status(409).<Devis>build();
-                }
-                existing.setDemande(maybeNewDemande.get());
-            }
-            existing.setDateDevis(dto.getDateDevis());
-            existing.setMontantTotal(dto.getMontantTotal());
-            Devis updated = devisRepo.save(existing);
-            return ResponseEntity.ok(updated);
-        }).orElse(ResponseEntity.notFound().build());
+            @Valid @RequestBody DevisRequest request) {
+        try {
+            Optional<DevisResponse> optional = service.update(id, request);
+            return optional
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    // DELETE /api/devis/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        if (!devisRepo.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        devisRepo.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return service.delete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }

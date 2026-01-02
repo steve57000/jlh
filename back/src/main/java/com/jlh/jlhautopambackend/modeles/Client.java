@@ -1,13 +1,22 @@
 package com.jlh.jlhautopambackend.modeles;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Entity
-@Table(name = "Client")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "client")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Client {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idClient;
 
     @Column(nullable = false, length = 100)
@@ -19,9 +28,37 @@ public class Client {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    @Column(length = 20)
+    @Column(nullable = false)
+    private String motDePasse;
+
+    @Column(name="email_verified", nullable=false)
+    private boolean emailVerified = false;
+
+    @Column(name="email_verified_at")
+    private Instant emailVerifiedAt;
+
+    @Column(nullable = false)
+    private String immatriculation;
+
+    @Column(name = "vehicule_marque", length = 100)
+    private String vehiculeMarque;
+
+    @Column(name = "vehicule_modele", length = 100)
+    private String vehiculeModele;
+
+    @Column(length = 20, nullable = false)
     private String telephone;
 
-    @Column(columnDefinition = "TEXT")
-    private String adresse;
+    // ✅ On éclate l’adresse
+    @Column(name="adresse_ligne1", length = 255)
+    private String adresseLigne1;
+
+    @Column(name="adresse_ligne2", length = 255)
+    private String adresseLigne2;
+
+    @Column(name="adresse_code_postal", length = 20)
+    private String adresseCodePostal;
+
+    @Column(name="adresse_ville", length = 100)
+    private String adresseVille;
 }

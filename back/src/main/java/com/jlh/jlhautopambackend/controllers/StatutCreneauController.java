@@ -1,7 +1,7 @@
 package com.jlh.jlhautopambackend.controllers;
 
-import com.jlh.jlhautopambackend.modeles.StatutCreneau;
-import com.jlh.jlhautopambackend.repositories.StatutCreneauRepository;
+import com.jlh.jlhautopambackend.dto.StatutCreneauDto;
+import com.jlh.jlhautopambackend.services.StatutCreneauService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,64 +10,53 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/statuts-creneau")
 public class StatutCreneauController {
+    private final StatutCreneauService service;
 
-    private final StatutCreneauRepository statutRepo;
-
-    public StatutCreneauController(StatutCreneauRepository statutRepo) {
-        this.statutRepo = statutRepo;
+    public StatutCreneauController(StatutCreneauService service) {
+        this.service = service;
     }
 
-    // GET /api/statuts-creneau
     @GetMapping
-    public List<StatutCreneau> getAll() {
-        return statutRepo.findAll();
+    public List<StatutCreneauDto> getAll() {
+        return service.findAll();
     }
 
-    // GET /api/statuts-creneau/{code}
     @GetMapping("/{code}")
-    public ResponseEntity<StatutCreneau> getById(@PathVariable String code) {
-        return statutRepo.findById(code)
+    public ResponseEntity<StatutCreneauDto> getByCode(@PathVariable String code) {
+        return service.findByCode(code)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST /api/statuts-creneau
     @PostMapping
-    public ResponseEntity<StatutCreneau> create(@Valid @RequestBody StatutCreneau statut) {
-        if (statutRepo.existsById(statut.getCodeStatut())) {
-            // Conflict : ce code existe déjà
+    public ResponseEntity<StatutCreneauDto> create(@Valid @RequestBody StatutCreneauDto dto) {
+        try {
+            StatutCreneauDto created = service.create(dto);
+            return ResponseEntity
+                    .created(URI.create("/api/statuts-creneau/" + created.getCodeStatut()))
+                    .body(created);
+        } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-        StatutCreneau saved = statutRepo.save(statut);
-        return ResponseEntity
-                .created(URI.create("/api/statuts-creneau/" + saved.getCodeStatut()))
-                .body(saved);
     }
 
-    // PUT /api/statuts-creneau/{code}
     @PutMapping("/{code}")
-    public ResponseEntity<StatutCreneau> update(
+    public ResponseEntity<StatutCreneauDto> update(
             @PathVariable String code,
-            @Valid @RequestBody StatutCreneau dto
+            @Valid @RequestBody StatutCreneauDto dto
     ) {
-        return statutRepo.findById(code).map(existing -> {
-            existing.setLibelle(dto.getLibelle());
-            StatutCreneau updated = statutRepo.save(existing);
-            return ResponseEntity.ok(updated);
-        }).orElse(ResponseEntity.notFound().build());
+        return service.update(code, dto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE /api/statuts-creneau/{code}
     @DeleteMapping("/{code}")
     public ResponseEntity<Void> delete(@PathVariable String code) {
-        if (!statutRepo.existsById(code)) {
-            return ResponseEntity.notFound().build();
-        }
-        statutRepo.deleteById(code);
-        return ResponseEntity.noContent().build();
+        return service.delete(code)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }

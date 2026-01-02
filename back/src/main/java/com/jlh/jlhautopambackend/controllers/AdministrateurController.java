@@ -1,7 +1,8 @@
 package com.jlh.jlhautopambackend.controllers;
 
-import com.jlh.jlhautopambackend.modeles.Administrateur;
-import com.jlh.jlhautopambackend.repositories.AdministrateurRepository;
+import com.jlh.jlhautopambackend.dto.AdministrateurRequest;
+import com.jlh.jlhautopambackend.dto.AdministrateurResponse;
+import com.jlh.jlhautopambackend.services.AdministrateurService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,68 +10,50 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/administrateurs")
 public class AdministrateurController {
 
-    private final AdministrateurRepository administrateurRepo;
+    private final AdministrateurService service;
 
-    public AdministrateurController(AdministrateurRepository administrateurRepo) {
-        this.administrateurRepo = administrateurRepo;
+    public AdministrateurController(AdministrateurService service) {
+        this.service = service;
     }
 
-    // GET /api/administrateurs
     @GetMapping
-    public List<Administrateur> getAll() {
-        return administrateurRepo.findAll();
+    public List<AdministrateurResponse> getAll() {
+        return service.findAll();
     }
 
-    // GET /api/administrateurs/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<Administrateur> getById(@PathVariable Integer id) {
-        return administrateurRepo.findById(id)
+    public ResponseEntity<AdministrateurResponse> getById(@PathVariable Integer id) {
+        return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST /api/administrateurs
     @PostMapping
-    public ResponseEntity<Administrateur> create(@Valid @RequestBody Administrateur admin) {
-        Administrateur saved = administrateurRepo.save(admin);
+    public ResponseEntity<AdministrateurResponse> create(
+            @Valid @RequestBody AdministrateurRequest request) {
+        AdministrateurResponse created = service.create(request);
         return ResponseEntity
-                .created(URI.create("/api/administrateurs/" + saved.getIdAdmin()))
-                .body(saved);
+                .created(URI.create("/api/administrateurs/" + created.getIdAdmin()))
+                .body(created);
     }
 
-    // PUT /api/administrateurs/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Administrateur> update(
+    public ResponseEntity<AdministrateurResponse> update(
             @PathVariable Integer id,
-            @Valid @RequestBody Administrateur adminDetails
-    ) {
-        return administrateurRepo.findById(id)
-                .map(existing -> {
-                    existing.setUsername(adminDetails.getUsername());
-                    existing.setMotDePasse(adminDetails.getMotDePasse());
-                    existing.setNom(adminDetails.getNom());
-                    existing.setPrenom(adminDetails.getPrenom());
-                    // Gérer les disponibilités si besoin
-                    existing.getDisponibilites().clear();
-                    existing.getDisponibilites().addAll(adminDetails.getDisponibilites());
-                    Administrateur updated = administrateurRepo.save(existing);
-                    return ResponseEntity.ok(updated);
-                })
+            @Valid @RequestBody AdministrateurRequest request) {
+        return service.update(id, request)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE /api/administrateurs/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        if (!administrateurRepo.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        administrateurRepo.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return service.delete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }

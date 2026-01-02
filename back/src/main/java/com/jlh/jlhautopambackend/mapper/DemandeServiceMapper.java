@@ -1,26 +1,40 @@
 package com.jlh.jlhautopambackend.mapper;
 
-import com.jlh.jlhautopambackend.dto.DemandeServiceDto;
-import com.jlh.jlhautopambackend.modeles.DemandeService;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.ReportingPolicy;
+import com.jlh.jlhautopambackend.dto.*;
+import com.jlh.jlhautopambackend.modeles.*;
+import org.mapstruct.*;
 
-import java.util.List;
-import java.util.Set;
-
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface DemandeServiceMapper {
 
-    @Mapping(target = "idDemande", source = "demande.idDemande")
-    @Mapping(target = "idService", source = "service.idService")
-    @Mapping(target = "libelleService", source = "service.libelle")
-    @Mapping(target = "descriptionService", source = "service.description")
-    @Mapping(target = "prixUnitaireService", source = "service.prixUnitaire")
-    @Mapping(target = "quantiteMax", ignore = true)
-    @Mapping(target = "privateNoteService", ignore = true)
-    @Mapping(target = "dateHeureService", ignore = true)
-    DemandeServiceDto toDto(DemandeService entity);
+    @Mapping(source = "request.demandeId", target = "id.idDemande")
+    @Mapping(source = "request.serviceId",  target = "id.idService")
+    @Mapping(source = "request.quantite",   target = "quantite")
+    @Mapping(source = "request.prixUnitaire", target = "prixUnitaireService")
+    @Mapping(target = "demande", ignore = true) // on les pose en service
+    @Mapping(target = "service", ignore = true)
+    DemandeService toEntity(DemandeServiceRequest request);
 
-    List<DemandeServiceDto> toDtos(Set<DemandeService> services);
+    @Mapping(source = "entity.id.idDemande", target = "id.idDemande")
+    @Mapping(source = "entity.id.idService", target = "id.idService")
+    @Mapping(source = "entity.libelleService", target = "libelle")
+    @Mapping(source = "entity.descriptionService", target = "description")
+    @Mapping(source = "entity.prixUnitaireService", target = "prixUnitaire")
+    DemandeServiceResponse toDto(DemandeService entity);
+
+    @AfterMapping
+    default void fillMissingSnapshots(DemandeService source, @MappingTarget DemandeServiceResponse target) {
+        if (source == null || target == null) {
+            return;
+        }
+        if (target.getLibelle() == null && source.getService() != null) {
+            target.setLibelle(source.getService().getLibelle());
+        }
+        if (target.getDescription() == null && source.getService() != null) {
+            target.setDescription(source.getService().getDescription());
+        }
+        if (target.getPrixUnitaire() == null && source.getService() != null) {
+            target.setPrixUnitaire(source.getService().getPrixUnitaire());
+        }
+    }
 }

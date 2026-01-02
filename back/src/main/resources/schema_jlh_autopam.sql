@@ -1,5 +1,3 @@
--- fichier : schema_jlh_autopam.sql
-
 -- Table des clients
 CREATE TABLE Client (
   id_client      INT AUTO_INCREMENT PRIMARY KEY,
@@ -15,7 +13,9 @@ CREATE TABLE Service (
   id_service     INT AUTO_INCREMENT PRIMARY KEY,
   libelle        VARCHAR(100) NOT NULL,
   description    TEXT,
-  prix_unitaire  DECIMAL(10,2) NOT NULL
+  prix_unitaire  DECIMAL(10,2) NOT NULL,
+  quantite_max   INT NOT NULL DEFAULT 1,
+  archived       TINYINT(1) NOT NULL DEFAULT 0
 );
 
 -- Lookup table : types de demande
@@ -47,6 +47,18 @@ CREATE TABLE Demande (
   FOREIGN KEY (id_client)   REFERENCES Client(id_client),
   FOREIGN KEY (code_type)   REFERENCES Type_Demande(code_type),
   FOREIGN KEY (code_statut) REFERENCES Statut_Demande(code_statut)
+);
+
+-- Table des documents attachés aux demandes
+CREATE TABLE Demande_Document (
+  id_document   BIGINT AUTO_INCREMENT PRIMARY KEY,
+  id_demande    INT NOT NULL,
+  filename      VARCHAR(255) NOT NULL,
+  content_type  VARCHAR(150) NOT NULL,
+  file_size     BIGINT NOT NULL,
+  data          LONGBLOB NOT NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_demande) REFERENCES Demande(id_demande) ON DELETE CASCADE
 );
 
 -- Table de jointure Demande ↔ Service
@@ -93,7 +105,8 @@ CREATE TABLE Administrateur (
   username       VARCHAR(50) UNIQUE NOT NULL,
   mot_de_passe   VARCHAR(255) NOT NULL,
   nom            VARCHAR(100),
-  prenom         VARCHAR(100)
+  prenom         VARCHAR(100),
+  email          VARCHAR(150) UNIQUE
 );
 
 -- Table des disponibilités (planning admin)
@@ -126,4 +139,43 @@ CREATE TABLE RendezVous (
   FOREIGN KEY (id_admin)    REFERENCES Administrateur(id_admin),
   FOREIGN KEY (id_creneau)  REFERENCES Creneau(id_creneau),
   FOREIGN KEY (code_statut) REFERENCES Statut_RendezVous(code_statut)
+);
+
+-- Table des documents associés aux demandes
+CREATE TABLE demande_document (
+  id_document      BIGINT AUTO_INCREMENT PRIMARY KEY,
+  id_demande       INT NOT NULL,
+  nom_fichier      VARCHAR(255) NOT NULL,
+  url_public       VARCHAR(512),
+  type_contenu     VARCHAR(100),
+  taille_octets    BIGINT,
+  visible_client   TINYINT(1) NOT NULL DEFAULT 1,
+  cree_par         VARCHAR(150),
+  cree_par_role    VARCHAR(30),
+  cree_le          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_demande) REFERENCES Demande(id_demande)
+);
+
+-- Timeline des demandes (statuts, commentaires, montants, rendez-vous...)
+CREATE TABLE demande_timeline (
+  id_timeline                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+  id_demande                   INT NOT NULL,
+  type_evenement               VARCHAR(30) NOT NULL,
+  cree_le                      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  cree_par                     VARCHAR(150),
+  cree_par_role                VARCHAR(30),
+  visible_client               TINYINT(1) NOT NULL DEFAULT 1,
+  statut_code                  VARCHAR(20),
+  statut_libelle               VARCHAR(100),
+  commentaire                  TEXT,
+  montant_valide               DECIMAL(12,2),
+  document_id                  BIGINT,
+  document_nom                 VARCHAR(255),
+  document_url                 VARCHAR(512),
+  rendezvous_id                INT,
+  rendezvous_statut_code       VARCHAR(20),
+  rendezvous_statut_libelle    VARCHAR(100),
+  rendezvous_date_debut        DATETIME,
+  rendezvous_date_fin          DATETIME,
+  FOREIGN KEY (id_demande) REFERENCES Demande(id_demande)
 );
