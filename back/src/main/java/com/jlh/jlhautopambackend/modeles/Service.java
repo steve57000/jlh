@@ -29,6 +29,10 @@ public class Service {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String icon;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal prixUnitaire;
 

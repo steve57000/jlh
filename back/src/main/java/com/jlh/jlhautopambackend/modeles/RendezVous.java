@@ -25,4 +25,7 @@ public class RendezVous {
     @ManyToOne(optional = false)
     @JoinColumn(name = "code_statut", nullable = false)
     private StatutRendezVous statut;
+
+    @Column(columnDefinition = "TEXT")
+    private String commentaire;
 }
