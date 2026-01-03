@@ -1,0 +1,58 @@
+### 1) LOGIN pour récupérer le JWT
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@admin.fr",
+  "password": "test"
+}
+
+> {% client.global.set("jwt", response.body.token) %}
+
+### 2) GET public (juste pour vérifier)
+GET http://localhost:8080/api/promotions
+Accept: application/json
+
+
+### CREATE une promotion AVEC image (multipart/form-data)
+POST http://localhost:8080/api/promotions
+Authorization: Bearer {{jwt}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="data"
+Content-Type: application/json
+
+{
+  "administrateurId": 1,
+  "validFrom": "2025-07-29T00:00:00Z",
+  "validTo":   "2025-08-31T00:00:00Z",
+  "description": "test"
+}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="vidangePromo.jpg"
+Content-Type: image/jpeg
+
+< C:/Users/steve/Desktop/jlh-auto/Images/vidangePromo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### UPDATE promotion ID=1 AVEC un nouveau fichier
+PUT http://localhost:8080/api/promotions/8
+Authorization: Bearer {{jwt}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="data"
+Content-Type: application/json
+
+{
+  "administrateurId": 1,
+  "validFrom": "2025-07-01T00:00:00Z",
+  "validTo":   "2025-12-31T00:00:00Z",
+  "description": "test edit"
+}
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 5) DELETE la promotion
+DELETE http://localhost:8080/api/promotions/7
+Authorization: Bearer {{jwt}}
