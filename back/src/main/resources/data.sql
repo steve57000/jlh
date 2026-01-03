@@ -63,7 +63,18 @@ SET @exists := (
     WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'service' AND COLUMN_NAME = 'icon'
 );
 SET @ddl := IF(@exists = 0,
-               'ALTER TABLE service ADD COLUMN icon VARCHAR(255) NULL',
+               'ALTER TABLE service ADD COLUMN icon TEXT NULL',
+               'SELECT 1'
+            );
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Mise à jour type colonne icon si déjà présente
+SET @exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'service' AND COLUMN_NAME = 'icon' AND DATA_TYPE <> 'text'
+);
+SET @ddl := IF(@exists = 1,
+               'ALTER TABLE service MODIFY COLUMN icon TEXT NULL',
                'SELECT 1'
             );
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -114,51 +125,51 @@ INSERT INTO statut_rendez_vous (code_statut, libelle) VALUES
 INSERT INTO service (id_service, libelle, description, icon, prix_unitaire, quantite_max, archived) VALUES
                                                                           (1, 'Pneumatiques',
                                                                            'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
-                                                                           'assets/icons/picto-metier-pneu.png',
+                                                                           NULL,
                                                                            89.00, 4, 0),
                                                                           (2, 'Véhicules hybrides',
                                                                            'Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.',
-                                                                           'assets/icons/picto-metier-hybride.png',
+                                                                           NULL,
                                                                            149.00, 1, 0),
                                                                           (3, 'Géométrie',
                                                                            'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
-                                                                           'assets/icons/picto-metier-geometrie.png',
+                                                                           NULL,
                                                                            99.00, 1, 0),
                                                                           (4, 'Freinage',
                                                                            'Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.',
-                                                                           'assets/icons/picto-metier-freinage.png',
+                                                                           NULL,
                                                                            199.00, 2, 0),
                                                                           (5, 'Embrayage',
                                                                            'Diagnostic et remplacement des embrayages, volants moteurs et butées pour une transmission souple et fiable.',
-                                                                           'assets/icons/picto-metier-embrayage.png',
+                                                                           NULL,
                                                                            349.00, 1, 0),
                                                                           (6, 'Échappement',
                                                                            'Inspection, réparation et remplacement des lignes d’échappement et filtres à particules pour un moteur sain.',
-                                                                           'assets/icons/picto-metier-echappement.png',
+                                                                           NULL,
                                                                            129.00, 1, 0),
                                                                           (7, 'Distribution',
                                                                            'Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.',
-                                                                           'assets/icons/picto-metier-distribution.png',
+                                                                           NULL,
                                                                            699.00, 1, 0),
                                                                           (8, 'Climatisation',
                                                                            'Entretien complet du circuit : recharge, nettoyage, contrôle d’étanchéité et désinfection de l’habitacle.',
-                                                                           'assets/icons/picto-metier-climatisation.png',
+                                                                           NULL,
                                                                            79.00, 1, 0),
                                                                           (9, 'Amortisseurs',
                                                                            'Remplacement des amortisseurs, ressorts et biellettes pour une conduite confortable et maîtrisée.',
-                                                                           'assets/icons/picto-metier-amortisseur.png',
+                                                                           NULL,
                                                                            249.00, 2, 0),
                                                                           (10, 'Pré-contrôle technique',
                                                                            'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
-                                                                           'assets/icons/picto-metier-pre_controle.png',
+                                                                           NULL,
                                                                            59.00, 1, 0),
                                                                           (11, 'Révision constructeur',
                                                                            'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
-                                                                           'assets/icons/picto-metier-revision_constructeur.png',
+                                                                           NULL,
                                                                            129.90, 1, 0),
                                                                           (12, 'Vidange',
                                                                            'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
-                                                                           'assets/icons/picto-metier-vidange.png',
+                                                                           NULL,
                                                                            59.90, 1, 0);
 
 -- ==================================================

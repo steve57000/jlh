@@ -29,7 +29,7 @@ public class Service {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 255)
+    @Column(columnDefinition = "TEXT")
     private String icon;
 
     @Column(nullable = false, precision = 10, scale = 2)
