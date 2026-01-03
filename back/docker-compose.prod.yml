@@ -26,7 +26,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL:      jdbc:postgresql://db:5432/${DB_NAME}
+      DB_URL:      jdbc:postgresql://db:5432/${DB_NAME}?sslmode=disable
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
     ports:

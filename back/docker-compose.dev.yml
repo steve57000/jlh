@@ -1,18 +1,21 @@
 # docker-compose.dev.yml
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE:      ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-jlh_autopam}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - db-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 10s
 
   # ---- MailHog (SMTP de dev) ----
   mailhog:
@@ -44,10 +47,11 @@ services:
 
       # ---- DB (dev) ----
       DB_HOST: db
-      DB_PORT: 3306
-      DB_NAME: jlh_autopam
-      DB_USERNAME: root
-      DB_PASSWORD: password
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-jlh_autopam}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-jlh_autopam}?sslmode=disable
 
       # ---- SMTP (MailHog) ----
       MAIL_HOST: mailhog
@@ -76,6 +80,6 @@ services:
       - backend
 
 volumes:
-  db-data:
+  postgres-data:
   promo-images:
   m2-repo:
