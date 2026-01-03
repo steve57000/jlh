@@ -57,6 +57,39 @@ SET @ddl := IF(@exists = 0,
             );
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+-- Ajout colonne icon sur les services (optionnelle)
+SET @exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'service' AND COLUMN_NAME = 'icon'
+);
+SET @ddl := IF(@exists = 0,
+               'ALTER TABLE service ADD COLUMN icon TEXT NULL',
+               'SELECT 1'
+            );
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Mise à jour type colonne icon si déjà présente
+SET @exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'service' AND COLUMN_NAME = 'icon' AND DATA_TYPE <> 'text'
+);
+SET @ddl := IF(@exists = 1,
+               'ALTER TABLE service MODIFY COLUMN icon TEXT NULL',
+               'SELECT 1'
+            );
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Ajout colonne commentaire sur les rendez-vous (optionnelle)
+SET @exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'rendez_vous' AND COLUMN_NAME = 'commentaire'
+);
+SET @ddl := IF(@exists = 0,
+               'ALTER TABLE rendez_vous ADD COLUMN commentaire TEXT NULL',
+               'SELECT 1'
+            );
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 -- Valorise username à partir de l'e-mail pour les administrateurs existants
 UPDATE administrateur
 SET username = concat(prenom, '.', nom, substr(nom, 1,1))
@@ -89,22 +122,55 @@ INSERT INTO statut_rendez_vous (code_statut, libelle) VALUES
 -- ==================================================
 -- 2) Services
 -- ==================================================
-INSERT INTO service (id_service, libelle, description, prix_unitaire, quantite_max, archived) VALUES
-                                                                          (1, 'Vidange',
-                                                                           'Vidange moteur complète avec huile synthétique haute performance et remplacement du filtre à huile pour optimiser la longévité de votre moteur',
-                                                                           59.90, 1, 0),
-                                                                          (2, 'Révision',
-                                                                           'Révision générale incluant le contrôle et le remplacement des courroies, filtres (air, habitacle, carburant) et bougies, ainsi que la vérification des niveaux de liquide',
-                                                                           129.90, 1, 0),
-                                                                          (3, 'Freinage',
-                                                                           'Remplacement des plaquettes de frein avant par des plaquettes haute performance, contrôle des disques et purge complète du circuit de freinage pour une sécurité maximale',
+INSERT INTO service (id_service, libelle, description, icon, prix_unitaire, quantite_max, archived) VALUES
+                                                                          (1, 'Pneumatiques',
+                                                                           'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
+                                                                           NULL,
+                                                                           89.00, 4, 0),
+                                                                          (2, 'Véhicules hybrides',
+                                                                           'Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.',
+                                                                           NULL,
+                                                                           149.00, 1, 0),
+                                                                          (3, 'Géométrie',
+                                                                           'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
+                                                                           NULL,
+                                                                           99.00, 1, 0),
+                                                                          (4, 'Freinage',
+                                                                           'Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.',
+                                                                           NULL,
                                                                            199.00, 2, 0),
-                                                                          (4, 'Pneumatiques',
-                                                                           'Montage et équilibrage de quatre pneus toutes saisons, vérification de la géométrie et conseil personnalisé pour un confort et une adhérence optimaux',
-                                                                           449.00, 4, 0),
-                                                                          (5, 'Diagnostic',
-                                                                           'Diagnostic électronique multimarque complet avec intervention valise électronique, analyse des défauts et remise d’un rapport détaillé',
-                                                                           79.00, 1, 0);
+                                                                          (5, 'Embrayage',
+                                                                           'Diagnostic et remplacement des embrayages, volants moteurs et butées pour une transmission souple et fiable.',
+                                                                           NULL,
+                                                                           349.00, 1, 0),
+                                                                          (6, 'Échappement',
+                                                                           'Inspection, réparation et remplacement des lignes d’échappement et filtres à particules pour un moteur sain.',
+                                                                           NULL,
+                                                                           129.00, 1, 0),
+                                                                          (7, 'Distribution',
+                                                                           'Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.',
+                                                                           NULL,
+                                                                           699.00, 1, 0),
+                                                                          (8, 'Climatisation',
+                                                                           'Entretien complet du circuit : recharge, nettoyage, contrôle d’étanchéité et désinfection de l’habitacle.',
+                                                                           NULL,
+                                                                           79.00, 1, 0),
+                                                                          (9, 'Amortisseurs',
+                                                                           'Remplacement des amortisseurs, ressorts et biellettes pour une conduite confortable et maîtrisée.',
+                                                                           NULL,
+                                                                           249.00, 2, 0),
+                                                                          (10, 'Pré-contrôle technique',
+                                                                           'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
+                                                                           NULL,
+                                                                           59.00, 1, 0),
+                                                                          (11, 'Révision constructeur',
+                                                                           'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
+                                                                           NULL,
+                                                                           129.90, 1, 0),
+                                                                          (12, 'Vidange',
+                                                                           'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
+                                                                           NULL,
+                                                                           59.90, 1, 0);
 
 -- ==================================================
 -- 3) Clients (mots de passe déjà hashés)
@@ -205,23 +271,23 @@ INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (1, 1, 1,
+    (1, 12, 1,
      'Vidange',
-     'Vidange moteur complète avec huile synthétique haute performance et remplacement du filtre à huile pour optimiser la longévité de votre moteur',
+     'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
      59.90),
-    (1, 5, 1,
-     'Diagnostic',
-     'Diagnostic électronique multimarque complet avec intervention valise électronique, analyse des défauts et remise d’un rapport détaillé',
-     79.00);
+    (1, 10, 1,
+     'Pré-contrôle technique',
+     'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
+     59.00);
 
 -- Demande 2 : Bob veut Révision
 INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (2, 2, 1,
-     'Révision',
-     'Révision générale incluant le contrôle et le remplacement des courroies, filtres (air, habitacle, carburant) et bougies, ainsi que la vérification des niveaux de liquide',
+    (2, 11, 1,
+     'Révision constructeur',
+     'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
      129.90);
 
 -- Demande 3 : Claire veut Changement pneus x4
@@ -229,35 +295,35 @@ INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (3, 4, 1,
+    (3, 1, 1,
      'Pneumatiques',
-     'Montage et équilibrage de quatre pneus toutes saisons, vérification de la géométrie et conseil personnalisé pour un confort et une adhérence optimaux',
-     449.00);
+     'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
+     89.00);
 
 -- Demande 5 : Eva voulait Diagnostic
 INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 ) VALUES
-    (5, 5, 1,
-     'Diagnostic',
-     'Diagnostic électronique multimarque complet avec intervention valise électronique, analyse des défauts et remise d’un rapport détaillé',
-     79.00);
+    (5, 3, 1,
+     'Géométrie',
+     'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
+     99.00);
 
 -- ==================================================
 -- 9) Devis
 -- ==================================================
 INSERT INTO devis (id_devis, id_demande, date_devis, montant_total) VALUES
-                                                                        (1,1,'2025-06-21 14:00:00', 59.90 + 79.00),
+                                                                        (1,1,'2025-06-21 14:00:00', 59.90 + 59.00),
                                                                         (2,2,'2025-06-20 15:00:00', 129.90);
 
 -- ==================================================
 -- 10) Rendez-vous (statut propre RDV)
 -- ==================================================
-INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut) VALUES
-                                                                                    (1,3,1,1,'Confirme'),
-                                                                                    (2,4,1,3,'Reporte'),
-                                                                                    (3,6,1,6,'Annule');
+INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire) VALUES
+                                                                                    (1,3,1,1,'Confirme', 'Contrôle général avant départ en vacances.'),
+                                                                                    (2,4,1,3,'Reporte', 'Demande de vérification du freinage.'),
+                                                                                    (3,6,1,6,'Annule', NULL);
 
 -- ==================================================
 -- 10) Documents et timeline des demandes
@@ -301,9 +367,9 @@ INSERT INTO demande_service (
     id_demande, id_service, quantite,
     libelle_service, description_service, prix_unitaire_service
 )
-VALUES (7, 2, 1,
-        'Révision',
-        'Révision générale incluant le contrôle et le remplacement des courroies, filtres (air, habitacle, carburant) et bougies, ainsi que la vérification des niveaux de liquide',
+VALUES (7, 11, 1,
+        'Révision constructeur',
+        'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
         129.90);
 
 -- Créneau réservé pour ce RDV (futur)
@@ -315,5 +381,5 @@ INSERT INTO disponibilite (id_admin, id_creneau)
 VALUES (1, 7);
 
 -- RDV Confirmé pour Alice (future date => visible par findUpcomingByClientId)
-INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut)
-VALUES (4, 7, 1, 7, 'Confirme');
+INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire)
+VALUES (4, 7, 1, 7, 'Confirme', 'Révision complète avant contrôle technique.');
