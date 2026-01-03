@@ -3,9 +3,9 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-jlh_autopam}
     ports:
       - "5432:5432"
     volumes:
@@ -48,10 +48,10 @@ services:
       # ---- DB (dev) ----
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: jlh_autopam
-      DB_USERNAME: postgres
-      DB_PASSWORD: password
-      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}?sslmode=disable
+      DB_NAME: ${DB_NAME:-jlh_autopam}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-jlh_autopam}?sslmode=disable
 
       # ---- SMTP (MailHog) ----
       MAIL_HOST: mailhog
