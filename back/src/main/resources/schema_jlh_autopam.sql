@@ -1,4 +1,6 @@
 -- Schéma PostgreSQL aligné avec les entités JPA
+-- NOTE: Ce fichier est un aide-mémoire et n'est pas exécuté par Spring Boot.
+-- Hibernate (ddl-auto) crée/ajuste les tables lors du démarrage.
 
 -- =========================
 -- 1) Référentiels
