@@ -76,6 +76,13 @@
               <div class="field__error">Indiquez un prix au format 0,00.</div>
             }
           </div>
+          <div class="field">
+            <label for="service-quantite-max">Quantité maximale</label>
+            <input id="service-quantite-max" formControlName="quantiteMax" type="number" min="1" required />
+            @if (form.controls['quantiteMax'].invalid && form.controls['quantiteMax'].touched) {
+              <div class="field__error">Indiquez une quantité maximale supérieure ou égale à 1.</div>
+            }
+          </div>
           <div class="modal-actions">
             <button class="cta-btn" type="submit" [disabled]="form.invalid">Enregistrer</button>
             <button class="modal-actions__cancel" type="button" (click)="closeModal()">Annuler</button>
