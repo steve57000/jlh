@@ -47,7 +47,9 @@ public class ServiceServiceImpl implements ServiceService {
                 .map(existing -> {
                     existing.setLibelle(request.getLibelle());
                     existing.setDescription(request.getDescription());
+                    existing.setIcon(request.getIcon());
                     existing.setPrixUnitaire(request.getPrixUnitaire());
+                    existing.setQuantiteMax(request.getQuantiteMax());
                     Service saved = repo.save(existing);
                     return mapper.toResponse(saved);
                 });

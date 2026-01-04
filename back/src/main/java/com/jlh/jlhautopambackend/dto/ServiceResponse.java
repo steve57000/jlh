@@ -12,6 +12,7 @@ public class ServiceResponse {
     private Integer idService;
     private String libelle;
     private String description;
+    private String icon;
     private BigDecimal prixUnitaire;
     private boolean archived;
     private Integer quantiteMax;

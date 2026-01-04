@@ -16,6 +16,8 @@ public class ServiceRequest {
 
     private String description;
 
+    private String icon;
+
     @NotNull
     @DecimalMin("0.00")
     private BigDecimal prixUnitaire;
