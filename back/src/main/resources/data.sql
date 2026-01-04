@@ -266,7 +266,7 @@ INSERT INTO demande_document (
 ) VALUES (
     1, 1, 'devis_jlh_autopam_test.pdf',
     'documents/2b6409c4-8973-4446-ad79-d7a716a61006_devis_jlh_autopam_test.pdf',
-    'application/pdf', 20480, 1,
+    'application/pdf', 20480, TRUE,
     'Michael', 'ADMIN', '2025-06-20 09:00:00'
 )
 ON CONFLICT DO NOTHING;
@@ -277,11 +277,11 @@ INSERT INTO demande_timeline (
     document_id, document_nom, document_url,
     rendezvous_id, rendezvous_statut_code, rendezvous_statut_libelle, rendezvous_date_debut, rendezvous_date_fin
 ) VALUES
-    (1, 1, 'MONTANT', '2025-06-20 08:30:00', 'test@admin.fr', 'ADMIN', 1,
+    (1, 1, 'MONTANT', '2025-06-20 08:30:00', 'test@admin.fr', 'ADMIN', TRUE,
      'En_attente', 'En attente', 'Création du devis', 138.90,
      NULL, NULL, NULL,
      NULL, NULL, NULL, NULL, NULL),
-    (2, 1, 'DOCUMENT', '2025-06-20 09:00:00', 'test@admin.fr', 'ADMIN', 1,
+    (2, 1, 'DOCUMENT', '2025-06-20 09:00:00', 'test@admin.fr', 'ADMIN', TRUE,
      NULL, NULL, 'Ajout du contrôle technique', NULL,
      1, 'devis_jlh_autopam_test.pdf', 'uploads/documents/devis_jlh_autopam_test',
      NULL, NULL, NULL, NULL, NULL)
