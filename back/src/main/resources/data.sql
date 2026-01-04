@@ -1,98 +1,9 @@
 -- ==================================================
--- 0) Sécurité : colonnes de vérification e-mail (MySQL-safe)
+-- 0) Préparation
 -- ==================================================
-SET @db := DATABASE();
-
--- Ajout colonne email_verified (bool = tinyint(1))
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'client' AND COLUMN_NAME = 'email_verified'
-);
-SET @ddl := IF(@exists = 0,
-               'ALTER TABLE client ADD COLUMN email_verified TINYINT(1) NOT NULL DEFAULT 0',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Ajout colonne email_verified_at (sans time zone en MySQL)
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'client' AND COLUMN_NAME = 'email_verified_at'
-);
-SET @ddl := IF(@exists = 0,
-               'ALTER TABLE client ADD COLUMN email_verified_at DATETIME NULL',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Ajout colonnes vehicule_marque / vehicule_modele
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'client' AND COLUMN_NAME = 'vehicule_marque'
-);
-SET @ddl := IF(@exists = 0,
-               'ALTER TABLE client ADD COLUMN vehicule_marque VARCHAR(100) NULL',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'client' AND COLUMN_NAME = 'vehicule_modele'
-);
-SET @ddl := IF(@exists = 0,
-               'ALTER TABLE client ADD COLUMN vehicule_modele VARCHAR(100) NULL',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Ajout colonne username (nullable au départ pour éviter l'échec si la table contient déjà des données)
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'administrateur' AND COLUMN_NAME = 'username'
-);
-SET @ddl := IF(@exists = 0,
-               'ALTER TABLE administrateur ADD COLUMN username VARCHAR(50) UNIQUE',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Ajout colonne icon sur les services (optionnelle)
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'service' AND COLUMN_NAME = 'icon'
-);
-SET @ddl := IF(@exists = 0,
-               'ALTER TABLE service ADD COLUMN icon TEXT NULL',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Mise à jour type colonne icon si déjà présente
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'service' AND COLUMN_NAME = 'icon' AND DATA_TYPE <> 'text'
-);
-SET @ddl := IF(@exists = 1,
-               'ALTER TABLE service MODIFY COLUMN icon TEXT NULL',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Ajout colonne commentaire sur les rendez-vous (optionnelle)
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'rendez_vous' AND COLUMN_NAME = 'commentaire'
-);
-SET @ddl := IF(@exists = 0,
-               'ALTER TABLE rendez_vous ADD COLUMN commentaire TEXT NULL',
-               'SELECT 1'
-            );
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
--- Valorise username à partir de l'e-mail pour les administrateurs existants
+-- Valorise username à partir des champs existants pour les administrateurs existants
 UPDATE administrateur
-SET username = concat(prenom, '.', nom, substr(nom, 1,1))
+SET username = concat(prenom, '.', nom, substring(nom from 1 for 1))
 WHERE username IS NULL OR username = '';
 
 -- ==================================================
@@ -101,23 +12,27 @@ WHERE username IS NULL OR username = '';
 INSERT INTO type_demande (code_type, libelle) VALUES
                                                   ('Devis', 'Devis'),
                                                   ('Service', 'Service'),
-                                                  ('RendezVous', 'Rendez-vous');
+                                                  ('RendezVous', 'Rendez-vous')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO statut_demande (code_statut, libelle) VALUES
                                                       ('Brouillon', 'Brouillon'),
                                                       ('En_attente', 'En attente'),
                                                       ('Traitee',    'Traitée'),
-                                                      ('Annulee',    'Annulée');
+                                                      ('Annulee',    'Annulée')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO statut_creneau (code_statut, libelle) VALUES
                                                       ('Libre',        'Libre'),
                                                       ('Reserve',      'Réservé'),
-                                                      ('Indisponible', 'Indisponible');
+                                                      ('Indisponible', 'Indisponible')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO statut_rendez_vous (code_statut, libelle) VALUES
                                                           ('Confirme', 'Confirmé'),
                                                           ('Reporte',  'Reporté'),
-                                                          ('Annule',   'Annulé');
+                                                          ('Annule',   'Annulé')
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 2) Services
@@ -170,7 +85,8 @@ INSERT INTO service (id_service, libelle, description, icon, prix_unitaire, quan
                                                                           (12, 'Vidange',
                                                                            'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
                                                                            NULL,
-                                                                           59.90, 1, 0);
+                                                                           59.90, 1, 0)
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 3) Clients (mots de passe déjà hashés)
@@ -210,14 +126,16 @@ INSERT INTO client (
        '6 quai de la Loire', NULL, '44000', 'Nantes',
        'EE-567-EE','Tesla','Model 3',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
-       0, NULL);
+       0, NULL)
+ON CONFLICT DO NOTHING;
 
 
 -- ==================================================
 -- 4) Admins
 -- ==================================================
 INSERT INTO administrateur (id_admin, username, email, mot_de_passe, nom, prenom) VALUES
-    (1,'Michael.B','test@admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Bongeot','Michael');
+    (1,'Michael.B','test@admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Bongeot','Michael')
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 5) Créneaux
@@ -228,40 +146,48 @@ INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
                                                                         (3,'2025-07-01 11:00:00','2025-07-01 12:00:00','Reserve'),   -- utilisé par RDV#2 (Reporté)
                                                                         (4,'2025-07-01 14:00:00','2025-07-01 15:00:00','Indisponible'),
                                                                         (5,'2025-07-02 09:00:00','2025-07-02 10:00:00','Libre'),
-                                                                        (6,'2025-07-02 10:00:00','2025-07-02 11:00:00','Reserve');   -- utilisé par RDV#3 (Annulé)
+                                                                        (6,'2025-07-02 10:00:00','2025-07-02 11:00:00','Reserve')   -- utilisé par RDV#3 (Annulé)
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 6) Disponibilités
 -- ==================================================
 INSERT INTO disponibilite (id_admin, id_creneau) VALUES
-                                                     (1,1),(1,2),(1,3),(1,5),(1,6);
+                                                     (1,1),(1,2),(1,3),(1,5),(1,6)
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 7) Demandes
 -- ==================================================
 -- Devis: Alice (En attente), multiple services
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (1, 1, '2025-06-20 08:15:00', 'Devis',     'En_attente');
+    (1, 1, '2025-06-20 08:15:00', 'Devis',     'En_attente')
+ON CONFLICT DO NOTHING;
 
 -- Devis: Bob (Traitée)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (2, 2, '2025-06-19 09:30:00', 'Devis',     'Traitee');
+    (2, 2, '2025-06-19 09:30:00', 'Devis',     'Traitee')
+ON CONFLICT DO NOTHING;
 
 -- RDV: Claire (Confirmé ensuite via RDV)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (3, 3, '2025-06-18 10:45:00', 'RendezVous','En_attente');
+    (3, 3, '2025-06-18 10:45:00', 'RendezVous','En_attente')
+ON CONFLICT DO NOTHING;
 
 -- RDV: David (Reporté ensuite via RDV)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (4, 4, '2025-06-17 11:00:00', 'RendezVous','Traitee');
+    (4, 4, '2025-06-17 11:00:00', 'RendezVous','Traitee')
+ON CONFLICT DO NOTHING;
 
 -- Devis: Eva (Annulée)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (5, 5, '2025-06-16 12:00:00', 'Devis',     'Annulee');
+    (5, 5, '2025-06-16 12:00:00', 'Devis',     'Annulee')
+ON CONFLICT DO NOTHING;
 
 -- RDV: Alice (Annulé ensuite via RDV)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (6, 1, '2025-06-15 13:00:00', 'RendezVous','Annulee');
+    (6, 1, '2025-06-15 13:00:00', 'RendezVous','Annulee')
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 8) Demande_Service
@@ -278,7 +204,8 @@ INSERT INTO demande_service (
     (1, 10, 1,
      'Pré-contrôle technique',
      'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
-     59.00);
+     59.00)
+ON CONFLICT DO NOTHING;
 
 -- Demande 2 : Bob veut Révision
 INSERT INTO demande_service (
@@ -288,7 +215,8 @@ INSERT INTO demande_service (
     (2, 11, 1,
      'Révision constructeur',
      'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
-     129.90);
+     129.90)
+ON CONFLICT DO NOTHING;
 
 -- Demande 3 : Claire veut Changement pneus x4
 INSERT INTO demande_service (
@@ -298,7 +226,8 @@ INSERT INTO demande_service (
     (3, 1, 1,
      'Pneumatiques',
      'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
-     89.00);
+     89.00)
+ON CONFLICT DO NOTHING;
 
 -- Demande 5 : Eva voulait Diagnostic
 INSERT INTO demande_service (
@@ -308,14 +237,16 @@ INSERT INTO demande_service (
     (5, 3, 1,
      'Géométrie',
      'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
-     99.00);
+     99.00)
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 9) Devis
 -- ==================================================
 INSERT INTO devis (id_devis, id_demande, date_devis, montant_total) VALUES
                                                                         (1,1,'2025-06-21 14:00:00', 59.90 + 59.00),
-                                                                        (2,2,'2025-06-20 15:00:00', 129.90);
+                                                                        (2,2,'2025-06-20 15:00:00', 129.90)
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 10) Rendez-vous (statut propre RDV)
@@ -323,7 +254,8 @@ INSERT INTO devis (id_devis, id_demande, date_devis, montant_total) VALUES
 INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire) VALUES
                                                                                     (1,3,1,1,'Confirme', 'Contrôle général avant départ en vacances.'),
                                                                                     (2,4,1,3,'Reporte', 'Demande de vérification du freinage.'),
-                                                                                    (3,6,1,6,'Annule', NULL);
+                                                                                    (3,6,1,6,'Annule', NULL)
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 10) Documents et timeline des demandes
@@ -336,7 +268,8 @@ INSERT INTO demande_document (
     'documents/2b6409c4-8973-4446-ad79-d7a716a61006_devis_jlh_autopam_test.pdf',
     'application/pdf', 20480, 1,
     'Michael', 'ADMIN', '2025-06-20 09:00:00'
-);
+)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO demande_timeline (
     id_timeline, id_demande, type_evenement, cree_le, cree_par, cree_par_role, visible_client,
@@ -351,7 +284,8 @@ INSERT INTO demande_timeline (
     (2, 1, 'DOCUMENT', '2025-06-20 09:00:00', 'test@admin.fr', 'ADMIN', 1,
      NULL, NULL, 'Ajout du contrôle technique', NULL,
      1, 'devis_jlh_autopam_test.pdf', 'uploads/documents/devis_jlh_autopam_test',
-     NULL, NULL, NULL, NULL, NULL);
+     NULL, NULL, NULL, NULL, NULL)
+ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 11) 🔥 Nouveau cas de test ICS pour Alice (client1)
@@ -360,7 +294,8 @@ INSERT INTO demande_timeline (
 
 -- Nouvelle demande de RDV pour Alice
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut)
-VALUES (7, 1, '2025-06-25 09:00:00', 'RendezVous', 'En_attente');
+VALUES (7, 1, '2025-06-25 09:00:00', 'RendezVous', 'En_attente')
+ON CONFLICT DO NOTHING;
 
 -- Services associés (ex: révision complète)
 INSERT INTO demande_service (
@@ -370,16 +305,20 @@ INSERT INTO demande_service (
 VALUES (7, 11, 1,
         'Révision constructeur',
         'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
-        129.90);
+        129.90)
+ON CONFLICT DO NOTHING;
 
 -- Créneau réservé pour ce RDV (futur)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut)
-VALUES (7, '2025-10-02 09:00:00', '2025-10-02 10:00:00', 'Reserve');
+VALUES (7, '2025-10-02 09:00:00', '2025-10-02 10:00:00', 'Reserve')
+ON CONFLICT DO NOTHING;
 
 -- Disponibilité de l’admin sur ce créneau
 INSERT INTO disponibilite (id_admin, id_creneau)
-VALUES (1, 7);
+VALUES (1, 7)
+ON CONFLICT DO NOTHING;
 
 -- RDV Confirmé pour Alice (future date => visible par findUpcomingByClientId)
 INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire)
-VALUES (4, 7, 1, 7, 'Confirme', 'Révision complète avant contrôle technique.');
+VALUES (4, 7, 1, 7, 'Confirme', 'Révision complète avant contrôle technique.')
+ON CONFLICT DO NOTHING;
