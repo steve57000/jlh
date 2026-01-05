@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +24,6 @@ public class ServiceIcon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idIcon;
 
-    @Lob
     @Column(nullable = false, unique = true, columnDefinition = "TEXT")
     private String url;
 
