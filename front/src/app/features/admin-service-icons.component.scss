@@ -74,6 +74,11 @@
   &__label {
     font-weight: 600;
   }
+
+  &__action {
+    font-size: 0.85rem;
+    color: #6b6b6b;
+  }
 }
 
 .icon-form {
@@ -87,9 +92,8 @@
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
-    align-items: start;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 
   &__actions {
@@ -113,5 +117,22 @@
     border-radius: 12px;
     background: #f5f5f5;
     padding: .5rem;
+  }
+}
+
+.icon-modal__preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 20px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+
+  img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
   }
 }

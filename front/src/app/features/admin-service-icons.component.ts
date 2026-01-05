@@ -21,11 +21,18 @@ export class AdminServiceIconsComponent implements OnInit {
 
   showDeleteConfirm = false;
   iconToDelete: ServiceIconDto | null = null;
+  showEditModal = false;
+  editingIcon: ServiceIconDto | null = null;
+  editForm: FormGroup;
 
   private readonly toast = inject(ToastService);
 
   constructor(private iconsService: ServiceIconsService, private fb: FormBuilder) {
     this.form = this.fb.group({
+      label: ['', [Validators.maxLength(150)]],
+      url: ['', [Validators.maxLength(1000), Validators.required]]
+    });
+    this.editForm = this.fb.group({
       label: ['', [Validators.maxLength(150)]],
       url: ['', [Validators.maxLength(1000), Validators.required]]
     });
@@ -69,12 +76,32 @@ export class AdminServiceIconsComponent implements OnInit {
     reader.readAsDataURL(file);
   }
 
+  onIconSelected(event: Event) {
+    this.onFileSelected(event);
+  }
+
   selectIcon(icon: ServiceIconDto) {
     this.previewUrl = icon.url;
     this.form.patchValue({
       url: icon.url,
       label: icon.label ?? ''
     });
+  }
+
+  openEditModal(icon: ServiceIconDto) {
+    this.editingIcon = icon;
+    this.editForm.reset({
+      label: icon.label ?? '',
+      url: icon.url
+    });
+    this.showEditModal = true;
+    this.showDeleteConfirm = false;
+    this.iconToDelete = null;
+  }
+
+  closeEditModal() {
+    this.showEditModal = false;
+    this.editingIcon = null;
   }
 
   clearSelection() {
@@ -104,6 +131,35 @@ export class AdminServiceIconsComponent implements OnInit {
     });
   }
 
+  updateIcon() {
+    if (!this.editingIcon?.idIcon) {
+      return;
+    }
+    if (this.editForm.invalid) {
+      this.editForm.markAllAsTouched();
+      return;
+    }
+    const payload = {
+      url: String(this.editForm.value.url || '').trim(),
+      label: String(this.editForm.value.label || '').trim() || null
+    };
+    this.iconsService.create(payload).subscribe({
+      next: created => {
+        this.icons = this.icons.map(icon => {
+          if (icon.idIcon === this.editingIcon?.idIcon) {
+            return { ...created, idIcon: this.editingIcon?.idIcon };
+          }
+          return icon;
+        });
+        this.toast.success('Icône mise à jour.');
+        this.closeEditModal();
+      },
+      error: err => {
+        this.toast.error('Erreur lors de la modification.', err.error?.message || err.message);
+      }
+    });
+  }
+
   confirmDeletion(icon: ServiceIconDto) {
     this.iconToDelete = icon;
     this.showDeleteConfirm = true;
@@ -127,6 +183,7 @@ export class AdminServiceIconsComponent implements OnInit {
           this.clearSelection();
         }
         this.cancelDeletion();
+        this.closeEditModal();
       },
       error: err => {
         this.toast.error('Erreur lors de la suppression.', err.error?.message || err.message);
