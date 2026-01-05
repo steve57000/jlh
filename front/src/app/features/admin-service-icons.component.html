@@ -28,31 +28,33 @@
   </div>
 
   <form class="icon-form" [formGroup]="form" (ngSubmit)="submitForm()" novalidate>
-    <div class="field">
-      <label for="icon-label">Libellé (optionnel)</label>
-      <input id="icon-label" formControlName="label" maxlength="150" />
+    <div class="icon-form__grid">
+      <div class="field">
+        <label for="icon-label">Libellé (optionnel)</label>
+        <input id="icon-label" formControlName="label" maxlength="150" />
+      </div>
+      <div class="field">
+        <label for="icon-file">Importer une icône</label>
+        <input
+          id="icon-file"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          (change)="onFileSelected($event)"
+        />
+        @if (previewUrl) {
+          <div class="icon-preview">
+            <img [src]="previewUrl" alt="Aperçu de l'icône" />
+            <button type="button" class="link danger" (click)="clearSelection()">Effacer</button>
+          </div>
+        }
+      </div>
+      <div class="field">
+        <label for="icon-url">URL / Data URL</label>
+        <input id="icon-url" formControlName="url" maxlength="1000" />
+        @if (form.controls['url'].invalid && form.controls['url'].touched) {
+          <div class="field__error">Indiquez une URL d’icône valide.</div>
+        }
     </div>
-    <div class="field">
-      <label for="icon-file">Importer une icône</label>
-      <input
-        id="icon-file"
-        type="file"
-        accept="image/png,image/jpeg,image/webp,image/svg+xml"
-        (change)="onFileSelected($event)"
-      />
-      @if (previewUrl) {
-        <div class="icon-preview">
-          <img [src]="previewUrl" alt="Aperçu de l'icône" />
-          <button type="button" class="link danger" (click)="clearSelection()">Effacer</button>
-        </div>
-      }
-    </div>
-    <div class="field">
-      <label for="icon-url">URL / Data URL</label>
-      <input id="icon-url" formControlName="url" maxlength="1000" />
-      @if (form.controls['url'].invalid && form.controls['url'].touched) {
-        <div class="field__error">Indiquez une URL d’icône valide.</div>
-      }
     </div>
     <div class="icon-form__actions">
       <button class="cta-btn" type="submit" [disabled]="form.invalid">Ajouter l’icône</button>
