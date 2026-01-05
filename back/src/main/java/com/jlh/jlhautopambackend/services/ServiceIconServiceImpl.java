@@ -4,10 +4,14 @@ import com.jlh.jlhautopambackend.dto.ServiceIconRequest;
 import com.jlh.jlhautopambackend.dto.ServiceIconResponse;
 import com.jlh.jlhautopambackend.modeles.ServiceIcon;
 import com.jlh.jlhautopambackend.repository.ServiceIconRepository;
+import com.jlh.jlhautopambackend.services.storage.FileStorageService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,9 +19,17 @@ import java.util.Optional;
 @Transactional
 public class ServiceIconServiceImpl implements ServiceIconService {
     private final ServiceIconRepository repo;
+    private final FileStorageService storageService;
+    private final String filesBaseUrl;
 
-    public ServiceIconServiceImpl(ServiceIconRepository repo) {
+    public ServiceIconServiceImpl(
+            ServiceIconRepository repo,
+            FileStorageService storageService,
+            @Value("${app.files.base-url}") String filesBaseUrl
+    ) {
         this.repo = repo;
+        this.storageService = storageService;
+        this.filesBaseUrl = StringUtils.trimTrailingCharacter(filesBaseUrl, '/');
     }
 
     @Override
@@ -47,6 +59,83 @@ public class ServiceIconServiceImpl implements ServiceIconService {
     }
 
     @Override
+    public Optional<ServiceIconResponse> createFromFile(MultipartFile file, String label) {
+        if (file == null || file.isEmpty()) {
+            return Optional.empty();
+        }
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new IllegalArgumentException("Le fichier doit être une image.");
+        }
+        String storedPath;
+        try {
+            storedPath = storageService.store(file, "icons");
+        } catch (IOException ex) {
+            throw new IllegalStateException("Impossible d'enregistrer l'image.", ex);
+        }
+        String url = buildPublicUrl(storedPath);
+        Optional<ServiceIcon> existing = repo.findByUrl(url);
+        if (existing.isPresent()) {
+            return Optional.of(toResponse(existing.get()));
+        }
+        ServiceIcon saved = repo.save(ServiceIcon.builder()
+                .url(url)
+                .label(StringUtils.hasText(label) ? label.trim() : null)
+                .build());
+        return Optional.of(toResponse(saved));
+    }
+
+    @Override
+    public Optional<ServiceIconResponse> update(Integer id, ServiceIconRequest request) {
+        Optional<ServiceIcon> existing = repo.findById(id);
+        if (existing.isEmpty()) {
+            return Optional.empty();
+        }
+        String url = sanitizeUrl(request.getUrl());
+        if (!StringUtils.hasText(url)) {
+            return Optional.empty();
+        }
+        Optional<ServiceIcon> existingByUrl = repo.findByUrl(url);
+        if (existingByUrl.isPresent() && !existingByUrl.get().getIdIcon().equals(id)) {
+            return Optional.empty();
+        }
+        ServiceIcon icon = existing.get();
+        icon.setUrl(url);
+        icon.setLabel(StringUtils.hasText(request.getLabel()) ? request.getLabel().trim() : null);
+        ServiceIcon saved = repo.save(icon);
+        return Optional.of(toResponse(saved));
+    }
+
+    @Override
+    public Optional<ServiceIconResponse> updateFromFile(Integer id, MultipartFile file, String label) {
+        Optional<ServiceIcon> existing = repo.findById(id);
+        if (existing.isEmpty()) {
+            return Optional.empty();
+        }
+        if (file == null || file.isEmpty()) {
+            return Optional.empty();
+        }
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new IllegalArgumentException("Le fichier doit être une image.");
+        }
+        String storedPath;
+        try {
+            storedPath = storageService.store(file, "icons");
+        } catch (IOException ex) {
+            throw new IllegalStateException("Impossible d'enregistrer l'image.", ex);
+        }
+        String url = buildPublicUrl(storedPath);
+        Optional<ServiceIcon> existingByUrl = repo.findByUrl(url);
+        if (existingByUrl.isPresent() && !existingByUrl.get().getIdIcon().equals(id)) {
+            return Optional.empty();
+        }
+        ServiceIcon icon = existing.get();
+        icon.setUrl(url);
+        icon.setLabel(StringUtils.hasText(label) ? label.trim() : null);
+        ServiceIcon saved = repo.save(icon);
+        return Optional.of(toResponse(saved));
+    }
+
+    @Override
     public boolean delete(Integer id) {
         if (!repo.existsById(id)) {
             return false;
@@ -69,6 +158,11 @@ public class ServiceIconServiceImpl implements ServiceIconService {
 
     private String sanitizeUrl(String url) {
         return StringUtils.hasText(url) ? url.trim() : "";
+    }
+
+    private String buildPublicUrl(String storedPath) {
+        String cleanPath = storedPath.startsWith("/") ? storedPath.substring(1) : storedPath;
+        return filesBaseUrl + "/" + cleanPath;
     }
 
     private ServiceIconResponse toResponse(ServiceIcon icon) {
