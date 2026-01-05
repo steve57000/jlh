@@ -21,7 +21,7 @@ public class UploadsController {
         this.storageService = storageService;
     }
 
-    @GetMapping("/uploads/{path:**}")
+    @GetMapping("/uploads/{*path}")
     public ResponseEntity<Resource> serveUpload(@PathVariable("path") String path) throws IOException {
         if (!StringUtils.hasText(path)) {
             return ResponseEntity.notFound().build();
