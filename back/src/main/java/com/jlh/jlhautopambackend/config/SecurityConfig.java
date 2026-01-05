@@ -60,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/services/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/service-icons/**").permitAll()
 
                         // client
                         .requestMatchers(HttpMethod.POST, "/api/auth/resend-verification").authenticated()
@@ -90,6 +91,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,   "/api/services/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/services/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/services/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/api/service-icons/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/service-icons/**").hasRole("ADMIN")
 
                         // le reste doit être authentifié
                         .anyRequest().authenticated()
