@@ -15,10 +15,12 @@ public class ServiceServiceImpl implements ServiceService {
 
     private final ServiceRepository repo;
     private final ServiceMapper mapper;
+    private final ServiceIconService iconService;
 
-    public ServiceServiceImpl(ServiceRepository repo, ServiceMapper mapper) {
+    public ServiceServiceImpl(ServiceRepository repo, ServiceMapper mapper, ServiceIconService iconService) {
         this.repo   = repo;
         this.mapper = mapper;
+        this.iconService = iconService;
     }
 
     @Override
@@ -37,6 +39,7 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     public ServiceResponse create(ServiceRequest request) {
         Service toSave = mapper.toEntity(request);
+        iconService.ensureIconExists(toSave.getIcon());
         Service saved  = repo.save(toSave);
         return mapper.toResponse(saved);
     }
@@ -50,6 +53,7 @@ public class ServiceServiceImpl implements ServiceService {
                     existing.setIcon(request.getIcon());
                     existing.setPrixUnitaire(request.getPrixUnitaire());
                     existing.setQuantiteMax(request.getQuantiteMax());
+                    iconService.ensureIconExists(request.getIcon());
                     Service saved = repo.save(existing);
                     return mapper.toResponse(saved);
                 });
