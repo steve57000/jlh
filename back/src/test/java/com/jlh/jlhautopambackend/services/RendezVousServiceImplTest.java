@@ -211,7 +211,6 @@ class RendezVousServiceImplTest {
         when(creneauRepo.findById(2)).thenReturn(Optional.of(creneau));
         when(adminRepo.findById(3)).thenReturn(Optional.of(admin));
         when(statutRepo.findById("ST1")).thenReturn(Optional.of(statut));
-        when(clientRepository.findById(client.getIdClient())).thenReturn(Optional.of(client));
         when(mapper.toEntity(request)).thenReturn(entityWithoutRel);
         when(repo.save(entityWithoutRel)).thenReturn(savedEntity);
         when(mapper.toResponse(savedEntity)).thenReturn(response);

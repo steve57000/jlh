@@ -9,7 +9,6 @@ import com.jlh.jlhautopambackend.modeles.Demande;
 import com.jlh.jlhautopambackend.modeles.DemandeService;
 import com.jlh.jlhautopambackend.modeles.DemandeTimelineType;
 import com.jlh.jlhautopambackend.modeles.Devis;
-import com.jlh.jlhautopambackend.modeles.Client;
 import com.jlh.jlhautopambackend.modeles.RendezVous;
 import com.jlh.jlhautopambackend.modeles.StatutDemande;
 import com.jlh.jlhautopambackend.modeles.StatutRendezVous;
@@ -41,7 +40,6 @@ public class RendezVousServiceImpl implements RendezVousService {
     private final DevisRepository devisRepository;
     private final CreneauRepository creneauRepo;
     private final AdministrateurRepository adminRepo;
-    private final ClientRepository clientRepository;
     private final StatutRendezVousRepository statutRendezVousRepo;
     private final StatutDemandeRepository statutDemandeRepo;
     private final TypeDemandeRepository typeDemandeRepo;
@@ -59,7 +57,6 @@ public class RendezVousServiceImpl implements RendezVousService {
                                  DevisRepository devisRepository,
                                  CreneauRepository creneauRepo,
                                  AdministrateurRepository adminRepo,
-                                 ClientRepository clientRepository,
                                  StatutRendezVousRepository statutRendezVousRepo,
                                  StatutDemandeRepository statutDemandeRepo,
                                  TypeDemandeRepository typeDemandeRepo,
@@ -72,7 +69,6 @@ public class RendezVousServiceImpl implements RendezVousService {
         this.devisRepository = devisRepository;
         this.creneauRepo = creneauRepo;
         this.adminRepo = adminRepo;
-        this.clientRepository = clientRepository;
         this.statutRendezVousRepo = statutRendezVousRepo;
         this.statutDemandeRepo = statutDemandeRepo;
         this.typeDemandeRepo = typeDemandeRepo;
@@ -104,7 +100,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         Creneau creneau = resolveCreneau(req.getCreneauId());
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
-        Client client = resolveClient(req.getClientId(), clientId, demande);
+        validateClient(req.getClientId(), clientId, demande);
 
         if (demande.getTypeDemande() == null || !TYPE_LIBRE.equals(demande.getTypeDemande().getCodeType())) {
             if (demande.getTypeDemande() != null) {
@@ -118,7 +114,6 @@ public class RendezVousServiceImpl implements RendezVousService {
 
         RendezVous ent = mapper.toEntity(req);
         ent.setDemande(demande);
-        ent.setClient(client);
         ent.setCreneau(creneau);
         ent.setAdministrateur(admin);
         ent.setStatut(statutRdv);
@@ -142,12 +137,11 @@ public class RendezVousServiceImpl implements RendezVousService {
         Creneau creneau = resolveCreneau(req.getCreneauId());
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
-        Client client = resolveClient(req.getClientId(), clientId, demande);
+        validateClient(req.getClientId(), clientId, demande);
 
         RendezVous ent = mapper.toEntity(req);
         ent.setDemande(demande);
         ent.setDemandeService(demandeService);
-        ent.setClient(client);
         ent.setCreneau(creneau);
         ent.setAdministrateur(admin);
         ent.setStatut(statutRdv);
@@ -167,12 +161,11 @@ public class RendezVousServiceImpl implements RendezVousService {
         Creneau creneau = resolveCreneau(req.getCreneauId());
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
-        Client client = resolveClient(req.getClientId(), clientId, demande);
+        validateClient(req.getClientId(), clientId, demande);
 
         RendezVous ent = mapper.toEntity(req);
         ent.setDemande(demande);
         ent.setDevis(devis);
-        ent.setClient(client);
         ent.setCreneau(creneau);
         ent.setAdministrateur(admin);
         ent.setStatut(statutRdv);
@@ -258,21 +251,18 @@ public class RendezVousServiceImpl implements RendezVousService {
                 .orElseThrow(() -> new IllegalArgumentException("Statut RDV introuvable: " + codeStatut));
     }
 
-    private Client resolveClient(Integer requestClientId, Integer authClientId, Demande demande) {
+    private void validateClient(Integer requestClientId, Integer authClientId, Demande demande) {
         Integer resolvedId = requestClientId != null ? requestClientId : authClientId;
         if (resolvedId == null && demande != null && demande.getClient() != null) {
-            return demande.getClient();
+            return;
         }
         if (resolvedId == null) {
             throw new IllegalArgumentException("Client requis pour le rendez-vous.");
         }
-        Client client = clientRepository.findById(resolvedId)
-                .orElseThrow(() -> new IllegalArgumentException("Client introuvable: " + resolvedId));
         if (demande != null && demande.getClient() != null
-                && !demande.getClient().getIdClient().equals(client.getIdClient())) {
+                && !demande.getClient().getIdClient().equals(resolvedId)) {
             throw new IllegalArgumentException("Le client ne correspond pas à la demande.");
         }
-        return client;
     }
 
     private void assertPriceValidated(Demande demande) {
