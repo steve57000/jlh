@@ -8,7 +8,7 @@ import com.jlh.jlhautopambackend.dto.ProchainRdvDto;
 import java.util.List;
 import java.util.Optional;
 
-public interface DemandeService {
+public interface DemandeWorkflowService {
 
     ClientStatsDto findStatsByClientId(Integer clientId);
     java.util.Optional<ProchainRdvDto> findProchainRdvByClientId(Integer clientId);

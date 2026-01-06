@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class DemandeServiceImpl implements DemandeService {
+public class DemandeServiceImpl implements DemandeWorkflowService {
     private static final String TYPE_DEFAULT = "Devis";
     private static final String STATUT_BROUILLON = "Brouillon";
     private static final String STATUT_EN_ATTENTE = "En_attente";
