@@ -10,6 +10,7 @@ import com.jlh.jlhautopambackend.modeles.DemandeService;
 import com.jlh.jlhautopambackend.modeles.DemandeTimelineType;
 import com.jlh.jlhautopambackend.modeles.Devis;
 import com.jlh.jlhautopambackend.modeles.RendezVous;
+import com.jlh.jlhautopambackend.modeles.StatutCreneau;
 import com.jlh.jlhautopambackend.modeles.StatutDemande;
 import com.jlh.jlhautopambackend.modeles.StatutRendezVous;
 import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
@@ -20,6 +21,7 @@ import com.jlh.jlhautopambackend.repository.DemandeServiceRepository;
 import com.jlh.jlhautopambackend.repository.DemandeTimelineRepository;
 import com.jlh.jlhautopambackend.repository.DevisRepository;
 import com.jlh.jlhautopambackend.repository.RendezVousRepository;
+import com.jlh.jlhautopambackend.repository.StatutCreneauRepository;
 import com.jlh.jlhautopambackend.repository.StatutDemandeRepository;
 import com.jlh.jlhautopambackend.repository.StatutRendezVousRepository;
 import com.jlh.jlhautopambackend.repository.TypeDemandeRepository;
@@ -40,6 +42,7 @@ public class RendezVousServiceImpl implements RendezVousService {
     private final DevisRepository devisRepository;
     private final CreneauRepository creneauRepo;
     private final AdministrateurRepository adminRepo;
+    private final StatutCreneauRepository statutCreneauRepo;
     private final StatutRendezVousRepository statutRendezVousRepo;
     private final StatutDemandeRepository statutDemandeRepo;
     private final TypeDemandeRepository typeDemandeRepo;
@@ -50,6 +53,7 @@ public class RendezVousServiceImpl implements RendezVousService {
     private static final String STATUT_BROUILLON  = "Brouillon";
     private static final String STATUT_EN_ATTENTE = "En_attente";
     private static final String TYPE_LIBRE        = "Libre";
+    private static final String STATUT_CRENEAU_RESERVE = "Reserve";
 
     public RendezVousServiceImpl(RendezVousRepository repo,
                                  DemandeRepository demandeRepo,
@@ -57,6 +61,7 @@ public class RendezVousServiceImpl implements RendezVousService {
                                  DevisRepository devisRepository,
                                  CreneauRepository creneauRepo,
                                  AdministrateurRepository adminRepo,
+                                 StatutCreneauRepository statutCreneauRepo,
                                  StatutRendezVousRepository statutRendezVousRepo,
                                  StatutDemandeRepository statutDemandeRepo,
                                  TypeDemandeRepository typeDemandeRepo,
@@ -69,6 +74,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         this.devisRepository = devisRepository;
         this.creneauRepo = creneauRepo;
         this.adminRepo = adminRepo;
+        this.statutCreneauRepo = statutCreneauRepo;
         this.statutRendezVousRepo = statutRendezVousRepo;
         this.statutDemandeRepo = statutDemandeRepo;
         this.typeDemandeRepo = typeDemandeRepo;
@@ -97,7 +103,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         if (demande == null) {
             throw new IllegalArgumentException("Demande libre requise pour créer un rendez-vous.");
         }
-        Creneau creneau = resolveCreneau(req.getCreneauId());
+        Creneau creneau = resolveCreneau(req);
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
         validateClient(req.getClientId(), clientId, demande);
@@ -134,7 +140,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         Demande demande = demandeService.getDemande();
         assertPriceValidated(demande);
 
-        Creneau creneau = resolveCreneau(req.getCreneauId());
+        Creneau creneau = resolveCreneau(req);
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
         validateClient(req.getClientId(), clientId, demande);
@@ -158,7 +164,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         Demande demande = devis.getDemande();
         assertPriceValidated(demande);
 
-        Creneau creneau = resolveCreneau(req.getCreneauId());
+        Creneau creneau = resolveCreneau(req);
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
         validateClient(req.getClientId(), clientId, demande);
@@ -182,8 +188,12 @@ public class RendezVousServiceImpl implements RendezVousService {
                 existing.setDemande(demandeRepo.findById(req.getDemandeId())
                         .orElseThrow(() -> new IllegalArgumentException("Demande introuvable: " + req.getDemandeId())));
             }
-            existing.setCreneau(resolveCreneau(req.getCreneauId()));
-            existing.setAdministrateur(resolveAdmin(req.getAdministrateurId()));
+            if (req.getCreneauId() != null || (req.getDateDebut() != null && req.getDateFin() != null)) {
+                existing.setCreneau(resolveCreneau(req));
+            }
+            if (req.getAdministrateurId() != null) {
+                existing.setAdministrateur(resolveAdmin(req.getAdministrateurId()));
+            }
             existing.setStatut(resolveStatut(req.getCodeStatut()));
             if (req.getCommentaire() != null) {
                 existing.setCommentaire(req.getCommentaire());
@@ -236,12 +246,29 @@ public class RendezVousServiceImpl implements RendezVousService {
                 .orElseThrow(() -> new IllegalArgumentException("Demande introuvable: " + demandeId));
     }
 
-    private Creneau resolveCreneau(Integer creneauId) {
-        return creneauRepo.findById(creneauId)
-                .orElseThrow(() -> new IllegalArgumentException("Creneau introuvable: " + creneauId));
+    private Creneau resolveCreneau(RendezVousRequest request) {
+        Integer creneauId = request.getCreneauId();
+        if (creneauId != null) {
+            return creneauRepo.findById(creneauId)
+                    .orElseThrow(() -> new IllegalArgumentException("Creneau introuvable: " + creneauId));
+        }
+        if (request.getDateDebut() == null || request.getDateFin() == null) {
+            throw new IllegalArgumentException("Creneau requis pour le rendez-vous.");
+        }
+        StatutCreneau statut = statutCreneauRepo.findById(STATUT_CRENEAU_RESERVE)
+                .orElseThrow(() -> new IllegalStateException("Statut creneau 'Reserve' manquant"));
+        Creneau creneau = Creneau.builder()
+                .dateDebut(request.getDateDebut())
+                .dateFin(request.getDateFin())
+                .statut(statut)
+                .build();
+        return creneauRepo.save(creneau);
     }
 
     private Administrateur resolveAdmin(Integer adminId) {
+        if (adminId == null) {
+            throw new IllegalArgumentException("Administrateur requis pour le rendez-vous.");
+        }
         return adminRepo.findById(adminId)
                 .orElseThrow(() -> new IllegalArgumentException("Administrateur introuvable: " + adminId));
     }

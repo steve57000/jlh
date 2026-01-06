@@ -3,6 +3,7 @@ package com.jlh.jlhautopambackend.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jlh.jlhautopambackend.dto.RendezVousRequest;
 import com.jlh.jlhautopambackend.dto.RendezVousResponse;
+import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
 import com.jlh.jlhautopambackend.services.RendezVousService;
 import com.jlh.jlhautopambackend.config.JwtAuthenticationFilter;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
@@ -35,6 +36,7 @@ class RendezVousControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockitoBean private RendezVousService service;
+    @MockitoBean private AdministrateurRepository adminRepository;
     @MockitoBean private AuthenticatedClientResolver clientResolver;
     // mocks JWT pour bypasser le filtre
     @MockitoBean private JwtUtil jwtUtil;

@@ -23,6 +23,8 @@ public interface RendezVousMapper {
     @Mapping(target = "devisId",         source = "entity.devis.idDevis")
     @Mapping(target = "clientId",        source = "entity.demande.client.idClient")
     @Mapping(target = "creneauId",       source = "entity.creneau.idCreneau")
+    @Mapping(target = "dateDebut",       source = "entity.creneau.dateDebut")
+    @Mapping(target = "dateFin",         source = "entity.creneau.dateFin")
     @Mapping(target = "administrateurId",source = "entity.administrateur.idAdmin")
     @Mapping(target = "statut",          expression = "java(toDtoStatut(entity.getStatut()))")
     @Mapping(target = "commentaire",     source = "entity.commentaire")

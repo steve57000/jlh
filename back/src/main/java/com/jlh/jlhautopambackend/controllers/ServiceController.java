@@ -1,6 +1,7 @@
 package com.jlh.jlhautopambackend.controllers;
 
 import com.jlh.jlhautopambackend.dto.*;
+import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
 import com.jlh.jlhautopambackend.services.RendezVousService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.services.ServiceService;
@@ -21,13 +22,16 @@ public class ServiceController {
     private final ServiceService service;
     private final RendezVousService rendezVousService;
     private final AuthenticatedClientResolver clientResolver;
+    private final AdministrateurRepository adminRepository;
 
     public ServiceController(ServiceService service,
                              RendezVousService rendezVousService,
-                             AuthenticatedClientResolver clientResolver) {
+                             AuthenticatedClientResolver clientResolver,
+                             AdministrateurRepository adminRepository) {
         this.service = service;
         this.rendezVousService = rendezVousService;
         this.clientResolver = clientResolver;
+        this.adminRepository = adminRepository;
     }
 
     @GetMapping
@@ -78,6 +82,9 @@ public class ServiceController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
         if (isClient) {
             clientId = clientResolver.requireCurrentClient(auth).getIdClient();
+        } else if (req.getAdministrateurId() == null && auth != null) {
+            adminRepository.findByEmail(auth.getName())
+                    .ifPresent(admin -> req.setAdministrateurId(admin.getIdAdmin()));
         }
         RendezVousResponse resp = rendezVousService.createForService(id, req, clientId);
         return ResponseEntity

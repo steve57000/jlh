@@ -4,6 +4,7 @@ import com.jlh.jlhautopambackend.dto.DevisRequest;
 import com.jlh.jlhautopambackend.dto.DevisResponse;
 import com.jlh.jlhautopambackend.dto.RendezVousRequest;
 import com.jlh.jlhautopambackend.dto.RendezVousResponse;
+import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
 import com.jlh.jlhautopambackend.services.RendezVousService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.services.DevisService;
@@ -24,13 +25,16 @@ public class DevisController {
     private final DevisService service;
     private final RendezVousService rendezVousService;
     private final AuthenticatedClientResolver clientResolver;
+    private final AdministrateurRepository adminRepository;
 
     public DevisController(DevisService service,
                            RendezVousService rendezVousService,
-                           AuthenticatedClientResolver clientResolver) {
+                           AuthenticatedClientResolver clientResolver,
+                           AdministrateurRepository adminRepository) {
         this.service = service;
         this.rendezVousService = rendezVousService;
         this.clientResolver = clientResolver;
+        this.adminRepository = adminRepository;
     }
 
     @GetMapping
@@ -90,6 +94,9 @@ public class DevisController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
         if (isClient) {
             clientId = clientResolver.requireCurrentClient(auth).getIdClient();
+        } else if (req.getAdministrateurId() == null && auth != null) {
+            adminRepository.findByEmail(auth.getName())
+                    .ifPresent(admin -> req.setAdministrateurId(admin.getIdAdmin()));
         }
         RendezVousResponse resp = rendezVousService.createForDevis(id, req, clientId);
         return ResponseEntity
