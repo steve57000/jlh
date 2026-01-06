@@ -26,4 +26,6 @@ public class DevisRequest {
 
     /** Montant des pièces */
     private BigDecimal montantPieces;
+
+    private Integer rendezVousId;
 }

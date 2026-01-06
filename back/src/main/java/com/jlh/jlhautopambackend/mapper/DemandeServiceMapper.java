@@ -11,6 +11,7 @@ public interface DemandeServiceMapper {
     @Mapping(source = "request.serviceId",  target = "id.idService")
     @Mapping(source = "request.quantite",   target = "quantite")
     @Mapping(source = "request.prixUnitaire", target = "prixUnitaireService")
+    @Mapping(source = "request.rendezVousId", target = "rendezVousId")
     @Mapping(target = "demande", ignore = true) // on les pose en service
     @Mapping(target = "service", ignore = true)
     DemandeService toEntity(DemandeServiceRequest request);
@@ -20,6 +21,7 @@ public interface DemandeServiceMapper {
     @Mapping(source = "entity.libelleService", target = "libelle")
     @Mapping(source = "entity.descriptionService", target = "description")
     @Mapping(source = "entity.prixUnitaireService", target = "prixUnitaire")
+    @Mapping(source = "entity.rendezVousId", target = "rendezVousId")
     DemandeServiceResponse toDto(DemandeService entity);
 
     @AfterMapping

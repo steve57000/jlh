@@ -35,4 +35,7 @@ public class Devis {
     /** Montant des pièces (optionnel, somme des lignes de services) */
     @Column(name = "montant_pieces", precision = 12, scale = 2)
     private BigDecimal montantPieces;
+
+    @Column(name = "id_rdv")
+    private Integer rendezVousId;
 }

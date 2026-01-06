@@ -50,6 +50,9 @@ public class DevisServiceImpl implements DevisService {
 
         Devis entity = mapper.toEntity(request);
         entity.setDemande(demande);
+        if (request.getRendezVousId() != null) {
+            entity.setRendezVousId(request.getRendezVousId());
+        }
 
         if (entity.getDateDevis() == null) {
             entity.setDateDevis(Instant.now());
@@ -89,6 +92,9 @@ public class DevisServiceImpl implements DevisService {
                         BigDecimal main = existing.getMontantMainOeuvre() != null ? existing.getMontantMainOeuvre() : BigDecimal.ZERO;
                         BigDecimal pieces = existing.getMontantPieces() != null ? existing.getMontantPieces() : BigDecimal.ZERO;
                         existing.setMontantTotal(main.add(pieces));
+                    }
+                    if (request.getRendezVousId() != null) {
+                        existing.setRendezVousId(request.getRendezVousId());
                     }
 
                     Devis updated = devisRepo.save(existing);

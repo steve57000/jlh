@@ -12,4 +12,5 @@ public class DemandeServiceResponse {
     private String libelle;
     private String description;
     private java.math.BigDecimal prixUnitaire;
+    private Integer rendezVousId;
 }
