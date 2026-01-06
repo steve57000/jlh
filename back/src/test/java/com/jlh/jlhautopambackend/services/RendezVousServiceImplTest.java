@@ -30,6 +30,7 @@ class RendezVousServiceImplTest {
     @Mock private DevisRepository devisRepository;
     @Mock private CreneauRepository creneauRepo;
     @Mock private AdministrateurRepository adminRepo;
+    @Mock private ClientRepository clientRepository;
     @Mock private StatutRendezVousRepository statutRepo;
     @Mock private StatutDemandeRepository statutDemandeRepo;
     @Mock private TypeDemandeRepository typeDemandeRepo;

@@ -13,6 +13,7 @@ import com.jlh.jlhautopambackend.modeles.RendezVous;
 import com.jlh.jlhautopambackend.modeles.StatutDemande;
 import com.jlh.jlhautopambackend.modeles.StatutRendezVous;
 import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
+import com.jlh.jlhautopambackend.repository.ClientRepository;
 import com.jlh.jlhautopambackend.repository.CreneauRepository;
 import com.jlh.jlhautopambackend.repository.DemandeRepository;
 import com.jlh.jlhautopambackend.repository.DemandeServiceRepository;
