@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.jlh.jlhautopambackend.modeles.Demande;
-import com.jlh.jlhautopambackend.modeles.DemandeService;
 import com.jlh.jlhautopambackend.modeles.DemandeServiceKey;
 import com.jlh.jlhautopambackend.repository.DemandeRepository;
 import com.jlh.jlhautopambackend.repository.DemandeServiceRepository;
@@ -86,7 +85,7 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
             return mapper.toDto(dsRepo.save(existing));
         }
 
-        DemandeService entity = mapper.toEntity(req);
+        com.jlh.jlhautopambackend.modeles.DemandeService entity = mapper.toEntity(req);
         // defaults robustes
         entity.setQuantite(requestedQty);
         entity.setDemande(demande);
@@ -122,10 +121,7 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
                     } else if (req.getPrixUnitaire() != null) {
                         entity.setPrixUnitaireService(req.getPrixUnitaire());
                     }
-                    if (req.getRendezVousId() != null) {
-                        entity.setRendezVousId(req.getRendezVousId());
-                    }
-                    DemandeService saved = dsRepo.save(entity);
+                    com.jlh.jlhautopambackend.modeles.DemandeService saved = dsRepo.save(entity);
                     return mapper.toDto(saved);
                 });
     }
