@@ -3,6 +3,7 @@ package com.jlh.jlhautopambackend.controllers;
 import com.jlh.jlhautopambackend.dto.DemandeTimelineEntryDto;
 import com.jlh.jlhautopambackend.dto.DemandeTimelineRequest;
 import com.jlh.jlhautopambackend.modeles.Client;
+import com.jlh.jlhautopambackend.modeles.Demande;
 import com.jlh.jlhautopambackend.services.DemandeTimelineService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.repository.DemandeRepository;
@@ -57,5 +58,30 @@ public class DemandeTimelineController {
         String actorEmail = auth != null ? auth.getName() : null;
         DemandeTimelineEntryDto dto = timelineService.logAdminEvent(demandeId, request, actorEmail);
         return ResponseEntity.status(201).body(dto);
+    }
+
+    @PostMapping("/validation-prix")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<Void> validatePrice(@PathVariable Integer demandeId,
+                                              @Valid @RequestBody DemandeTimelineRequest request,
+                                              Authentication auth) {
+        Client client = clientResolver.requireCurrentClient(auth);
+        boolean owns = demandeRepository.existsByIdDemandeAndClient_IdClient(demandeId, client.getIdClient());
+        if (!owns) {
+            return ResponseEntity.status(403).build();
+        }
+        if (request.getMontantValide() == null || request.getType() != com.jlh.jlhautopambackend.modeles.DemandeTimelineType.MONTANT) {
+            return ResponseEntity.badRequest().build();
+        }
+        Demande demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Demande introuvable"));
+        timelineService.logMontantValidation(
+                demande,
+                request.getMontantValide(),
+                request.getCommentaire(),
+                client.getEmail(),
+                "CLIENT"
+        );
+        return ResponseEntity.status(201).build();
     }
 }
