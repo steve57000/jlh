@@ -6,7 +6,7 @@ import com.jlh.jlhautopambackend.dto.DemandeResponse;
 import com.jlh.jlhautopambackend.dto.DemandeTimelineEntryDto;
 import com.jlh.jlhautopambackend.dto.ProchainRdvDto;
 import com.jlh.jlhautopambackend.modeles.Client;
-import com.jlh.jlhautopambackend.services.DemandeService;
+import com.jlh.jlhautopambackend.services.DemandeWorkflowService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +22,10 @@ import java.util.Map;
 @RequestMapping("/api/demandes")
 public class DemandeController {
 
-    private final DemandeService service;
+    private final DemandeWorkflowService service;
     private final AuthenticatedClientResolver clientResolver;
 
-    public DemandeController(DemandeService service,
+    public DemandeController(DemandeWorkflowService service,
                              AuthenticatedClientResolver clientResolver) {
         this.service = service;
         this.clientResolver = clientResolver;

@@ -45,6 +45,9 @@ public class Demande {
     @OneToOne(mappedBy = "demande") // ou @OneToOne @JoinColumn(name="id_demande") selon ton modèle
     private RendezVous rendezVous;
 
+    @OneToOne(mappedBy = "demande")
+    private Devis devis;
+
     @OneToMany(mappedBy = "demande") // via DemandeService.id.idDemande
     private Set<DemandeService> services;
 
