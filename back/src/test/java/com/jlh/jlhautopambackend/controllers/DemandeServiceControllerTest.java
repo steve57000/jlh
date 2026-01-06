@@ -94,7 +94,13 @@ class DemandeServiceControllerTest {
 
     @Test @DisplayName("POST ➔ 201")
     void testCreate() throws Exception {
-        DemandeServiceRequest req = new DemandeServiceRequest(5, 50, 3, null);
+        DemandeServiceRequest req = DemandeServiceRequest.builder()
+                .demandeId(5)
+                .serviceId(50)
+                .quantite(3)
+                .prixUnitaire(null)
+                .rendezVousId(null)
+                .build();
         DemandeServiceKeyDto key = new DemandeServiceKeyDto(5,50);
         DemandeServiceResponse created = DemandeServiceResponse.builder()
                 .id(key)
@@ -120,7 +126,13 @@ class DemandeServiceControllerTest {
 
     @Test @DisplayName("PUT ➔ 200")
     void testUpdate() throws Exception {
-        DemandeServiceRequest req = new DemandeServiceRequest(null, null, 9, null);
+        DemandeServiceRequest req = DemandeServiceRequest.builder()
+                .demandeId(null)
+                .serviceId(null)
+                .quantite(9)
+                .prixUnitaire(null)
+                .rendezVousId(null)
+                .build();
         DemandeServiceKeyDto key = new DemandeServiceKeyDto(7,70);
         DemandeServiceResponse updated = DemandeServiceResponse.builder()
                 .id(key)
