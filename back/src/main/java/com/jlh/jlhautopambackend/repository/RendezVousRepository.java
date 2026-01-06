@@ -13,15 +13,14 @@ import java.util.Optional;
 public interface RendezVousRepository extends JpaRepository<RendezVous, Integer> {
 
     // ✅ chemins d’associations corrects
-    boolean existsByDemande_IdDemande(Integer idDemande);
     boolean existsByCreneau_IdCreneau(Integer idCreneau);
 
     @Query("""
       select rv from RendezVous rv
-        join rv.demande d
+        join rv.client c
         join fetch rv.statut rvs
         join fetch rv.creneau cr
-      where d.client.idClient = :clientId
+      where c.idClient = :clientId
         and cr.dateDebut >= :now
       order by cr.dateDebut asc
     """)
@@ -30,9 +29,9 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
 
     @Query("""
       select count(rv) from RendezVous rv
-        join rv.demande d
+        join rv.client c
         join rv.creneau cr
-      where d.client.idClient = :clientId
+      where c.idClient = :clientId
         and cr.dateDebut >= :now
     """)
     long countUpcomingByClientId(@Param("clientId") Integer clientId,
@@ -40,12 +39,21 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
 
     @Query("""
       select rv from RendezVous rv
-        join rv.demande d
+        join rv.client c
         join fetch rv.statut
         join fetch rv.creneau
       where rv.idRdv = :rdvId
-        and d.client.idClient = :clientId
+        and c.idClient = :clientId
     """)
     Optional<RendezVous> findByIdAndClient(@Param("rdvId") Integer rdvId,
                                            @Param("clientId") Integer clientId);
+
+    long countByClient_IdClientAndDemandeServiceIsNullAndDevisIsNull(Integer clientId);
+
+    @Query("""
+      select count(rv) from RendezVous rv
+      where rv.client.idClient = :clientId
+        and (rv.demandeService is not null or rv.devis is not null)
+    """)
+    long countLinkedByClientId(@Param("clientId") Integer clientId);
 }

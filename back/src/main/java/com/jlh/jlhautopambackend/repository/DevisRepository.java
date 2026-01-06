@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DevisRepository extends JpaRepository<Devis, Integer> {
+    java.util.Optional<Devis> findByDemande_IdDemande(Integer idDemande);
 }

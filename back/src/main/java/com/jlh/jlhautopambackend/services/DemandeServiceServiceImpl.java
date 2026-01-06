@@ -76,6 +76,9 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
             existing.setQuantite(q);
             existing.setLibelleService(serviceEntity.getLibelle());
             existing.setDescriptionService(serviceEntity.getDescription());
+            if (req.getRendezVousId() != null) {
+                existing.setRendezVousId(req.getRendezVousId());
+            }
             if (req.getPrixUnitaire() != null) {
                 existing.setPrixUnitaireService(req.getPrixUnitaire());
             }
@@ -90,6 +93,9 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
         entity.snapshotFromService(serviceEntity);
         if (req.getPrixUnitaire() != null) {
             entity.setPrixUnitaireService(req.getPrixUnitaire());
+        }
+        if (req.getRendezVousId() != null) {
+            entity.setRendezVousId(req.getRendezVousId());
         }
 
         return mapper.toDto(dsRepo.save(entity));

@@ -15,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rendezvous")
+@PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
 public class RendezVousController {
 
     private final RendezVousService service;
@@ -41,8 +42,15 @@ public class RendezVousController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
-    public ResponseEntity<RendezVousResponse> create(@Valid @RequestBody RendezVousRequest req) {
-        RendezVousResponse resp = service.create(req);
+    public ResponseEntity<RendezVousResponse> create(@Valid @RequestBody RendezVousRequest req,
+                                                     Authentication auth) {
+        Integer clientId = null;
+        boolean isClient = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
+        if (isClient) {
+            clientId = clientResolver.requireCurrentClient(auth).getIdClient();
+        }
+        RendezVousResponse resp = service.createLibre(req, clientId);
         return ResponseEntity
                 .created(URI.create("/api/rendezvous/" + resp.getIdRdv()))
                 .body(resp);

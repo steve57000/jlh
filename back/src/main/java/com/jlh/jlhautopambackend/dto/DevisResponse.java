@@ -27,4 +27,6 @@ public class DevisResponse {
 
     /** Montant spécifique des pièces */
     private BigDecimal montantPieces;
+
+    private Integer rendezVousId;
 }

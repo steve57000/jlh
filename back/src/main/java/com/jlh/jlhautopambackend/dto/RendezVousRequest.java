@@ -9,8 +9,7 @@ import lombok.*;
 @Builder
 public class RendezVousRequest {
 
-    /** Id de la demande (en Brouillon au moment de la création du RDV). */
-    @NotNull
+    /** Id de la demande (optionnel pour les rendez-vous libres). */
     private Integer demandeId;
 
     /** Id du créneau choisi par le client (matin/après-midi ⇒ tu mappes vers un Creneau en base). */
@@ -24,4 +23,10 @@ public class RendezVousRequest {
     /** Code du statut RDV initial (ex: "Confirme", "Reporte", "Annule"). */
     @NotNull
     private String codeStatut;
+
+    /** Identifiant du client (utile pour un admin qui crée un rendez-vous). */
+    private Integer clientId;
+
+    /** Commentaire associé au rendez-vous. */
+    private String commentaire;
 }

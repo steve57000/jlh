@@ -19,4 +19,6 @@ public interface DemandeServiceRepository extends JpaRepository<DemandeService, 
     boolean existsByService_IdService(Integer idService);
 
     List<DemandeService> findByService_IdService(Integer idService);
+
+    java.util.Optional<DemandeService> findByDemande_IdDemandeAndService_IdService(Integer demandeId, Integer serviceId);
 }

@@ -21,6 +21,7 @@ public class DemandeServiceDto {
     private Integer quantiteMax;
     private String privateNoteService;
     private Instant dateHeureService;
+    private Integer rendezVousId;
 
     public String getLibelle() {
         return libelle != null ? libelle : libelleService;
