@@ -22,4 +22,8 @@ public class DemandeResponse {
     private List<DemandeDocumentDto> documents;
 
     private List<DemandeTimelineEntryDto> timeline;
+
+    private DevisResponse devis;
+
+    private RendezVousResponse rendezVous;
 }

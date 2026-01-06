@@ -11,6 +11,7 @@ public interface DevisMapper {
 
     @Mapping(target = "idDevis", ignore = true)
     @Mapping(target = "demande", ignore = true)
+    @Mapping(target = "rendezVousId", source = "dto.rendezVousId")
     Devis toEntity(DevisRequest dto);
     // montantTotal, montantMainOeuvre, montantPieces, dateDevis
     // seront mappés automatiquement par nom si présents dans DevisRequest
@@ -21,5 +22,6 @@ public interface DevisMapper {
     @Mapping(target = "montantTotal", source = "entity.montantTotal")
     @Mapping(target = "montantMainOeuvre", source = "entity.montantMainOeuvre")
     @Mapping(target = "montantPieces", source = "entity.montantPieces")
+    @Mapping(target = "rendezVousId", source = "entity.rendezVousId")
     DevisResponse toResponse(Devis entity);
 }

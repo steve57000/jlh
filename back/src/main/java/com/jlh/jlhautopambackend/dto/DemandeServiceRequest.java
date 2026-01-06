@@ -15,4 +15,5 @@ public class DemandeServiceRequest {
     private Integer quantite;
     @JsonAlias("prixUnitaireService")
     private BigDecimal prixUnitaire;
+    private Integer rendezVousId;
 }

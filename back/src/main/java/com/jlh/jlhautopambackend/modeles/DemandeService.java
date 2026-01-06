@@ -46,6 +46,9 @@ public class DemandeService {
     @Column(name = "prix_unitaire_service", nullable = false, precision = 10, scale = 2)
     private BigDecimal prixUnitaireService;
 
+    @Column(name = "id_rdv")
+    private Integer rendezVousId;
+
     public void snapshotFromService(Service source) {
         if (source == null) {
             return;
@@ -55,4 +58,3 @@ public class DemandeService {
         this.prixUnitaireService = source.getPrixUnitaire();
     }
 }
-

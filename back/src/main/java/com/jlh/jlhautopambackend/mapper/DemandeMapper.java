@@ -23,6 +23,8 @@ public interface DemandeMapper {
     @Mapping(target = "services", source = "services")
     @Mapping(target = "documents", source = "documents")
     @Mapping(target = "timeline", source = "timelineEntries")
+    @Mapping(target = "devis", ignore = true)
+    @Mapping(target = "rendezVous", ignore = true)
     DemandeResponse toResponse(
             Demande ent,
             @Context UserService userService
@@ -71,6 +73,7 @@ public interface DemandeMapper {
     @Mapping(target = "quantiteMax", source = "service.quantiteMax")
     @Mapping(target = "privateNoteService", ignore = true)
     @Mapping(target = "dateHeureService", ignore = true)
+    @Mapping(target = "rendezVousId", source = "rendezVousId")
     DemandeServiceDto toDemandeServiceDto(DemandeService ds);
 
     @AfterMapping
@@ -124,6 +127,7 @@ public interface DemandeMapper {
     @Mapping(target = "services", ignore = true)
     @Mapping(target = "documents", ignore = true)
     @Mapping(target = "rendezVous", ignore = true)
+    @Mapping(target = "devis", ignore = true)
     @Mapping(target = "timelineEntries", ignore = true)
     Demande toEntity(DemandeRequest req);
 }
