@@ -9,7 +9,9 @@ import java.util.Optional;
 public interface RendezVousService {
     List<RendezVousResponse> findAll();
     Optional<RendezVousResponse> findById(Integer id);
-    RendezVousResponse create(RendezVousRequest request);
+    RendezVousResponse createLibre(RendezVousRequest request, Integer clientId);
+    RendezVousResponse createForService(Integer serviceId, RendezVousRequest request, Integer clientId);
+    RendezVousResponse createForDevis(Integer devisId, RendezVousRequest request, Integer clientId);
     Optional<RendezVousResponse> update(Integer id, RendezVousRequest request);
     boolean delete(Integer id);
 

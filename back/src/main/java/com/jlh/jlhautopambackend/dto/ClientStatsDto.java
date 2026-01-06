@@ -8,4 +8,9 @@ public class ClientStatsDto {
     private long traitees;
     private long annulees;
     private long rdvAvenir;
+    private long demandesLibres;
+    private long demandesService;
+    private long demandesDevis;
+    private long rdvLies;
+    private long rdvNonLies;
 }

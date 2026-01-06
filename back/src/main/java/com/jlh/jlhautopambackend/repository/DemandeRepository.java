@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface DemandeRepository extends JpaRepository<Demande, Integer> {
 
     long countByClient_IdClientAndStatutDemande_CodeStatut(Integer clientId, String codeStatut);
+    long countByClient_IdClientAndTypeDemande_CodeType(Integer clientId, String codeType);
     List<Demande> findByClient_IdClientOrderByDateDemandeDesc(Integer clientId);
 
     @EntityGraph(attributePaths = {

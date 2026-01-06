@@ -10,9 +10,24 @@ public class RendezVous {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idRdv;
 
-    @OneToOne(optional = false)
-    @JoinColumn(name = "id_demande", unique = true, nullable = false)
+    @OneToOne(optional = true)
+    @JoinColumn(name = "id_demande", unique = true)
     private Demande demande;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "id_demande_service", referencedColumnName = "id_demande"),
+            @JoinColumn(name = "id_service", referencedColumnName = "id_service")
+    })
+    private DemandeService demandeService;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_devis")
+    private Devis devis;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_client", nullable = false)
+    private Client client;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_admin", nullable = false)

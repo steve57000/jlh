@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DemandeTimelineRepository extends JpaRepository<DemandeTimeline, Long> {
+    boolean existsByDemande_IdDemandeAndType(Integer demandeId, com.jlh.jlhautopambackend.modeles.DemandeTimelineType type);
 }

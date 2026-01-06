@@ -34,6 +34,9 @@ public class DemandeServiceImpl implements DemandeService {
     private static final String STATUT_EN_ATTENTE = "En_attente";
     private static final String STATUT_TRAITEE = "Traitee";
     private static final String STATUT_ANNULEE = "Annulee";
+    private static final String TYPE_LIBRE = "Libre";
+    private static final String TYPE_SERVICE = "Service";
+    private static final String TYPE_DEVIS = "Devis";
 
     private final DemandeRepository repository;
     private final ClientRepository clientRepo;
@@ -73,7 +76,13 @@ public class DemandeServiceImpl implements DemandeService {
         long traitees = repository.countByClient_IdClientAndStatutDemande_CodeStatut(clientId, STATUT_TRAITEE);
         long annulees = repository.countByClient_IdClientAndStatutDemande_CodeStatut(clientId, STATUT_ANNULEE);
         long rdvAvenir = rendezVousRepository.countUpcomingByClientId(clientId, Instant.now());
-        return new ClientStatsDto(enAttente, traitees, annulees, rdvAvenir);
+        long demandesLibres = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_LIBRE);
+        long demandesService = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_SERVICE);
+        long demandesDevis = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_DEVIS);
+        long rdvNonLies = rendezVousRepository.countByClient_IdClientAndDemandeServiceIsNullAndDevisIsNull(clientId);
+        long rdvLies = rendezVousRepository.countLinkedByClientId(clientId);
+        return new ClientStatsDto(enAttente, traitees, annulees, rdvAvenir,
+                demandesLibres, demandesService, demandesDevis, rdvLies, rdvNonLies);
     }
 
     @Override
@@ -315,6 +324,15 @@ public class DemandeServiceImpl implements DemandeService {
                 if (client.getNom() != null) {
                     sb.append(client.getNom());
                 }
+            }
+        } else if (rendezVous.getClient() != null) {
+            Client client = rendezVous.getClient();
+            sb.append("Client ");
+            if (client.getPrenom() != null) {
+                sb.append(client.getPrenom()).append(' ');
+            }
+            if (client.getNom() != null) {
+                sb.append(client.getNom());
             }
         }
         if (rendezVous.getStatut() != null && rendezVous.getStatut().getLibelle() != null) {
