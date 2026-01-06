@@ -73,6 +73,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/demandes").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/demandes/current").hasRole("CLIENT")
 
+                        // rendezvous
+                        .requestMatchers(HttpMethod.GET,  "/api/rendezvous/**").hasAnyRole("CLIENT","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/rendezvous/**").hasAnyRole("CLIENT","ADMIN")
+
                         // ✅ ICS chemin correct (sous /api/demandes)
                         .requestMatchers(HttpMethod.GET, "/api/demandes/rendezvous/*/ics").hasAnyRole("CLIENT","ADMIN")
 

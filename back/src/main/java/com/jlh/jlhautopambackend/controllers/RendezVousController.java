@@ -15,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rendezvous")
+@PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
 public class RendezVousController {
 
     private final RendezVousService service;
