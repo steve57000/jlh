@@ -1,6 +1,7 @@
 package com.jlh.jlhautopambackend.dto;
 
 import lombok.*;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -19,6 +20,10 @@ public class RendezVousResponse {
     private Integer clientId;
     /** Identifiant du créneau */
     private Integer creneauId;
+    /** Date de début du rendez-vous */
+    private Instant dateDebut;
+    /** Date de fin du rendez-vous */
+    private Instant dateFin;
     /** Identifiant de l’administrateur */
     private Integer administrateurId;
     /** Statut du rendez-vous */

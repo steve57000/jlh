@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.controllers;
 
 import com.jlh.jlhautopambackend.dto.RendezVousRequest;
 import com.jlh.jlhautopambackend.dto.RendezVousResponse;
+import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
 import com.jlh.jlhautopambackend.services.RendezVousService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import jakarta.validation.Valid;
@@ -20,10 +21,14 @@ public class RendezVousController {
 
     private final RendezVousService service;
     private final AuthenticatedClientResolver clientResolver;
+    private final AdministrateurRepository adminRepository;
 
-    public RendezVousController(RendezVousService service, AuthenticatedClientResolver clientResolver) {
+    public RendezVousController(RendezVousService service,
+                                AuthenticatedClientResolver clientResolver,
+                                AdministrateurRepository adminRepository) {
         this.service = service;
         this.clientResolver = clientResolver;
+        this.adminRepository = adminRepository;
     }
 
     @GetMapping
@@ -49,6 +54,9 @@ public class RendezVousController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
         if (isClient) {
             clientId = clientResolver.requireCurrentClient(auth).getIdClient();
+        } else if (req.getAdministrateurId() == null && auth != null) {
+            adminRepository.findByEmail(auth.getName())
+                    .ifPresent(admin -> req.setAdministrateurId(admin.getIdAdmin()));
         }
         RendezVousResponse resp = service.createLibre(req, clientId);
         return ResponseEntity
@@ -60,7 +68,14 @@ public class RendezVousController {
     @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
     public ResponseEntity<RendezVousResponse> update(
             @PathVariable Integer id,
-            @Valid @RequestBody RendezVousRequest req) {
+            @Valid @RequestBody RendezVousRequest req,
+            Authentication auth) {
+        boolean isClient = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
+        if (!isClient && req.getAdministrateurId() == null && auth != null) {
+            adminRepository.findByEmail(auth.getName())
+                    .ifPresent(admin -> req.setAdministrateurId(admin.getIdAdmin()));
+        }
         return service.update(id, req)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

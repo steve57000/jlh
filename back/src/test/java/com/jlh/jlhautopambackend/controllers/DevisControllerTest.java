@@ -3,7 +3,10 @@ package com.jlh.jlhautopambackend.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jlh.jlhautopambackend.dto.DevisRequest;
 import com.jlh.jlhautopambackend.dto.DevisResponse;
+import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
 import com.jlh.jlhautopambackend.services.DevisService;
+import com.jlh.jlhautopambackend.services.RendezVousService;
+import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.utils.JwtUtil;
 import com.jlh.jlhautopambackend.config.JwtAuthenticationFilter;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +43,9 @@ class DevisControllerTest {
 
     @MockitoBean
     private DevisService devisService;
+    @MockitoBean private RendezVousService rendezVousService;
+    @MockitoBean private AuthenticatedClientResolver clientResolver;
+    @MockitoBean private AdministrateurRepository adminRepository;
 
     // Mocks pour JWT
     @MockitoBean

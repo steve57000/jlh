@@ -91,7 +91,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         long demandesLibres = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_LIBRE);
         long demandesService = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_SERVICE);
         long demandesDevis = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_DEVIS);
-        long rdvNonLies = rendezVousRepository.countByClient_IdClientAndDemandeServiceIsNullAndDevisIsNull(clientId);
+        long rdvNonLies = rendezVousRepository.countByDemande_Client_IdClientAndDemandeServiceIsNullAndDevisIsNull(clientId);
         long rdvLies = rendezVousRepository.countLinkedByClientId(clientId);
         return new ClientStatsDto(enAttente, traitees, annulees, rdvAvenir,
                 demandesLibres, demandesService, demandesDevis, rdvLies, rdvNonLies);
@@ -337,15 +337,6 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                 if (client.getNom() != null) {
                     sb.append(client.getNom());
                 }
-            }
-        } else if (rendezVous.getClient() != null) {
-            Client client = rendezVous.getClient();
-            sb.append("Client ");
-            if (client.getPrenom() != null) {
-                sb.append(client.getPrenom()).append(' ');
-            }
-            if (client.getNom() != null) {
-                sb.append(client.getNom());
             }
         }
         if (rendezVous.getStatut() != null && rendezVous.getStatut().getLibelle() != null) {

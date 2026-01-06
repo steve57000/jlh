@@ -17,7 +17,8 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
 
     @Query("""
       select rv from RendezVous rv
-        join rv.client c
+        join rv.demande d
+        join d.client c
         join fetch rv.statut rvs
         join fetch rv.creneau cr
       where c.idClient = :clientId
@@ -29,7 +30,8 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
 
     @Query("""
       select count(rv) from RendezVous rv
-        join rv.client c
+        join rv.demande d
+        join d.client c
         join rv.creneau cr
       where c.idClient = :clientId
         and cr.dateDebut >= :now
@@ -39,7 +41,8 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
 
     @Query("""
       select rv from RendezVous rv
-        join rv.client c
+        join rv.demande d
+        join d.client c
         join fetch rv.statut
         join fetch rv.creneau
       where rv.idRdv = :rdvId
@@ -48,11 +51,11 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
     Optional<RendezVous> findByIdAndClient(@Param("rdvId") Integer rdvId,
                                            @Param("clientId") Integer clientId);
 
-    long countByClient_IdClientAndDemandeServiceIsNullAndDevisIsNull(Integer clientId);
+    long countByDemande_Client_IdClientAndDemandeServiceIsNullAndDevisIsNull(Integer clientId);
 
     @Query("""
       select count(rv) from RendezVous rv
-      where rv.client.idClient = :clientId
+      where rv.demande.client.idClient = :clientId
         and (rv.demandeService is not null or rv.devis is not null)
     """)
     long countLinkedByClientId(@Param("clientId") Integer clientId);

@@ -26,11 +26,15 @@ class RendezVousServiceImplTest {
 
     @Mock private RendezVousRepository repo;
     @Mock private DemandeRepository demandeRepo;
+    @Mock private DemandeServiceRepository demandeServiceRepository;
+    @Mock private DevisRepository devisRepository;
     @Mock private CreneauRepository creneauRepo;
     @Mock private AdministrateurRepository adminRepo;
+    @Mock private StatutCreneauRepository statutCreneauRepo;
     @Mock private StatutRendezVousRepository statutRepo;
     @Mock private StatutDemandeRepository statutDemandeRepo;
     @Mock private TypeDemandeRepository typeDemandeRepo;
+    @Mock private DemandeTimelineRepository timelineRepository;
     @Mock private RendezVousMapper mapper;
     @Mock private DemandeTimelineService timelineService;
 
@@ -41,6 +45,7 @@ class RendezVousServiceImplTest {
     private Demande demande;
     private Creneau creneau;
     private Administrateur admin;
+    private Client client;
     private StatutRendezVous statut;
     private RendezVous entityWithoutRel;
     private RendezVous savedEntity;
@@ -58,6 +63,7 @@ class RendezVousServiceImplTest {
         demande = Demande.builder()
                 .idDemande(1)
                 .statutDemande(StatutDemande.builder().codeStatut("Brouillon").build())
+                .client(Client.builder().idClient(4).build())
                 .build();
         creneau = Creneau.builder().idCreneau(2).build();
         admin = Administrateur.builder()
@@ -65,6 +71,7 @@ class RendezVousServiceImplTest {
                 .username("admin3")
                 .email("admin@example.com")
                 .build();
+        client = Client.builder().idClient(4).build();
         statut = StatutRendezVous.builder()
                 .codeStatut("ST1")
                 .libelle("Planned")
@@ -146,7 +153,7 @@ class RendezVousServiceImplTest {
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> service.create(request)
+                () -> service.createLibre(request, client.getIdClient())
         );
         assertEquals("Demande introuvable: 1", ex.getMessage());
         verify(demandeRepo).findById(1);
@@ -161,7 +168,7 @@ class RendezVousServiceImplTest {
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> service.create(request)
+                () -> service.createLibre(request, client.getIdClient())
         );
         assertEquals("Creneau introuvable: 2", ex.getMessage());
         verify(creneauRepo).findById(2);
@@ -175,7 +182,7 @@ class RendezVousServiceImplTest {
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> service.create(request)
+                () -> service.createLibre(request, client.getIdClient())
         );
         assertEquals("Administrateur introuvable: 3", ex.getMessage());
         verify(adminRepo).findById(3);
@@ -190,7 +197,7 @@ class RendezVousServiceImplTest {
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> service.create(request)
+                () -> service.createLibre(request, client.getIdClient())
         );
         assertEquals("Statut RDV introuvable: ST1", ex.getMessage());
         verify(statutRepo).findById("ST1");
@@ -198,20 +205,17 @@ class RendezVousServiceImplTest {
 
     @Test
     void testCreate_ShouldSetRelationsAndReturnResponse() {
-        TypeDemande typeRdv = TypeDemande.builder().codeType("RendezVous").build();
-        StatutDemande enAttente = StatutDemande.builder().codeStatut("En_attente").libelle("En attente").build();
         when(demandeRepo.findById(1)).thenReturn(Optional.of(demande));
-        when(typeDemandeRepo.findById("RendezVous")).thenReturn(Optional.of(typeRdv));
+        when(typeDemandeRepo.findById("Libre")).thenReturn(Optional.of(TypeDemande.builder().codeType("Libre").build()));
         when(demandeRepo.save(demande)).thenReturn(demande);
         when(creneauRepo.findById(2)).thenReturn(Optional.of(creneau));
         when(adminRepo.findById(3)).thenReturn(Optional.of(admin));
         when(statutRepo.findById("ST1")).thenReturn(Optional.of(statut));
-        when(statutDemandeRepo.findById("En_attente")).thenReturn(Optional.of(enAttente));
         when(mapper.toEntity(request)).thenReturn(entityWithoutRel);
         when(repo.save(entityWithoutRel)).thenReturn(savedEntity);
         when(mapper.toResponse(savedEntity)).thenReturn(response);
 
-        RendezVousResponse result = service.create(request);
+        RendezVousResponse result = service.createLibre(request, client.getIdClient());
 
         assertEquals(response, result);
         ArgumentCaptor<RendezVous> captor = ArgumentCaptor.forClass(RendezVous.class);
@@ -222,7 +226,6 @@ class RendezVousServiceImplTest {
         assertEquals(admin, passed.getAdministrateur());
         assertEquals(statut, passed.getStatut());
         verify(timelineService).logRendezVousEvent(demande, savedEntity, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
-        verify(timelineService).logStatusChange(demande, enAttente, "Brouillon", admin.getEmail(), "ADMIN");
     }
 
     @Test

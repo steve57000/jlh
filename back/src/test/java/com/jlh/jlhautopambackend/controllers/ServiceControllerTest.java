@@ -3,6 +3,9 @@ package com.jlh.jlhautopambackend.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jlh.jlhautopambackend.dto.ServiceRequest;
 import com.jlh.jlhautopambackend.dto.ServiceResponse;
+import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
+import com.jlh.jlhautopambackend.services.RendezVousService;
+import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.services.ServiceService;
 import com.jlh.jlhautopambackend.utils.JwtUtil;
 import com.jlh.jlhautopambackend.config.JwtAuthenticationFilter;
@@ -39,6 +42,9 @@ class ServiceControllerTest {
 
     @MockitoBean
     private ServiceService service;
+    @MockitoBean private RendezVousService rendezVousService;
+    @MockitoBean private AuthenticatedClientResolver clientResolver;
+    @MockitoBean private AdministrateurRepository adminRepository;
 
     // mocks pour désactiver l'authent
     @MockitoBean private JwtUtil jwtUtil;
