@@ -137,10 +137,18 @@ public class ServiceIconServiceImpl implements ServiceIconService {
 
     @Override
     public boolean delete(Integer id) {
-        if (!repo.existsById(id)) {
+        Optional<ServiceIcon> existing = repo.findById(id);
+        if (existing.isEmpty()) {
             return false;
         }
-        repo.deleteById(id);
+        String storedPath = resolveStoredPath(existing.get().getUrl());
+        if (StringUtils.hasText(storedPath)) {
+            try {
+                storageService.delete(storedPath);
+            } catch (IOException ignored) {
+            }
+        }
+        repo.delete(existing.get());
         return true;
     }
 
@@ -163,6 +171,30 @@ public class ServiceIconServiceImpl implements ServiceIconService {
     private String buildPublicUrl(String storedPath) {
         String cleanPath = storedPath.startsWith("/") ? storedPath.substring(1) : storedPath;
         return filesBaseUrl + "/" + cleanPath;
+    }
+
+    private String resolveStoredPath(String url) {
+        String cleaned = sanitizeUrl(url);
+        if (!StringUtils.hasText(cleaned) || !cleaned.startsWith(filesBaseUrl)) {
+            return "";
+        }
+        String relative = cleaned.substring(filesBaseUrl.length());
+        int queryIndex = relative.indexOf('?');
+        if (queryIndex >= 0) {
+            relative = relative.substring(0, queryIndex);
+        }
+        int fragmentIndex = relative.indexOf('#');
+        if (fragmentIndex >= 0) {
+            relative = relative.substring(0, fragmentIndex);
+        }
+        while (relative.startsWith("/") || relative.startsWith("\\")) {
+            relative = relative.substring(1);
+        }
+        String normalized = StringUtils.cleanPath(relative);
+        if (!normalized.startsWith("icons/") && !normalized.equals("icons")) {
+            return "";
+        }
+        return normalized;
     }
 
     private ServiceIconResponse toResponse(ServiceIcon icon) {

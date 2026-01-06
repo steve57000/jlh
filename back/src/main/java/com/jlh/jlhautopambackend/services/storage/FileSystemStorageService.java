@@ -61,7 +61,11 @@ public class FileSystemStorageService implements FileStorageService {
         if (!StringUtils.hasText(relativePath)) {
             throw new IllegalArgumentException("relativePath manquant");
         }
-        Path resolved = rootLocation.resolve(relativePath).normalize();
+        String cleaned = StringUtils.cleanPath(relativePath);
+        while (cleaned.startsWith("/") || cleaned.startsWith("\\")) {
+            cleaned = cleaned.substring(1);
+        }
+        Path resolved = rootLocation.resolve(cleaned).normalize();
         if (!resolved.startsWith(rootLocation)) {
             throw new IllegalArgumentException("Chemin invalide");
         }
