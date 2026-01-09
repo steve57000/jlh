@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS administrateur (
   mot_de_passe VARCHAR(255) NOT NULL,
   nom VARCHAR(100),
   prenom VARCHAR(100),
-  email VARCHAR(150) UNIQUE
+  email VARCHAR(150) UNIQUE,
+  niveau_acces VARCHAR(30) NOT NULL DEFAULT 'PRINCIPAL'
 );
 
 CREATE TABLE IF NOT EXISTS service (

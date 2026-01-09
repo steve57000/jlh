@@ -6,6 +6,10 @@ UPDATE administrateur
 SET username = concat(prenom, '.', nom, substring(nom from 1 for 1))
 WHERE username IS NULL OR username = '';
 
+UPDATE administrateur
+SET niveau_acces = 'PRINCIPAL'
+WHERE niveau_acces IS NULL;
+
 -- ==================================================
 -- 1) Lookups
 -- ==================================================
@@ -14,6 +18,19 @@ INSERT INTO type_demande (code_type, libelle) VALUES
                                                   ('Service', 'Service'),
                                                   ('RendezVous', 'Rendez-vous')
 ON CONFLICT DO NOTHING;
+
+UPDATE service SET icon = 'assets/icons/picto-metier-pneu.png' WHERE id_service = 1 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-hybride.png' WHERE id_service = 2 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-geometrie.png' WHERE id_service = 3 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-freinage.png' WHERE id_service = 4 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-embrayage.png' WHERE id_service = 5 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-echappement.png' WHERE id_service = 6 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-distribution.png' WHERE id_service = 7 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-climatisation.png' WHERE id_service = 8 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-amortisseur.png' WHERE id_service = 9 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-pre_controle.png' WHERE id_service = 10 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-revision_constructeur.png' WHERE id_service = 11 AND icon IS NULL;
+UPDATE service SET icon = 'assets/icons/picto-metier-vidange.png' WHERE id_service = 12 AND icon IS NULL;
 
 INSERT INTO statut_demande (code_statut, libelle) VALUES
                                                       ('Brouillon', 'Brouillon'),
@@ -133,8 +150,8 @@ ON CONFLICT DO NOTHING;
 -- ==================================================
 -- 4) Admins
 -- ==================================================
-INSERT INTO administrateur (id_admin, username, email, mot_de_passe, nom, prenom) VALUES
-    (1,'Michael.B','test@admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Bongeot','Michael')
+INSERT INTO administrateur (id_admin, username, email, mot_de_passe, nom, prenom, niveau_acces) VALUES
+    (1,'Michael.B','test@admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Bongeot','Michael', 'PRINCIPAL')
 ON CONFLICT DO NOTHING;
 
 -- ==================================================

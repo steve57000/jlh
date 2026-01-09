@@ -5,6 +5,7 @@ import com.jlh.jlhautopambackend.dto.ClientResponse;
 import com.jlh.jlhautopambackend.services.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -21,11 +22,13 @@ public class ClientController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public List<ClientResponse> getAll() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<ClientResponse> getById(@PathVariable Integer id) {
         return service.findById(id)
                 .map(ResponseEntity::ok)
@@ -33,6 +36,7 @@ public class ClientController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<ClientResponse> create(
             @Valid @RequestBody ClientRequest request) {
         ClientResponse created = service.create(request);
@@ -42,6 +46,7 @@ public class ClientController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<ClientResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody ClientRequest request) {
@@ -51,6 +56,7 @@ public class ClientController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         return service.delete(id)
                 ? ResponseEntity.noContent().build()

@@ -52,7 +52,7 @@ public class RendezVousServiceImpl implements RendezVousService {
 
     private static final String STATUT_BROUILLON  = "Brouillon";
     private static final String STATUT_EN_ATTENTE = "En_attente";
-    private static final String TYPE_LIBRE        = "Libre";
+    private static final String TYPE_RENDEZ_VOUS  = "RendezVous";
     private static final String STATUT_CRENEAU_RESERVE = "Reserve";
 
     public RendezVousServiceImpl(RendezVousRepository repo,
@@ -112,8 +112,8 @@ public class RendezVousServiceImpl implements RendezVousService {
             if (demande.getTypeDemande() != null) {
                 throw new IllegalStateException("Le rendez-vous libre ne peut être créé que pour une demande libre.");
             }
-            var typeLibre = typeDemandeRepo.findById(TYPE_LIBRE)
-                    .orElseThrow(() -> new IllegalStateException("TypeDemande 'Libre' manquant"));
+            var typeLibre = typeDemandeRepo.findById(TYPE_RENDEZ_VOUS)
+                    .orElseThrow(() -> new IllegalStateException("TypeDemande 'RendezVous' manquant"));
             demande.setTypeDemande(typeLibre);
             demandeRepo.save(demande);
         }

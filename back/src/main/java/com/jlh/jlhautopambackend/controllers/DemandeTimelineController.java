@@ -32,11 +32,11 @@ public class DemandeTimelineController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<List<DemandeTimelineEntryDto>> list(@PathVariable Integer demandeId,
                                                               Authentication auth) {
         boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_MANAGER".equals(a.getAuthority()));
         if (!isAdmin) {
             Client client = clientResolver.requireCurrentClient(auth);
             boolean owns = demandeRepository.existsByIdDemandeAndClient_IdClient(demandeId, client.getIdClient());
@@ -51,7 +51,7 @@ public class DemandeTimelineController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<DemandeTimelineEntryDto> create(@PathVariable Integer demandeId,
                                                           @Valid @RequestBody DemandeTimelineRequest request,
                                                           Authentication auth) {

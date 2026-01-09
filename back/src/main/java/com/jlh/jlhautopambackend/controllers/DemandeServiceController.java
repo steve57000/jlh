@@ -34,13 +34,13 @@ public class DemandeServiceController {
     /* ==================== ADMIN ==================== */
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public List<DemandeServiceResponse> getAll() {
         return service.findAll();
     }
 
     @GetMapping("/{demandeId}/{serviceId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<DemandeServiceResponse> getByKey(
             @PathVariable Integer demandeId,
             @PathVariable Integer serviceId) {
@@ -52,7 +52,7 @@ public class DemandeServiceController {
     /* ==================== CLIENT (ownership) ==================== */
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','CLIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENT','MANAGER')")
     public ResponseEntity<DemandeServiceResponse> create(
             Authentication auth,
             @Valid @RequestBody DemandeServiceRequest req) {
@@ -74,7 +74,7 @@ public class DemandeServiceController {
     }
 
     @PutMapping("/{demandeId}/{serviceId}")
-    @PreAuthorize("hasAnyRole('ADMIN','CLIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENT','MANAGER')")
     public ResponseEntity<DemandeServiceResponse> update(
             Authentication auth,
             @PathVariable Integer demandeId,
@@ -95,7 +95,7 @@ public class DemandeServiceController {
     }
 
     @DeleteMapping("/{demandeId}/{serviceId}")
-    @PreAuthorize("hasAnyRole('ADMIN','CLIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENT','MANAGER')")
     public ResponseEntity<Void> delete(
             Authentication auth,
             @PathVariable Integer demandeId,
@@ -125,6 +125,7 @@ public class DemandeServiceController {
             return false;
         }
         return auth.getAuthorities().stream()
-                .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
+                .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority())
+                        || "ROLE_MANAGER".equals(granted.getAuthority()));
     }
 }

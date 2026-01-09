@@ -20,7 +20,24 @@ public class AdministrateurDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Administrateur admin = repo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Admin introuvable"));
-        // Ici on donne un rôle générique ROLE_ADMIN
+        var level = admin.getNiveauAcces();
+        if (level == com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur.GESTIONNAIRE) {
+            return new User(
+                    admin.getUsername(),
+                    admin.getMotDePasse(),
+                    List.of(new SimpleGrantedAuthority("ROLE_MANAGER"))
+            );
+        }
+        if (level == com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur.PRINCIPAL) {
+            return new User(
+                    admin.getUsername(),
+                    admin.getMotDePasse(),
+                    List.of(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("ROLE_ADMIN_PRINCIPAL")
+                    )
+            );
+        }
         return new User(
                 admin.getUsername(),
                 admin.getMotDePasse(),
