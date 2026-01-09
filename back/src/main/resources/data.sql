@@ -22,18 +22,18 @@ INSERT INTO type_demande (code_type, libelle) VALUES
                                                   ('RendezVous', 'Rendez-vous')
 ON CONFLICT DO NOTHING;
 
-UPDATE service SET icon = '/uploads/icons/picto-metier-pneu.png' WHERE id_service = 1 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-hybride.png' WHERE id_service = 2 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-geometrie.png' WHERE id_service = 3 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-freinage.png' WHERE id_service = 4 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-embrayage.png' WHERE id_service = 5 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-echappement.png' WHERE id_service = 6 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-distribution.png' WHERE id_service = 7 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-climatisation.png' WHERE id_service = 8 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-amortisseur.png' WHERE id_service = 9 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-pre_controle.png' WHERE id_service = 10 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-revision_constructeur.png' WHERE id_service = 11 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icons/picto-metier-vidange.png' WHERE id_service = 12 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-pneu.png' WHERE id_service = 1 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-hybride.png' WHERE id_service = 2 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-geometrie.png' WHERE id_service = 3 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-freinage.png' WHERE id_service = 4 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-embrayage.png' WHERE id_service = 5 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-echappement.png' WHERE id_service = 6 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-distribution.png' WHERE id_service = 7 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-climatisation.png' WHERE id_service = 8 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-amortisseur.png' WHERE id_service = 9 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-pre_controle.png' WHERE id_service = 10 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-revision_constructeur.png' WHERE id_service = 11 AND icon IS NULL;
+UPDATE service SET icon = '/uploads/icones/picto-metier-vidange.png' WHERE id_service = 12 AND icon IS NULL;
 
 INSERT INTO statut_demande (code_statut, libelle) VALUES
                                                       ('Brouillon', 'Brouillon'),
