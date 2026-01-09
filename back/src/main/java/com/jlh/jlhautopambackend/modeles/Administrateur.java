@@ -23,6 +23,10 @@ public class Administrateur {
     @Column(unique=true)
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "niveau_acces", nullable = false, length = 30)
+    private NiveauAccesAdministrateur niveauAcces;
+
     @OneToMany(mappedBy = "administrateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Disponibilite> disponibilites;
 }

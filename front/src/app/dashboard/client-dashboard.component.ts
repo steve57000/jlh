@@ -89,7 +89,7 @@ export class ClientDashboardComponent implements OnInit {
   private readonly fallbackTypeOptions: Array<FilterOption<AnyTypeOrAll>> = [
     { value: 'Devis', label: 'Devis' },
     { value: 'Service', label: 'Service' },
-    { value: 'Libre', label: 'Rendez-vous' }
+    { value: 'RendezVous', label: 'Rendez-vous' }
   ];
 
   private readonly fallbackStatutOptions: Array<FilterOption<AnyStatutOrAll>> = [

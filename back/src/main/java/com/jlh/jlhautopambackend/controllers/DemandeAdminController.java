@@ -15,7 +15,7 @@ import java.util.List;
 @CrossOrigin
 @RestController
 @RequestMapping("/api/admin/demandes")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
 public class DemandeAdminController {
 
     private final DemandeRepository repository;
@@ -63,6 +63,7 @@ public class DemandeAdminController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         return repository.findById(id)
                 .map(entity -> {

@@ -18,6 +18,8 @@ public interface AdministrateurMapper {
     @Mapping(target = "idAdmin", ignore = true)
     // On ignore les disponibilités lors du toEntity
     @Mapping(target = "disponibilites", ignore = true)
+    @Mapping(target = "niveauAcces",
+            expression = "java(resolveNiveauAcces(dto.getNiveauAcces()))")
     Administrateur toEntity(AdministrateurRequest dto);
 
     // On convertit la liste de Disponibilite en liste de DisponibiliteIdDto
@@ -25,6 +27,8 @@ public interface AdministrateurMapper {
             expression = "java(resolveUsername(entity))")
     @Mapping(target = "disponibilites",
             expression = "java(mapDisponibilites(entity.getDisponibilites()))")
+    @Mapping(target = "niveauAcces",
+            expression = "java(entity.getNiveauAcces() != null ? entity.getNiveauAcces().name() : null)")
     AdministrateurResponse toResponse(Administrateur entity);
 
     default List<DisponibiliteIdDto> mapDisponibilites(List<Disponibilite> src) {
@@ -46,5 +50,16 @@ public interface AdministrateurMapper {
         }
         String email = entity.getEmail();
         return (email != null && !email.isBlank()) ? email.trim() : null;
+    }
+
+    default com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur resolveNiveauAcces(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 }

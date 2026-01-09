@@ -12,5 +12,6 @@ public class AdministrateurRequest {
     private String motDePasse;
     private String nom;
     private String prenom;
+    private String niveauAcces;
 
 }

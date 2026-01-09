@@ -21,10 +21,25 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
         return adminRepo.findByEmail(email)
-                .map(admin -> User.withUsername(admin.getEmail())
-                        .password(admin.getMotDePasse())
-                        .roles("ADMIN")
-                        .build())
+                .map(admin -> {
+                    var level = admin.getNiveauAcces();
+                    if (level == com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur.GESTIONNAIRE) {
+                        return User.withUsername(admin.getEmail())
+                                .password(admin.getMotDePasse())
+                                .roles("MANAGER")
+                                .build();
+                    }
+                    if (level == com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur.PRINCIPAL) {
+                        return User.withUsername(admin.getEmail())
+                                .password(admin.getMotDePasse())
+                                .roles("ADMIN", "ADMIN_PRINCIPAL")
+                                .build();
+                    }
+                    return User.withUsername(admin.getEmail())
+                            .password(admin.getMotDePasse())
+                            .roles("ADMIN")
+                            .build();
+                })
                 .or(() -> clientRepo.findByEmailIgnoreCase(email)
                         .map(cli -> User.withUsername(cli.getEmail())
                                 .password(cli.getMotDePasse())

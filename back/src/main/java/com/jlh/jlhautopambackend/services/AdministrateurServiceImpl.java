@@ -34,6 +34,9 @@ public class AdministrateurServiceImpl implements AdministrateurService {
         Administrateur entity = mapper.toEntity(request);
         entity.setUsername(resolveUsername(request, null));
         entity.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
+        if (entity.getNiveauAcces() == null) {
+            entity.setNiveauAcces(com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur.ADMIN);
+        }
         Administrateur saved = repository.save(entity);
         return mapper.toResponse(saved);
     }
@@ -62,6 +65,14 @@ public class AdministrateurServiceImpl implements AdministrateurService {
                     existing.setUsername(resolveUsername(request, existing.getUsername()));
                     existing.setNom(request.getNom());
                     existing.setPrenom(request.getPrenom());
+                    if (request.getNiveauAcces() != null && !request.getNiveauAcces().isBlank()) {
+                        try {
+                            existing.setNiveauAcces(com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur
+                                    .valueOf(request.getNiveauAcces().trim().toUpperCase()));
+                        } catch (IllegalArgumentException ignored) {
+                            // ignore invalid values
+                        }
+                    }
                     if (request.getMotDePasse() != null && !request.getMotDePasse().isBlank()) {
                         existing.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
                     }

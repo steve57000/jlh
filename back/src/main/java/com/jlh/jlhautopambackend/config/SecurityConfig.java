@@ -72,26 +72,27 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes/prochain-rdv.ics").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/demandes").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/demandes/current").hasRole("CLIENT")
-                        .requestMatchers(HttpMethod.POST, "/api/rendezvous").hasAnyRole("CLIENT","ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/services/*/rendezvous").hasAnyRole("CLIENT","ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/devis/*/rendezvous").hasAnyRole("CLIENT","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/services/*/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/devis/*/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
 
                         // rendezvous
-                        .requestMatchers(HttpMethod.GET,  "/api/rendezvous/**").hasAnyRole("CLIENT","ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/rendezvous/**").hasAnyRole("CLIENT","ADMIN")
+                        .requestMatchers(HttpMethod.GET,  "/api/rendezvous/**").hasAnyRole("CLIENT","ADMIN","MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/rendezvous/**").hasAnyRole("CLIENT","ADMIN","MANAGER")
 
                         // ✅ ICS chemin correct (sous /api/demandes)
-                        .requestMatchers(HttpMethod.GET, "/api/demandes/rendezvous/*/ics").hasAnyRole("CLIENT","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/demandes/rendezvous/*/ics").hasAnyRole("CLIENT","ADMIN","MANAGER")
 
                         // demandes-services : seuls les clients ajoutent/modifient/suppriment
-                        .requestMatchers(HttpMethod.POST,   "/api/demandes-services").hasRole("CLIENT")
-                        .requestMatchers(HttpMethod.PUT,    "/api/demandes-services/**").hasRole("CLIENT")
-                        .requestMatchers(HttpMethod.DELETE, "/api/demandes-services/**").hasRole("CLIENT")
-                        // (optionnel) lister/voir demandes-services → ADMIN
-                        .requestMatchers(HttpMethod.GET,    "/api/demandes-services/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/api/demandes-services").hasAnyRole("CLIENT","ADMIN","MANAGER")
+                        .requestMatchers(HttpMethod.PUT,    "/api/demandes-services/**").hasAnyRole("CLIENT","ADMIN","MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/demandes-services/**").hasAnyRole("CLIENT","ADMIN","MANAGER")
+                        // (optionnel) lister/voir demandes-services → ADMIN/GESTIONNAIRE
+                        .requestMatchers(HttpMethod.GET,    "/api/demandes-services/**").hasAnyRole("ADMIN","MANAGER")
 
                         // admin
-                        .requestMatchers("/api/administrateurs/**").hasRole("ADMIN")
+                        .requestMatchers("/api/administrateurs/**").hasRole("ADMIN_PRINCIPAL")
+                        .requestMatchers("/api/clients/**").hasAnyRole("ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.POST,   "/api/promotions").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/promotions/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/promotions/**").hasRole("ADMIN")

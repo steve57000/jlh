@@ -5,6 +5,7 @@ import com.jlh.jlhautopambackend.dto.AdministrateurResponse;
 import com.jlh.jlhautopambackend.services.AdministrateurService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/administrateurs")
+@PreAuthorize("hasRole('ADMIN_PRINCIPAL')")
 public class AdministrateurController {
 
     private final AdministrateurService service;

@@ -107,7 +107,7 @@ public interface DemandeMapper {
     @AfterMapping
     default void overrideStatutForRendezVous(Demande src, @MappingTarget DemandeResponse target) {
         if (src == null || src.getTypeDemande() == null) return;
-        if (!"Libre".equals(src.getTypeDemande().getCodeType())) return;
+        if (!"RendezVous".equals(src.getTypeDemande().getCodeType())) return;
 
         RendezVous rdv = src.getRendezVous();
         if (rdv != null && rdv.getStatut() != null) {

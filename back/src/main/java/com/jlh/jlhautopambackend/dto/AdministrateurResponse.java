@@ -15,6 +15,7 @@ public class AdministrateurResponse {
     private String username;
     private String nom;
     private String prenom;
+    private String niveauAcces;
     // Si vous voulez renvoyer les disponibilités, n’incluez que leur ID :
     private List<DisponibiliteIdDto> disponibilites;
 

@@ -37,7 +37,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     private static final String STATUT_EN_ATTENTE = "En_attente";
     private static final String STATUT_TRAITEE = "Traitee";
     private static final String STATUT_ANNULEE = "Annulee";
-    private static final String TYPE_LIBRE = "Libre";
+    private static final String TYPE_RENDEZ_VOUS = "RendezVous";
     private static final String TYPE_SERVICE = "Service";
     private static final String TYPE_DEVIS = "Devis";
 
@@ -88,7 +88,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         long traitees = repository.countByClient_IdClientAndStatutDemande_CodeStatut(clientId, STATUT_TRAITEE);
         long annulees = repository.countByClient_IdClientAndStatutDemande_CodeStatut(clientId, STATUT_ANNULEE);
         long rdvAvenir = rendezVousRepository.countUpcomingByClientId(clientId, Instant.now());
-        long demandesLibres = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_LIBRE);
+        long demandesLibres = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_RENDEZ_VOUS);
         long demandesService = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_SERVICE);
         long demandesDevis = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_DEVIS);
         long rdvNonLies = rendezVousRepository.countByDemande_Client_IdClientAndDemandeServiceIsNullAndDevisIsNull(clientId);
