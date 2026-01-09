@@ -14,6 +14,12 @@ interface TypeStats {
   averageValue: number;
 }
 
+interface ServiceStats {
+  label: string;
+  count: number;
+  percentage: number;
+}
+
 interface BudgetStats {
   total: number;
   averagePerDemande: number;
@@ -26,6 +32,7 @@ interface DashboardStats {
   traitees: number;
   annulees: number;
   typeStats: TypeStats[];
+  serviceStats: ServiceStats[];
   budget: BudgetStats;
 }
 
@@ -49,7 +56,7 @@ export class AdminDashboardComponent implements OnInit {
     const typeOrder: DemandeType[] = ['Devis', 'Libre', 'Service'];
     const labels: Record<DemandeType, string> = {
       Devis: 'Demandes de devis',
-      Libre: 'Rendez-vous libres',
+      Libre: 'Rendez-vous',
       Service: 'Demandes de service'
     };
 
@@ -71,6 +78,8 @@ export class AdminDashboardComponent implements OnInit {
     let totalAmount = 0;
     const clientSpend = new Map<number, number>();
 
+    const serviceCounts = new Map<string, number>();
+
     for (const demande of rows) {
       typeTotals[demande.code_type] ??= 0;
       typeTotals[demande.code_type] += 1;
@@ -83,6 +92,11 @@ export class AdminDashboardComponent implements OnInit {
       totalAmount += totalDemande;
       typeAmounts[demande.code_type] ??= 0;
       typeAmounts[demande.code_type] += totalDemande;
+
+      for (const service of demande.services ?? []) {
+        const label = (service?.libelle || 'Service').trim();
+        serviceCounts.set(label, (serviceCounts.get(label) ?? 0) + 1);
+      }
 
       const clientId = demande.client?.id_client;
       if (clientId != null) {
@@ -101,6 +115,16 @@ export class AdminDashboardComponent implements OnInit {
       };
     });
 
+    const totalServices = Array.from(serviceCounts.values()).reduce((sum, value) => sum + value, 0);
+    const serviceStats: ServiceStats[] = Array.from(serviceCounts.entries())
+      .map(([label, count]) => ({
+        label,
+        count,
+        percentage: totalServices ? Math.round((count / totalServices) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
     const budget: BudgetStats = {
       total: totalAmount,
       averagePerDemande: total ? totalAmount / total : 0,
@@ -113,6 +137,7 @@ export class AdminDashboardComponent implements OnInit {
       traitees,
       annulees,
       typeStats,
+      serviceStats,
       budget
     };
   });

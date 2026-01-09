@@ -68,6 +68,30 @@
           </div>
         </article>
 
+        <article class="card chart-card chart-card--services">
+          <header>
+            <p class="card__eyebrow">Types de services</p>
+            <h3>Répartition par prestation</h3>
+          </header>
+          @if (overview.serviceStats.length) {
+            <div class="type-chart">
+              @for (row of overview.serviceStats; track row.label) {
+                <div class="type-chart__row">
+                  <div class="type-chart__info">
+                    <strong>{{ row.label }}</strong>
+                    <span>{{ row.count }} demandes • {{ row.percentage }}%</span>
+                  </div>
+                  <div class="type-chart__bar" aria-hidden="true">
+                    <span class="type-chart__value" [style.width.%]="row.percentage || 4"></span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="dashboard__state">Aucune prestation liée pour l’instant.</p>
+          }
+        </article>
+
         <article class="card budget-card">
           <header>
             <p class="card__eyebrow">Budget</p>
