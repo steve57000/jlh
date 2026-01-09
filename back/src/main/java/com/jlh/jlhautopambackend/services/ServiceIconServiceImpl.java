@@ -68,7 +68,7 @@ public class ServiceIconServiceImpl implements ServiceIconService {
         }
         String storedPath;
         try {
-            storedPath = storageService.store(file, "icons");
+            storedPath = storageService.store(file, "icones");
         } catch (IOException ex) {
             throw new IllegalStateException("Impossible d'enregistrer l'image.", ex);
         }
@@ -119,7 +119,7 @@ public class ServiceIconServiceImpl implements ServiceIconService {
         }
         String storedPath;
         try {
-            storedPath = storageService.store(file, "icons");
+            storedPath = storageService.store(file, "icones");
         } catch (IOException ex) {
             throw new IllegalStateException("Impossible d'enregistrer l'image.", ex);
         }
@@ -191,7 +191,7 @@ public class ServiceIconServiceImpl implements ServiceIconService {
             relative = relative.substring(1);
         }
         String normalized = StringUtils.cleanPath(relative);
-        if (!normalized.startsWith("icons/") && !normalized.equals("icons")) {
+        if (!normalized.startsWith("icones/") && !normalized.equals("icones")) {
             return "";
         }
         return normalized;

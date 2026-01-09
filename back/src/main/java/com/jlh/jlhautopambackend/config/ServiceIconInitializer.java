@@ -11,18 +11,18 @@ import java.util.List;
 @Component
 public class ServiceIconInitializer implements ApplicationRunner {
     private static final List<ServiceIcon> DEFAULT_ICONS = List.of(
-            ServiceIcon.builder().url("assets/icons/picto-metier-pneu.png").label("Pneumatiques").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-hybride.png").label("Véhicules hybrides").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-geometrie.png").label("Géométrie").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-freinage.png").label("Freinage").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-embrayage.png").label("Embrayage").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-echappement.png").label("Échappement").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-distribution.png").label("Distribution").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-climatisation.png").label("Climatisation").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-amortisseur.png").label("Amortisseurs").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-pre_controle.png").label("Pré-contrôle technique").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-revision_constructeur.png").label("Révision constructeur").build(),
-            ServiceIcon.builder().url("assets/icons/picto-metier-vidange.png").label("Vidange").build()
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-pneu.png").label("Pneumatiques").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-hybride.png").label("Véhicules hybrides").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-geometrie.png").label("Géométrie").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-freinage.png").label("Freinage").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-embrayage.png").label("Embrayage").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-echappement.png").label("Échappement").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-distribution.png").label("Distribution").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-climatisation.png").label("Climatisation").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-amortisseur.png").label("Amortisseurs").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-pre_controle.png").label("Pré-contrôle technique").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-revision_constructeur.png").label("Révision constructeur").build(),
+            ServiceIcon.builder().url("/uploads/icones/picto-metier-vidange.png").label("Vidange").build()
     );
 
     private final ServiceIconRepository repo;
