@@ -222,6 +222,10 @@
   flex-direction: column;
   gap: 0.35rem;
 
+  & + .field {
+    margin-top: 0.35rem;
+  }
+
   label {
     font-weight: 600;
     color: v.$color-primary;

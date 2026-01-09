@@ -2,7 +2,7 @@
 @use '../../styles/animations' as anim;
 
 .services-page {
-  padding: 20px 0;
+  padding: 12px 0 24px;
   margin: 0 auto;
   background: vars.$linear-bg;
 
@@ -18,8 +18,8 @@
 
   h2 {
     font-family: vars.$font-title;
-    font-size: 2rem;
-    margin-bottom: 32px;
+    font-size: 1.75rem;
+    margin-bottom: 18px;
     color: vars.$color-quaternary;
   }
 
@@ -27,8 +27,8 @@
 
   .services-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 18px;
     align-items: stretch;
     grid-auto-rows: 1fr;
 
@@ -38,8 +38,8 @@
 
   @media (min-width: 1280px) {
     .services-list {
-      gap: 28px;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 22px;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     }
     .container-max:has(.aside) {
       grid-template-columns: 360px 1fr; // l’encart n’occupe la place qu’en présence d’un brouillon non vide

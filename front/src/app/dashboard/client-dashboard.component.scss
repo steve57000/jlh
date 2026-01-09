@@ -166,6 +166,66 @@
 }
 
 .client-dashboard {
+  .header {
+    background: #fff;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  }
+
+  .toolbar {
+    gap: 0.75rem;
+
+    .cta-btn-secondary {
+      border-radius: 999px;
+    }
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    margin-bottom: 0;
+    border-radius: 0.9rem;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .card--archive {
+    opacity: 0.92;
+    border-color: #edf2f7;
+  }
+
+  .archive-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #e2e8f0;
+
+    &__header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 0.75rem;
+
+      h3 {
+        margin: 0;
+      }
+
+      p {
+        margin: 0;
+        color: #6b7280;
+      }
+    }
+  }
+}
+
+.client-dashboard {
   /* ====== Filtres ====== */
   .filters {
     margin-bottom: 1rem;

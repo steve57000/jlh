@@ -16,6 +16,8 @@ public class ServiceRequest {
 
     private String description;
 
+    private String descriptionLongue;
+
     private String icon;
 
     @NotNull

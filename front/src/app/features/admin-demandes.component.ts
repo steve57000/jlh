@@ -68,7 +68,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   private readonly fallbackTypeOptions: Array<FilterOption<TypeFilterValue>> = [
     { value: 'Devis', label: 'Devis' },
     { value: 'Service', label: 'Service' },
-    { value: 'Libre', label: 'Rendez-vous libre' }
+    { value: 'Libre', label: 'Rendez-vous' }
   ];
 
   private readonly fallbackStatutOptions: Array<FilterOption<StatutFilterValue>> = [
