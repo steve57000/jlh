@@ -10,7 +10,7 @@ SET username = concat(prenom, '.', nom, substring(nom from 1 for 1))
 WHERE username IS NULL OR username = '';
 
 UPDATE administrateur
-SET niveau_acces = 'PRINCIPAL'
+SET niveau_acces = 'ADMIN'
 WHERE niveau_acces IS NULL;
 
 -- ==================================================
