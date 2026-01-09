@@ -26,10 +26,6 @@ public class RendezVous {
     private Devis devis;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "id_client", nullable = false)
-    private Client client;
-
-    @ManyToOne(optional = false)
     @JoinColumn(name = "id_admin", nullable = false)
     private Administrateur administrateur;
 
@@ -43,4 +39,9 @@ public class RendezVous {
 
     @Column(columnDefinition = "TEXT")
     private String commentaire;
+
+    @Transient
+    public Client getClient() {
+        return demande != null ? demande.getClient() : null;
+    }
 }

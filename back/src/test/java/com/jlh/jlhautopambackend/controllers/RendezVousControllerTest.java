@@ -3,6 +3,7 @@ package com.jlh.jlhautopambackend.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jlh.jlhautopambackend.dto.RendezVousRequest;
 import com.jlh.jlhautopambackend.dto.RendezVousResponse;
+import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
 import com.jlh.jlhautopambackend.services.RendezVousService;
 import com.jlh.jlhautopambackend.config.JwtAuthenticationFilter;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
@@ -35,6 +36,7 @@ class RendezVousControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockitoBean private RendezVousService service;
+    @MockitoBean private AdministrateurRepository adminRepository;
     @MockitoBean private AuthenticatedClientResolver clientResolver;
     // mocks JWT pour bypasser le filtre
     @MockitoBean private JwtUtil jwtUtil;
@@ -72,14 +74,20 @@ class RendezVousControllerTest {
 
     @Test @DisplayName("POST /api/rendezvous ➔ 201, JSON retour")
     void testCreate() throws Exception {
-        RendezVousRequest req = new RendezVousRequest(1, 2, 3, "S");
+        RendezVousRequest req = RendezVousRequest.builder()
+                .demandeId(1)
+                .creneauId(2)
+                .administrateurId(3)
+                .codeStatut("S")
+                .build();
         RendezVousResponse created = RendezVousResponse.builder()
                 .idRdv(7)
                 .build();
-        Mockito.when(service.create(Mockito.any(RendezVousRequest.class)))
+        Mockito.when(service.createLibre(Mockito.any(RendezVousRequest.class), Mockito.any()))
                 .thenReturn(created);
 
         mvc.perform(post("/api/rendezvous")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("client1").roles("CLIENT"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
@@ -89,7 +97,12 @@ class RendezVousControllerTest {
 
     @Test @DisplayName("PUT /api/rendezvous/{id} ➔ 200")
     void testUpdateFound() throws Exception {
-        RendezVousRequest req = new RendezVousRequest(1, 2, 3, "S");
+        RendezVousRequest req = RendezVousRequest.builder()
+                .demandeId(1)
+                .creneauId(2)
+                .administrateurId(3)
+                .codeStatut("S")
+                .build();
         RendezVousResponse updated = RendezVousResponse.builder().idRdv(8).build();
         Mockito.when(service.update(Mockito.eq(8), Mockito.any(RendezVousRequest.class)))
                 .thenReturn(Optional.of(updated));
@@ -108,7 +121,12 @@ class RendezVousControllerTest {
 
         mvc.perform(put("/api/rendezvous/99")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RendezVousRequest(1, 2, 3, "S"))))
+                        .content(objectMapper.writeValueAsString(RendezVousRequest.builder()
+                                .demandeId(1)
+                                .creneauId(2)
+                                .administrateurId(3)
+                                .codeStatut("S")
+                                .build())))
                 .andExpect(status().isNotFound());
     }
 
