@@ -51,6 +51,16 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
     Optional<RendezVous> findByIdAndClient(@Param("rdvId") Integer rdvId,
                                            @Param("clientId") Integer clientId);
 
+    @Query("""
+      select count(rv) from RendezVous rv
+        join rv.demande d
+        join d.client c
+      where c.idClient = :clientId
+        and rv.demandeService is null
+        and rv.devis is null
+    """)
+    long countByClient_IdClientAndDemandeServiceIsNullAndDevisIsNull(@Param("clientId") Integer clientId);
+
     long countByDemande_Client_IdClientAndDemandeServiceIsNullAndDevisIsNull(Integer clientId);
 
     @Query("""

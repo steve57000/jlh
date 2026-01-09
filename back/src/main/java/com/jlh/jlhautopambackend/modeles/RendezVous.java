@@ -39,4 +39,9 @@ public class RendezVous {
 
     @Column(columnDefinition = "TEXT")
     private String commentaire;
+
+    @Transient
+    public Client getClient() {
+        return demande != null ? demande.getClient() : null;
+    }
 }
