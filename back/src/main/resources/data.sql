@@ -2,6 +2,9 @@
 -- 0) Préparation
 -- ==================================================
 -- Valorise username à partir des champs existants pour les administrateurs existants
+ALTER TABLE administrateur
+    ADD COLUMN IF NOT EXISTS niveau_acces VARCHAR(30) DEFAULT 'PRINCIPAL';
+
 UPDATE administrateur
 SET username = concat(prenom, '.', nom, substring(nom from 1 for 1))
 WHERE username IS NULL OR username = '';
