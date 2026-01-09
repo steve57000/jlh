@@ -108,7 +108,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
         validateClient(req.getClientId(), clientId, demande);
 
-        if (demande.getTypeDemande() == null || !TYPE_LIBRE.equals(demande.getTypeDemande().getCodeType())) {
+        if (demande.getTypeDemande() == null || !TYPE_RENDEZ_VOUS.equals(demande.getTypeDemande().getCodeType())) {
             if (demande.getTypeDemande() != null) {
                 throw new IllegalStateException("Le rendez-vous libre ne peut être créé que pour une demande libre.");
             }
