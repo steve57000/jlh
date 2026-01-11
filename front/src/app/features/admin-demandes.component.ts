@@ -108,6 +108,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   rdvForm = signal<RendezVousFormState | null>(null);
   rdvSaving = signal(false);
   rdvFeedback = signal<string | null>(null);
+  rdvFeedbackType = signal<'success' | 'error' | null>(null);
 
   filtered = computed(() => {
     const t = this.type();
@@ -755,6 +756,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
 
     if (!form.dateDebut || !form.dateFin) {
       this.rdvFeedback.set('Veuillez renseigner les dates de début et de fin.');
+      this.rdvFeedbackType.set('error');
       this.toast.error('Erreur', 'Dates de rendez-vous incomplètes.');
       return;
     }
@@ -764,6 +766,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
 
     if (!dateDebutIso || !dateFinIso) {
       this.rdvFeedback.set('Format de date invalide.');
+      this.rdvFeedbackType.set('error');
       this.toast.error('Erreur', 'Format de date invalide.');
       return;
     }
@@ -781,6 +784,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     ) {
       const msg = 'Pour reporter un rendez-vous, modifiez les dates avant de confirmer.';
       this.rdvFeedback.set(msg);
+      this.rdvFeedbackType.set('error');
       this.toast.error('Erreur', msg);
       return;
     }
@@ -796,12 +800,14 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
 
     if (!form.idRdv && draft?.code_type === 'Service' && !draft?.services?.[0]?.id_service) {
       this.rdvFeedback.set('Aucun service associé pour planifier le rendez-vous.');
+      this.rdvFeedbackType.set('error');
       this.toast.error('Erreur', 'Aucun service associé pour planifier le rendez-vous.');
       return;
     }
 
     this.rdvSaving.set(true);
     this.rdvFeedback.set(null);
+    this.rdvFeedbackType.set(null);
 
     const request = form.idRdv
       ? this.rendezVousApi.update(form.idRdv, payload)
@@ -820,6 +826,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
           )
         );
         this.rdvFeedback.set('Rendez-vous mis à jour et client informé.');
+        this.rdvFeedbackType.set('success');
         this.toast.success('Rendez-vous confirmé.');
       },
       error: err => {
@@ -829,6 +836,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
           msg = 'Conflit sur le créneau : choisissez un autre horaire ou modifiez les dates.';
         }
         this.rdvFeedback.set(msg);
+        this.rdvFeedbackType.set('error');
         this.toast.error('Erreur', msg);
       }
     });
