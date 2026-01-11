@@ -768,6 +768,23 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const draft = this.draft();
+    const existingRdv = draft?.rendezVous ?? null;
+    const existingStart = existingRdv?.dateDebut ? this.parseDateInput(this.formatDateInput(existingRdv.dateDebut)) : null;
+    const existingEnd = existingRdv?.dateFin ? this.parseDateInput(this.formatDateInput(existingRdv.dateFin)) : null;
+
+    if (
+      form.codeStatut === 'Reporte' &&
+      existingRdv?.idRdv &&
+      existingStart === dateDebutIso &&
+      existingEnd === dateFinIso
+    ) {
+      const msg = 'Pour reporter un rendez-vous, modifiez les dates avant de confirmer.';
+      this.rdvFeedback.set(msg);
+      this.toast.error('Erreur', msg);
+      return;
+    }
+
     const payload: RendezVousUpsertPayload = {
       demandeId,
       dateDebut: dateDebutIso,
@@ -777,7 +794,6 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       creneauId: form.creneauId
     };
 
-    const draft = this.draft();
     if (!form.idRdv && draft?.code_type === 'Service' && !draft?.services?.[0]?.id_service) {
       this.rdvFeedback.set('Aucun service associé pour planifier le rendez-vous.');
       this.toast.error('Erreur', 'Aucun service associé pour planifier le rendez-vous.');
@@ -808,7 +824,10 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       },
       error: err => {
         this.rdvSaving.set(false);
-        const msg = err?.error?.message || err.message || 'Impossible de mettre à jour le rendez-vous.';
+        let msg = err?.error?.message || err.message || 'Impossible de mettre à jour le rendez-vous.';
+        if (err?.status === 409) {
+          msg = 'Conflit sur le créneau : choisissez un autre horaire ou modifiez les dates.';
+        }
         this.rdvFeedback.set(msg);
         this.toast.error('Erreur', msg);
       }
