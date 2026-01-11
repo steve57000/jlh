@@ -18,6 +18,7 @@ import java.util.Optional;
 @Service
 @Transactional
 public class ServiceIconServiceImpl implements ServiceIconService {
+    private static final String ICONS_SUBDIR = "icons/pictos-metiers";
     private final ServiceIconRepository repo;
     private final FileStorageService storageService;
     private final String filesBaseUrl;
@@ -68,7 +69,7 @@ public class ServiceIconServiceImpl implements ServiceIconService {
         }
         String storedPath;
         try {
-            storedPath = storageService.store(file, "icones");
+            storedPath = storageService.store(file, ICONS_SUBDIR);
         } catch (IOException ex) {
             throw new IllegalStateException("Impossible d'enregistrer l'image.", ex);
         }
@@ -119,7 +120,7 @@ public class ServiceIconServiceImpl implements ServiceIconService {
         }
         String storedPath;
         try {
-            storedPath = storageService.store(file, "icones");
+            storedPath = storageService.store(file, ICONS_SUBDIR);
         } catch (IOException ex) {
             throw new IllegalStateException("Impossible d'enregistrer l'image.", ex);
         }
@@ -191,7 +192,7 @@ public class ServiceIconServiceImpl implements ServiceIconService {
             relative = relative.substring(1);
         }
         String normalized = StringUtils.cleanPath(relative);
-        if (!normalized.startsWith("icones/") && !normalized.equals("icones")) {
+        if (!normalized.startsWith(ICONS_SUBDIR + "/") && !normalized.equals(ICONS_SUBDIR)) {
             return "";
         }
         return normalized;
