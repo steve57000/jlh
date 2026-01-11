@@ -22,18 +22,20 @@ INSERT INTO type_demande (code_type, libelle) VALUES
                                                   ('RendezVous', 'Rendez-vous')
 ON CONFLICT DO NOTHING;
 
-UPDATE service SET icon = '/uploads/icones/picto-metier-pneu.png' WHERE id_service = 1 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-hybride.png' WHERE id_service = 2 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-geometrie.png' WHERE id_service = 3 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-freinage.png' WHERE id_service = 4 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-embrayage.png' WHERE id_service = 5 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-echappement.png' WHERE id_service = 6 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-distribution.png' WHERE id_service = 7 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-climatisation.png' WHERE id_service = 8 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-amortisseur.png' WHERE id_service = 9 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-pre_controle.png' WHERE id_service = 10 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-revision_constructeur.png' WHERE id_service = 11 AND icon IS NULL;
-UPDATE service SET icon = '/uploads/icones/picto-metier-vidange.png' WHERE id_service = 12 AND icon IS NULL;
+INSERT INTO service_icon (url, label) VALUES
+                                          ('/icons/pictos-metiers/picto-metier-pneu.png', 'Pneumatiques'),
+                                          ('/icons/pictos-metiers/picto-metier-hybride.png', 'Véhicules hybrides'),
+                                          ('/icons/pictos-metiers/picto-metier-geometrie.png', 'Géométrie'),
+                                          ('/icons/pictos-metiers/picto-metier-freinage.png', 'Freinage'),
+                                          ('/icons/pictos-metiers/picto-metier-embrayage.png', 'Embrayage'),
+                                          ('/icons/pictos-metiers/picto-metier-echappement.png', 'Échappement'),
+                                          ('/icons/pictos-metiers/picto-metier-distribution.png', 'Distribution'),
+                                          ('/icons/pictos-metiers/picto-metier-climatisation.png', 'Climatisation'),
+                                          ('/icons/pictos-metiers/picto-metier-amortisseur.png', 'Amortisseurs'),
+                                          ('/icons/pictos-metiers/picto-metier-pre_controle.png', 'Pré-contrôle technique'),
+                                          ('/icons/pictos-metiers/picto-metier-revision_constructeur.png', 'Révision constructeur'),
+                                          ('/icons/pictos-metiers/picto-metier-vidange.png', 'Vidange')
+ON CONFLICT (url) DO NOTHING;
 
 INSERT INTO statut_demande (code_statut, libelle) VALUES
                                                       ('Brouillon', 'Brouillon'),
@@ -60,51 +62,51 @@ ON CONFLICT DO NOTHING;
 INSERT INTO service (id_service, libelle, description, icon, prix_unitaire, quantite_max, archived) VALUES
                                                                           (1, 'Pneumatiques',
                                                                            'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-pneu.png',
                                                                            89.00, 4, FALSE),
                                                                           (2, 'Véhicules hybrides',
                                                                            'Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-hybride.png',
                                                                            149.00, 1, FALSE),
                                                                           (3, 'Géométrie',
                                                                            'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-geometrie.png',
                                                                            99.00, 1, FALSE),
                                                                           (4, 'Freinage',
                                                                            'Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-freinage.png',
                                                                            199.00, 2, FALSE),
                                                                           (5, 'Embrayage',
                                                                            'Diagnostic et remplacement des embrayages, volants moteurs et butées pour une transmission souple et fiable.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-embrayage.png',
                                                                            349.00, 1, FALSE),
                                                                           (6, 'Échappement',
                                                                            'Inspection, réparation et remplacement des lignes d’échappement et filtres à particules pour un moteur sain.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-echappement.png',
                                                                            129.00, 1, FALSE),
                                                                           (7, 'Distribution',
                                                                            'Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-distribution.png',
                                                                            699.00, 1, FALSE),
                                                                           (8, 'Climatisation',
                                                                            'Entretien complet du circuit : recharge, nettoyage, contrôle d’étanchéité et désinfection de l’habitacle.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-climatisation.png',
                                                                            79.00, 1, FALSE),
                                                                           (9, 'Amortisseurs',
                                                                            'Remplacement des amortisseurs, ressorts et biellettes pour une conduite confortable et maîtrisée.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-amortisseur.png',
                                                                            249.00, 2, FALSE),
                                                                           (10, 'Pré-contrôle technique',
                                                                            'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-pre_controle.png',
                                                                            59.00, 1, FALSE),
                                                                           (11, 'Révision constructeur',
                                                                            'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-revision_constructeur.png',
                                                                            129.90, 1, FALSE),
                                                                           (12, 'Vidange',
                                                                            'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
-                                                                           NULL,
+                                                                           '/icons/pictos-metiers/picto-metier-vidange.png',
                                                                            59.90, 1, FALSE)
 ON CONFLICT DO NOTHING;
 
