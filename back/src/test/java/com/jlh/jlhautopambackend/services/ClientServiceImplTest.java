@@ -61,36 +61,11 @@ class ClientServiceImplTest {
                 .ville("Metz")
                 .build();
 
-        entity = Client.builder()
-                .nom(request.getNom())
-                .prenom(request.getPrenom())
-                .email(request.getEmail())
-                .immatriculation(request.getImmatriculation())
-                .vehiculeMarque(request.getVehiculeMarque())
-                .vehiculeModele(request.getVehiculeModele())
-                .telephone(request.getTelephone())
-                .adresseLigne1(request.getAdresseLigne1())
-                .adresseLigne2(request.getAdresseLigne2())
-                .adresseVille(request.getVille())
-                .adresseCodePostal(request.getCodePostal())
-                .motDePasse("ENC(secret123)")
-                .build();
+        entity = buildClientFromRequest(request, null);
+        entity.setMotDePasse("ENC(secret123)");
 
-        savedEntity = Client.builder()
-                .idClient(1)
-                .nom(request.getNom())
-                .prenom(request.getPrenom())
-                .email(request.getEmail())
-                .immatriculation(request.getImmatriculation())
-                .vehiculeMarque(request.getVehiculeMarque())
-                .vehiculeModele(request.getVehiculeModele())
-                .telephone(request.getTelephone())
-                .adresseLigne1(request.getAdresseLigne1())
-                .adresseLigne2(request.getAdresseLigne2())
-                .adresseVille(request.getVille())
-                .adresseCodePostal(request.getCodePostal())
-                .motDePasse("ENC(secret123)")
-                .build();
+        savedEntity = buildClientFromRequest(request, 1);
+        savedEntity.setMotDePasse("ENC(secret123)");
 
         response = ClientResponse.builder()
                 .idClient(savedEntity.getIdClient())
@@ -150,20 +125,21 @@ class ClientServiceImplTest {
 
     @Test
     void testFindAll_ShouldReturnListOfResponses() {
-        Client other = Client.builder()
-                .idClient(2)
+        ClientRequest otherRequest = ClientRequest.builder()
                 .nom("Smith")
                 .prenom("Jane")
                 .email("jane.smith@example.com")
+                .motDePasse("secret999")
                 .immatriculation("CD-456-EF")
                 .vehiculeMarque("Renault")
                 .vehiculeModele("Clio")
                 .telephone("0987654321")
                 .adresseLigne1("1 rue dg")
                 .adresseLigne2("2 rue dg")
-                .adresseVille("Metz")
-                .adresseCodePostal("57")
+                .codePostal("57")
+                .ville("Metz")
                 .build();
+        Client other = buildClientFromRequest(otherRequest, 2);
         ClientResponse otherResp = ClientResponse.builder()
                 .idClient(2)
                 .nom("Smith")
@@ -210,37 +186,25 @@ class ClientServiceImplTest {
                 .ville("Metz")
                 .build();
 
-        Client existing = Client.builder()
-                .idClient(3)
+        ClientRequest existingRequest = ClientRequest.builder()
                 .nom("Old")
                 .prenom("Old")
                 .email("old@example.com")
+                .motDePasse("secret123")
                 .immatriculation("OLD-111-XX")
                 .vehiculeMarque("Ford")
                 .vehiculeModele("Focus")
                 .telephone("0000000000")
                 .adresseLigne1("Old Addr")
                 .adresseLigne2("Old Addr")
-                .adresseVille("Old Addr")
-                .adresseCodePostal("Old Addr")
-                .motDePasse("ENC(secret123)")
+                .codePostal("Old Addr")
+                .ville("Old Addr")
                 .build();
+        Client existing = buildClientFromRequest(existingRequest, 3);
+        existing.setMotDePasse("ENC(secret123)");
 
-        Client updatedEntity = Client.builder()
-                .idClient(3)
-                .nom(updateReq.getNom())
-                .prenom(updateReq.getPrenom())
-                .email(updateReq.getEmail())
-                .immatriculation(updateReq.getImmatriculation())
-                .vehiculeMarque(updateReq.getVehiculeMarque())
-                .vehiculeModele(updateReq.getVehiculeModele())
-                .telephone(updateReq.getTelephone())
-                .adresseLigne1(updateReq.getAdresseLigne1())
-                .adresseLigne2(updateReq.getAdresseLigne2())
-                .adresseCodePostal(updateReq.getCodePostal())
-                .adresseVille(updateReq.getVille())
-                .motDePasse("ENC(password999)")
-                .build();
+        Client updatedEntity = buildClientFromRequest(updateReq, 3);
+        updatedEntity.setMotDePasse("ENC(password999)");
 
         ClientResponse updatedResp = ClientResponse.builder()
                 .idClient(3)
@@ -320,5 +284,24 @@ class ClientServiceImplTest {
         assertFalse(result);
         verify(repository).existsById(99);
         verify(repository, never()).deleteById(anyInt());
+    }
+
+    private Client buildClientFromRequest(ClientRequest source, Integer idClient) {
+        Client client = Client.builder()
+                .idClient(idClient)
+                .nom(source.getNom())
+                .prenom(source.getPrenom())
+                .email(source.getEmail())
+                .telephone(source.getTelephone())
+                .adresseLigne1(source.getAdresseLigne1())
+                .adresseLigne2(source.getAdresseLigne2())
+                .adresseVille(source.getVille())
+                .adresseCodePostal(source.getCodePostal())
+                .build();
+        client.setImmatriculation(source.getImmatriculation());
+        client.setVehiculeMarque(source.getVehiculeMarque());
+        client.setVehiculeModele(source.getVehiculeModele());
+        client.setVehiculeEnergie(source.getVehiculeEnergie());
+        return client;
     }
 }
