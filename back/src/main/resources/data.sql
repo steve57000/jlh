@@ -59,54 +59,54 @@ ON CONFLICT DO NOTHING;
 -- ==================================================
 -- 2) Services
 -- ==================================================
-INSERT INTO service (id_service, libelle, description, icon, prix_unitaire, quantite_max, archived) VALUES
+INSERT INTO service (id_service, libelle, description, id_icon, prix_unitaire, quantite_max, archived) VALUES
                                                                           (1, 'Pneumatiques',
                                                                            'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
-                                                                           '/icons/pictos-metiers/picto-metier-pneu.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-pneu.png'),
                                                                            89.00, 4, FALSE),
                                                                           (2, 'Véhicules hybrides',
                                                                            'Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.',
-                                                                           '/icons/pictos-metiers/picto-metier-hybride.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-hybride.png'),
                                                                            149.00, 1, FALSE),
                                                                           (3, 'Géométrie',
                                                                            'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
-                                                                           '/icons/pictos-metiers/picto-metier-geometrie.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-geometrie.png'),
                                                                            99.00, 1, FALSE),
                                                                           (4, 'Freinage',
                                                                            'Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.',
-                                                                           '/icons/pictos-metiers/picto-metier-freinage.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-freinage.png'),
                                                                            199.00, 2, FALSE),
                                                                           (5, 'Embrayage',
                                                                            'Diagnostic et remplacement des embrayages, volants moteurs et butées pour une transmission souple et fiable.',
-                                                                           '/icons/pictos-metiers/picto-metier-embrayage.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-embrayage.png'),
                                                                            349.00, 1, FALSE),
                                                                           (6, 'Échappement',
                                                                            'Inspection, réparation et remplacement des lignes d’échappement et filtres à particules pour un moteur sain.',
-                                                                           '/icons/pictos-metiers/picto-metier-echappement.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-echappement.png'),
                                                                            129.00, 1, FALSE),
                                                                           (7, 'Distribution',
                                                                            'Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.',
-                                                                           '/icons/pictos-metiers/picto-metier-distribution.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-distribution.png'),
                                                                            699.00, 1, FALSE),
                                                                           (8, 'Climatisation',
                                                                            'Entretien complet du circuit : recharge, nettoyage, contrôle d’étanchéité et désinfection de l’habitacle.',
-                                                                           '/icons/pictos-metiers/picto-metier-climatisation.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-climatisation.png'),
                                                                            79.00, 1, FALSE),
                                                                           (9, 'Amortisseurs',
                                                                            'Remplacement des amortisseurs, ressorts et biellettes pour une conduite confortable et maîtrisée.',
-                                                                           '/icons/pictos-metiers/picto-metier-amortisseur.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-amortisseur.png'),
                                                                            249.00, 2, FALSE),
                                                                           (10, 'Pré-contrôle technique',
                                                                            'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
-                                                                           '/icons/pictos-metiers/picto-metier-pre_controle.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-pre_controle.png'),
                                                                            59.00, 1, FALSE),
                                                                           (11, 'Révision constructeur',
                                                                            'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
-                                                                           '/icons/pictos-metiers/picto-metier-revision_constructeur.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-revision_constructeur.png'),
                                                                            129.90, 1, FALSE),
                                                                           (12, 'Vidange',
                                                                            'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
-                                                                           '/icons/pictos-metiers/picto-metier-vidange.png',
+                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-vidange.png'),
                                                                            59.90, 1, FALSE)
 ON CONFLICT DO NOTHING;
 
@@ -117,38 +117,44 @@ ON CONFLICT DO NOTHING;
 INSERT INTO client (
     id_client, nom, prenom, email, telephone,
     adresse_ligne1, adresse_ligne2, adresse_code_postal, adresse_ville,
-    immatriculation, vehicule_marque, vehicule_modele, vehicule_energie, mot_de_passe,
+    mot_de_passe,
     email_verified, email_verified_at
 ) VALUES
       (1,'Durand','Alice','test@client1.fr','0601020304',
        '12 rue Victor Hugo', NULL, '75003', 'Paris',
-       'AA-123-AA','Peugeot','208','ESSENCE',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
        TRUE, '2025-06-01 10:00:00'),
 
       (2,'Martin','Bob','test@client2.fr','0605060708',
        '45 av. Jean Jaurès', NULL, '69007', 'Lyon',
-       'BB-234-BB','Renault','Clio','DIESEL',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
        TRUE, '2025-06-01 10:00:00'),
 
       (3,'Bernard','Claire','test@client3.fr','0611121314',
        '78 bd Haussmann', NULL, '75009', 'Paris',
-       'CC-345-CC','Citroen','C3','ESSENCE',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
        TRUE, '2025-06-01 10:00:00'),
 
       (4,'Lefevre','David','test@client4.fr','0622232425',
        '3 place Bellecour', NULL, '69002', 'Lyon',
-       'DD-456-DD','Volkswagen','Golf','DIESEL',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
        TRUE, '2025-06-01 10:00:00'),
 
       (5,'Dupont','Eva','test@client5.fr','0633343536',
        '6 quai de la Loire', NULL, '44000', 'Nantes',
-       'EE-567-EE','Tesla','Model 3','ELECTRIQUE',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
        FALSE, NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO client_vehicle (
+    id_vehicle, id_client, immatriculation,
+    vehicule_marque, vehicule_modele, vehicule_energie
+) VALUES
+      (1, 1, 'AA-123-AA', 'Peugeot', '208', 'ESSENCE'),
+      (2, 2, 'BB-234-BB', 'Renault', 'Clio', 'DIESEL'),
+      (3, 3, 'CC-345-CC', 'Citroen', 'C3', 'ESSENCE'),
+      (4, 4, 'DD-456-DD', 'Volkswagen', 'Golf', 'DIESEL'),
+      (5, 5, 'EE-567-EE', 'Tesla', 'Model 3', 'ELECTRIQUE')
 ON CONFLICT DO NOTHING;
 
 

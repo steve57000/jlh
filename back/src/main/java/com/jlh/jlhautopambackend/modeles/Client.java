@@ -1,6 +1,14 @@
 package com.jlh.jlhautopambackend.modeles;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,18 +45,8 @@ public class Client {
     @Column(name="email_verified_at")
     private Instant emailVerifiedAt;
 
-    @Column(nullable = false)
-    private String immatriculation;
-
-    @Column(name = "vehicule_marque", length = 100)
-    private String vehiculeMarque;
-
-    @Column(name = "vehicule_modele", length = 100)
-    private String vehiculeModele;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "vehicule_energie", length = 30)
-    private EnergieVehicule vehiculeEnergie;
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private ClientVehicle vehicule;
 
     @Column(length = 20, nullable = false)
     private String telephone;
@@ -65,4 +63,66 @@ public class Client {
 
     @Column(name="adresse_ville", length = 100)
     private String adresseVille;
+
+    public String getImmatriculation() {
+        return vehicule != null ? vehicule.getImmatriculation() : null;
+    }
+
+    public void setImmatriculation(String immatriculation) {
+        if (immatriculation == null && vehicule == null) {
+            return;
+        }
+        ensureVehicle().setImmatriculation(immatriculation);
+    }
+
+    public String getVehiculeMarque() {
+        return vehicule != null ? vehicule.getVehiculeMarque() : null;
+    }
+
+    public void setVehiculeMarque(String vehiculeMarque) {
+        if (vehiculeMarque == null && vehicule == null) {
+            return;
+        }
+        ensureVehicle().setVehiculeMarque(vehiculeMarque);
+    }
+
+    public String getVehiculeModele() {
+        return vehicule != null ? vehicule.getVehiculeModele() : null;
+    }
+
+    public void setVehiculeModele(String vehiculeModele) {
+        if (vehiculeModele == null && vehicule == null) {
+            return;
+        }
+        ensureVehicle().setVehiculeModele(vehiculeModele);
+    }
+
+    public EnergieVehicule getVehiculeEnergie() {
+        return vehicule != null ? vehicule.getVehiculeEnergie() : null;
+    }
+
+    public void setVehiculeEnergie(EnergieVehicule vehiculeEnergie) {
+        if (vehiculeEnergie == null && vehicule == null) {
+            return;
+        }
+        ensureVehicle().setVehiculeEnergie(vehiculeEnergie);
+    }
+
+    public void setVehicule(ClientVehicle vehicule) {
+        this.vehicule = vehicule;
+        if (vehicule != null && vehicule.getClient() != this) {
+            vehicule.setClient(this);
+        }
+    }
+
+    private ClientVehicle ensureVehicle() {
+        if (vehicule == null) {
+            vehicule = ClientVehicle.builder()
+                    .client(this)
+                    .build();
+        } else if (vehicule.getClient() == null) {
+            vehicule.setClient(this);
+        }
+        return vehicule;
+    }
 }
