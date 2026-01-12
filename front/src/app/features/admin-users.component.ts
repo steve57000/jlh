@@ -24,10 +24,10 @@ export class AdminUsersComponent {
 
   adminForm!: FormGroup;
   clientForm!: FormGroup;
-  vehicleBrandOptions = signal([...VEHICLE_BRAND_OPTIONS]);
+  vehicleBrandOptions = signal<{ value: string; label: string }[]>([...VEHICLE_BRAND_OPTIONS]);
   vehicleModelOptions = signal<{ value: string; label: string }[]>([]);
   private vehicleModelOptionsByBrand = signal<Record<string, { value: string; label: string }[]>>(
-    structuredClone(VEHICLE_MODEL_OPTIONS)
+    structuredClone(VEHICLE_MODEL_OPTIONS) as unknown as Record<string, { value: string; label: string }[]>
   );
   vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
   isBrandCustom = signal(false);
