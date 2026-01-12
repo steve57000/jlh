@@ -141,7 +141,7 @@
         <div class="input-with-action">
           <input [type]="showOldPassword() ? 'text' : 'password'"
                  formControlName="oldPassword"
-                 autocomplete="current-password"
+                 autocomplete="off"
                  [class.invalid]="fp.oldPassword.touched && fp.oldPassword.invalid" />
           <button type="button"
                   class="password-toggle"

@@ -78,14 +78,17 @@ export class AccountComponent implements OnInit {
       const me = await this.api.getMe();
       this.me = me;
 
+      const vehiculeMarqueValue = this.resolveBrandValue(me.vehiculeMarque);
+      const vehiculeModeleValue = this.resolveModelValue(vehiculeMarqueValue, me.vehiculeModele);
+
       this.profileForm.reset({
         nom: me.nom || '',
         prenom: me.prenom || '',
         email: me.email || '',
         telephone: me.telephone || '',
         immatriculation: me.immatriculation || '',
-        vehiculeMarque: (me.vehiculeMarque as VehicleBrandValue) || '',
-        vehiculeModele: (me.vehiculeModele as VehicleModelValue) || '',
+        vehiculeMarque: vehiculeMarqueValue,
+        vehiculeModele: vehiculeModeleValue,
         vehiculeEnergie: (me.vehiculeEnergie as VehicleEnergyValue) || '',
         adresse_ligne1: me.adresse?.ligne1 || '',
         adresse_ligne2: me.adresse?.ligne2 || '',
@@ -169,8 +172,8 @@ export class AccountComponent implements OnInit {
       this.me = await this.api.updateMe({
         telephone: (v.telephone ?? '').trim() || null,
         immatriculation: immat || null,
-        vehiculeMarque: (v.vehiculeMarque ?? '').trim() || null,
-        vehiculeModele: (v.vehiculeModele ?? '').trim() || null,
+        vehiculeMarque: this.resolveBrandLabel(v.vehiculeMarque),
+        vehiculeModele: this.resolveModelLabel(v.vehiculeMarque, v.vehiculeModele),
         vehiculeEnergie: (v.vehiculeEnergie as VehicleEnergyValue) || null,
         adresse: {
           ligne1: (v.adresse_ligne1 ?? '').trim() || null,
@@ -231,6 +234,39 @@ export class AccountComponent implements OnInit {
     if (currentModel && !options.some(option => option.value === currentModel)) {
       this.profileForm.get('vehiculeModele')?.setValue('');
     }
+  }
+
+  private resolveBrandValue(value?: string | null): VehicleBrandValue | '' {
+    const raw = (value ?? '').trim();
+    if (!raw) return '';
+    const match = VEHICLE_BRAND_OPTIONS.find(option => option.value === raw)
+      || VEHICLE_BRAND_OPTIONS.find(option => option.label.toLowerCase() === raw.toLowerCase());
+    return (match?.value as VehicleBrandValue) ?? '';
+  }
+
+  private resolveModelValue(brand: VehicleBrandValue | '', value?: string | null): VehicleModelValue | '' {
+    const raw = (value ?? '').trim();
+    if (!raw || !brand) return '';
+    const options = VEHICLE_MODEL_OPTIONS[brand] ?? [];
+    const match = options.find(option => option.value === raw)
+      || options.find(option => option.label.toLowerCase() === raw.toLowerCase());
+    return (match?.value as VehicleModelValue) ?? '';
+  }
+
+  private resolveBrandLabel(value?: VehicleBrandValue | '' | null): string | null {
+    const raw = (value ?? '').trim();
+    if (!raw) return null;
+    const match = VEHICLE_BRAND_OPTIONS.find(option => option.value === raw);
+    return match?.label ?? raw;
+  }
+
+  private resolveModelLabel(brand?: VehicleBrandValue | '' | null, value?: VehicleModelValue | '' | null): string | null {
+    const raw = (value ?? '').trim();
+    if (!raw) return null;
+    if (!brand) return raw;
+    const options = VEHICLE_MODEL_OPTIONS[brand] ?? [];
+    const match = options.find(option => option.value === raw);
+    return match?.label ?? raw;
   }
 
   togglePassword(field: 'old' | 'new' | 'confirm') {
