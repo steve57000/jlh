@@ -32,8 +32,9 @@ public class Service {
     @Column(name = "description_longue", columnDefinition = "TEXT")
     private String descriptionLongue;
 
-    @Column(columnDefinition = "TEXT")
-    private String icon;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_icon")
+    private ServiceIcon icon;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal prixUnitaire;
