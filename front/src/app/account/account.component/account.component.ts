@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ClientAccountService, ClientMeDto } from '../../services/client-account.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { VEHICLE_BRAND_OPTIONS, VEHICLE_MODEL_OPTIONS, VehicleBrandValue, VehicleModelValue } from '../../shared/vehicle-brand-model-options';
 import { VEHICLE_ENERGY_OPTIONS, VehicleEnergyValue } from '../../shared/vehicle-energy-options';
 
 @Component({
@@ -36,6 +37,8 @@ export class AccountComponent implements OnInit {
   private readonly reTel  = /^0[1-9](\s?\d{2}){4}$/;            // 0X XX XX XX XX (espaces optionnels)
   private readonly reSiv  = /^[A-Z]{2}-\d{3}-[A-Z]{2}$/i;       // AA-123-AA
   private readonly reCp   = /^\d{5}$/;                          // 5 chiffres
+  vehicleBrandOptions = VEHICLE_BRAND_OPTIONS;
+  vehicleModelOptions = signal<{ value: VehicleModelValue; label: string }[]>([]);
   vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
 
   profileForm = this.fb.group({
@@ -45,8 +48,8 @@ export class AccountComponent implements OnInit {
 
     telephone: ['', [Validators.pattern(this.reTel)]],
     immatriculation: ['', [Validators.pattern(this.reSiv)]],
-    vehiculeMarque: [''],
-    vehiculeModele: [''],
+    vehiculeMarque: this.fb.control<VehicleBrandValue | ''>(''),
+    vehiculeModele: this.fb.control<VehicleModelValue | ''>(''),
     vehiculeEnergie: this.fb.control<VehicleEnergyValue | ''>(''),
 
     adresse_ligne1: [''],
@@ -61,7 +64,12 @@ export class AccountComponent implements OnInit {
     confirmPassword: ['', Validators.required]
   });
 
-  async ngOnInit() { await this.loadMe(); }
+  async ngOnInit() {
+    this.profileForm.get('vehiculeMarque')?.valueChanges.subscribe(value => {
+      this.updateVehicleModelOptions(value as VehicleBrandValue | '' | null);
+    });
+    await this.loadMe();
+  }
 
   private async loadMe() {
     try {
@@ -70,20 +78,24 @@ export class AccountComponent implements OnInit {
       const me = await this.api.getMe();
       this.me = me;
 
+      const vehiculeMarqueValue = this.resolveBrandValue(me.vehiculeMarque);
+      const vehiculeModeleValue = this.resolveModelValue(vehiculeMarqueValue, me.vehiculeModele);
+
       this.profileForm.reset({
         nom: me.nom || '',
         prenom: me.prenom || '',
         email: me.email || '',
         telephone: me.telephone || '',
         immatriculation: me.immatriculation || '',
-        vehiculeMarque: me.vehiculeMarque || '',
-        vehiculeModele: me.vehiculeModele || '',
+        vehiculeMarque: vehiculeMarqueValue,
+        vehiculeModele: vehiculeModeleValue,
         vehiculeEnergie: (me.vehiculeEnergie as VehicleEnergyValue) || '',
         adresse_ligne1: me.adresse?.ligne1 || '',
         adresse_ligne2: me.adresse?.ligne2 || '',
         adresse_codePostal: me.adresse?.codePostal || '',
         adresse_ville: me.adresse?.ville || '',
       });
+      this.updateVehicleModelOptions(this.profileForm.get('vehiculeMarque')?.value as VehicleBrandValue | '' | null);
     } catch (e: any) {
       this.err.set(e?.error?.message || e?.message || 'Impossible de charger votre profil.');
     } finally {
@@ -160,8 +172,8 @@ export class AccountComponent implements OnInit {
       this.me = await this.api.updateMe({
         telephone: (v.telephone ?? '').trim() || null,
         immatriculation: immat || null,
-        vehiculeMarque: (v.vehiculeMarque ?? '').trim() || null,
-        vehiculeModele: (v.vehiculeModele ?? '').trim() || null,
+        vehiculeMarque: this.resolveBrandLabel(v.vehiculeMarque),
+        vehiculeModele: this.resolveModelLabel(v.vehiculeMarque, v.vehiculeModele),
         vehiculeEnergie: (v.vehiculeEnergie as VehicleEnergyValue) || null,
         adresse: {
           ligne1: (v.adresse_ligne1 ?? '').trim() || null,
@@ -214,6 +226,48 @@ export class AccountComponent implements OnInit {
   // Helpers UI
   get f() { return this.profileForm.controls; }
   get fp() { return this.pwdForm.controls; }
+
+  private updateVehicleModelOptions(brand: VehicleBrandValue | '' | null) {
+    const options = brand ? VEHICLE_MODEL_OPTIONS[brand] ?? [] : [];
+    this.vehicleModelOptions.set([...options]);
+    const currentModel = this.profileForm.get('vehiculeModele')?.value;
+    if (currentModel && !options.some(option => option.value === currentModel)) {
+      this.profileForm.get('vehiculeModele')?.setValue('');
+    }
+  }
+
+  private resolveBrandValue(value?: string | null): VehicleBrandValue | '' {
+    const raw = (value ?? '').trim();
+    if (!raw) return '';
+    const match = VEHICLE_BRAND_OPTIONS.find(option => option.value === raw)
+      || VEHICLE_BRAND_OPTIONS.find(option => option.label.toLowerCase() === raw.toLowerCase());
+    return (match?.value as VehicleBrandValue) ?? '';
+  }
+
+  private resolveModelValue(brand: VehicleBrandValue | '', value?: string | null): VehicleModelValue | '' {
+    const raw = (value ?? '').trim();
+    if (!raw || !brand) return '';
+    const options = VEHICLE_MODEL_OPTIONS[brand] ?? [];
+    const match = options.find(option => option.value === raw)
+      || options.find(option => option.label.toLowerCase() === raw.toLowerCase());
+    return (match?.value as VehicleModelValue) ?? '';
+  }
+
+  private resolveBrandLabel(value?: VehicleBrandValue | '' | null): string | null {
+    const raw = (value ?? '').trim();
+    if (!raw) return null;
+    const match = VEHICLE_BRAND_OPTIONS.find(option => option.value === raw);
+    return match?.label ?? raw;
+  }
+
+  private resolveModelLabel(brand?: VehicleBrandValue | '' | null, value?: VehicleModelValue | '' | null): string | null {
+    const raw = (value ?? '').trim();
+    if (!raw) return null;
+    if (!brand) return raw;
+    const options = VEHICLE_MODEL_OPTIONS[brand] ?? [];
+    const match = options.find(option => option.value === raw);
+    return match?.label ?? raw;
+  }
 
   togglePassword(field: 'old' | 'new' | 'confirm') {
     switch (field) {

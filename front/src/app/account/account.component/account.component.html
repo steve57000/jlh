@@ -45,11 +45,21 @@
           <div class="grid-2">
             <div>
               <label>Marque</label>
-              <input type="text" formControlName="vehiculeMarque" placeholder="Peugeot" />
+              <select formControlName="vehiculeMarque">
+                <option value="">Sélectionner…</option>
+                @for (opt of vehicleBrandOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
             </div>
             <div>
               <label>Modèle</label>
-              <input type="text" formControlName="vehiculeModele" placeholder="308" />
+              <select formControlName="vehiculeModele">
+                <option value="">Sélectionner…</option>
+                @for (opt of vehicleModelOptions(); track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
             </div>
           </div>
 
@@ -131,7 +141,7 @@
         <div class="input-with-action">
           <input [type]="showOldPassword() ? 'text' : 'password'"
                  formControlName="oldPassword"
-                 autocomplete="current-password"
+                 autocomplete="off"
                  [class.invalid]="fp.oldPassword.touched && fp.oldPassword.invalid" />
           <button type="button"
                   class="password-toggle"

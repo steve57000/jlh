@@ -156,7 +156,9 @@ ON CONFLICT DO NOTHING;
 -- 4) Admins
 -- ==================================================
 INSERT INTO administrateur (id_admin, username, email, mot_de_passe, nom, prenom, niveau_acces) VALUES
-    (1,'Michael.B','test@admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Bongeot','Michael', 'PRINCIPAL')
+    (1,'Michael.B','test@admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Bongeot','Michael', 'PRINCIPAL'),
+    (2,'Test.Gestionnaire','test@gestionnaire.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Gestionnaire','Test', 'GESTIONNAIRE'),
+    (3,'Test.SousAdmin','test@sous-admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Sous-admin','Test', 'ADMIN')
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
