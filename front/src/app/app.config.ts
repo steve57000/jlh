@@ -4,6 +4,7 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
+import { LocationStrategy, PathLocationStrategy } from '@angular/common';
 import {provideRouter, withInMemoryScrolling} from '@angular/router';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
@@ -40,6 +41,7 @@ export const appConfig: ApplicationConfig = {
 
     // Locale
     { provide: LOCALE_ID, useValue: 'fr-FR' },
+    { provide: LocationStrategy, useClass: PathLocationStrategy },
 
     // Active les animations côté client
     provideAnimations(),
