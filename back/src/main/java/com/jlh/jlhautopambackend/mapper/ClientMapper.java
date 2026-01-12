@@ -5,8 +5,10 @@ import com.jlh.jlhautopambackend.dto.ClientDto;
 import com.jlh.jlhautopambackend.dto.ClientRequest;
 import com.jlh.jlhautopambackend.dto.ClientResponse;
 import com.jlh.jlhautopambackend.modeles.Client;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -29,9 +31,7 @@ public abstract class ClientMapper {
     @Mapping(target = "adresseLigne2", source = "adresseLigne2")
     @Mapping(target = "adresseCodePostal", source = "codePostal")
     @Mapping(target = "adresseVille", source = "ville")
-    @Mapping(target = "vehiculeMarque", source = "vehiculeMarque")
-    @Mapping(target = "vehiculeModele", source = "vehiculeModele")
-    @Mapping(target = "vehiculeEnergie", source = "vehiculeEnergie")
+    @Mapping(target = "vehicule", ignore = true)
     public abstract Client toEntity(ClientRequest dto);
 
     @Mapping(target = "codePostal", source = "adresseCodePostal")
@@ -43,6 +43,17 @@ public abstract class ClientMapper {
 
     @Mapping(target = "adresse", expression = "java(formatAdresse(entity))")
     public abstract ClientDto toDto(Client entity);
+
+    @AfterMapping
+    protected void assignVehicule(ClientRequest dto, @MappingTarget Client entity) {
+        if (dto == null || entity == null) {
+            return;
+        }
+        entity.setImmatriculation(dto.getImmatriculation());
+        entity.setVehiculeMarque(dto.getVehiculeMarque());
+        entity.setVehiculeModele(dto.getVehiculeModele());
+        entity.setVehiculeEnergie(dto.getVehiculeEnergie());
+    }
 
     protected String formatAdresse(Client entity) {
         if (entity == null) {
