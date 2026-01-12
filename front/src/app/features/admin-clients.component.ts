@@ -24,10 +24,10 @@ export class AdminClientsComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   clients = signal<ClientResponse[]>([]);
-  vehicleBrandOptions = signal([...VEHICLE_BRAND_OPTIONS]);
+  vehicleBrandOptions = signal<{ value: string; label: string }[]>([...VEHICLE_BRAND_OPTIONS]);
   vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
   private vehicleModelOptionsByBrand = signal<Record<string, { value: string; label: string }[]>>(
-    structuredClone(VEHICLE_MODEL_OPTIONS)
+    structuredClone(VEHICLE_MODEL_OPTIONS) as Record<string, { value: string; label: string }[]>
   );
 
   search = signal('');
