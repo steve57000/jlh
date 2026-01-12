@@ -27,7 +27,7 @@ export class AdminClientsComponent implements OnInit {
   vehicleBrandOptions = signal<{ value: string; label: string }[]>([...VEHICLE_BRAND_OPTIONS]);
   vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
   private vehicleModelOptionsByBrand = signal<Record<string, { value: string; label: string }[]>>(
-    structuredClone(VEHICLE_MODEL_OPTIONS) as Record<string, { value: string; label: string }[]>
+    structuredClone(VEHICLE_MODEL_OPTIONS) as unknown as Record<string, { value: string; label: string }[]>
   );
 
   search = signal('');
