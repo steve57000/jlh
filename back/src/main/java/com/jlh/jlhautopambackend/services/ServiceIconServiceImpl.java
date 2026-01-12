@@ -154,15 +154,12 @@ public class ServiceIconServiceImpl implements ServiceIconService {
     }
 
     @Override
-    public void ensureIconExists(String url) {
-        String cleaned = sanitizeUrl(url);
-        if (!StringUtils.hasText(cleaned)) {
-            return;
+    public ServiceIcon resolveIcon(Integer iconId) {
+        if (iconId == null) {
+            return null;
         }
-        repo.findByUrl(cleaned).orElseGet(() -> repo.save(ServiceIcon.builder()
-                .url(cleaned)
-                .label(null)
-                .build()));
+        return repo.findById(iconId)
+                .orElseThrow(() -> new IllegalArgumentException("Icône introuvable : " + iconId));
     }
 
     private String sanitizeUrl(String url) {

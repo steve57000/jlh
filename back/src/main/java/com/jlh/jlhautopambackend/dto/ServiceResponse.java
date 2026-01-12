@@ -13,7 +13,8 @@ public class ServiceResponse {
     private String libelle;
     private String description;
     private String descriptionLongue;
-    private String icon;
+    private Integer iconId;
+    private String iconUrl;
     private BigDecimal prixUnitaire;
     private boolean archived;
     private Integer quantiteMax;
