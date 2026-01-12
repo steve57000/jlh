@@ -225,7 +225,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const defaults = this.getDefaultMetiersPictos();
 
     return sorted.map((service, index) => {
-      const icon = typeof service.icon === 'string' ? service.icon.trim() : '';
+      const icon = typeof service.iconUrl === 'string' ? service.iconUrl.trim() : '';
       const fallbackIcon = defaults[index % defaults.length]?.img;
       return {
         img: this.resolveIcon(icon) || fallbackIcon,

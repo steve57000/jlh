@@ -20,5 +20,5 @@ public interface ServiceIconService {
 
     boolean delete(Integer id);
 
-    void ensureIconExists(String url);
+    com.jlh.jlhautopambackend.modeles.ServiceIcon resolveIcon(Integer iconId);
 }

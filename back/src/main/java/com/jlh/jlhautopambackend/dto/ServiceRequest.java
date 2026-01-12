@@ -18,7 +18,7 @@ public class ServiceRequest {
 
     private String descriptionLongue;
 
-    private String icon;
+    private Integer iconId;
 
     @NotNull
     @DecimalMin("0.00")

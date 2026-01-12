@@ -39,7 +39,7 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     public ServiceResponse create(ServiceRequest request) {
         Service toSave = mapper.toEntity(request);
-        iconService.ensureIconExists(toSave.getIcon());
+        toSave.setIcon(iconService.resolveIcon(request.getIconId()));
         Service saved  = repo.save(toSave);
         return mapper.toResponse(saved);
     }
@@ -51,10 +51,9 @@ public class ServiceServiceImpl implements ServiceService {
                     existing.setLibelle(request.getLibelle());
                     existing.setDescription(request.getDescription());
                     existing.setDescriptionLongue(request.getDescriptionLongue());
-                    existing.setIcon(request.getIcon());
+                    existing.setIcon(iconService.resolveIcon(request.getIconId()));
                     existing.setPrixUnitaire(request.getPrixUnitaire());
                     existing.setQuantiteMax(request.getQuantiteMax());
-                    iconService.ensureIconExists(request.getIcon());
                     Service saved = repo.save(existing);
                     return mapper.toResponse(saved);
                 });
