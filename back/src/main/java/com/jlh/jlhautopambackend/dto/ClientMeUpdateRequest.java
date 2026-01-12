@@ -1,5 +1,6 @@
 package com.jlh.jlhautopambackend.dto;
 
+import com.jlh.jlhautopambackend.modeles.EnergieVehicule;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -21,6 +22,8 @@ public class ClientMeUpdateRequest {
 
     @Size(max = 100, message = "Modèle du véhicule trop long")
     private String vehiculeModele;
+
+    private EnergieVehicule vehiculeEnergie;
 
     @Valid
     private Adresse adresse;

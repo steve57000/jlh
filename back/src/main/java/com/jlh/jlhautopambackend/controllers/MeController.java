@@ -57,6 +57,7 @@ public class MeController {
                 .immatriculation(c.getImmatriculation())
                 .vehiculeMarque(c.getVehiculeMarque())
                 .vehiculeModele(c.getVehiculeModele())
+                .vehiculeEnergie(c.getVehiculeEnergie())
                 .adresse(ClientMeDto.AddressDto.builder()
                         .ligne1(c.getAdresseLigne1())
                         .ligne2(c.getAdresseLigne2())
@@ -81,6 +82,7 @@ public class MeController {
         );
         c.setVehiculeMarque(nullIfBlank(req.getVehiculeMarque()));
         c.setVehiculeModele(nullIfBlank(req.getVehiculeModele()));
+        c.setVehiculeEnergie(req.getVehiculeEnergie());
 
         if (req.getAdresse() != null) {
             c.setAdresseLigne1(nullIfBlank(req.getAdresse().getLigne1()));
@@ -100,6 +102,7 @@ public class MeController {
                 .immatriculation(c.getImmatriculation())
                 .vehiculeMarque(c.getVehiculeMarque())
                 .vehiculeModele(c.getVehiculeModele())
+                .vehiculeEnergie(c.getVehiculeEnergie())
                 .adresse(ClientMeDto.AddressDto.builder()
                         .ligne1(c.getAdresseLigne1())
                         .ligne2(c.getAdresseLigne2())

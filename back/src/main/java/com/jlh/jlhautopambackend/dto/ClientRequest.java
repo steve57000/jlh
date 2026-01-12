@@ -1,6 +1,7 @@
 // src/main/java/com/jlh/jlhautopambackend/dto/ClientRequest.java
 package com.jlh.jlhautopambackend.dto;
 
+import com.jlh.jlhautopambackend.modeles.EnergieVehicule;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -35,6 +36,8 @@ public class ClientRequest {
     @NotBlank(message = "Le modèle du véhicule est obligatoire")
     @Size(max = 100, message = "Le modèle du véhicule est trop long")
     private String vehiculeModele;
+
+    private EnergieVehicule vehiculeEnergie;
 
     @NotBlank(message = "Le téléphone est obligatoire")
     private String telephone;

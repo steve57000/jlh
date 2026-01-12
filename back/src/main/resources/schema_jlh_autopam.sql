@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS client (
   immatriculation VARCHAR(255) NOT NULL,
   vehicule_marque VARCHAR(100),
   vehicule_modele VARCHAR(100),
+  vehicule_energie VARCHAR(30),
   telephone VARCHAR(20) NOT NULL,
   adresse_ligne1 VARCHAR(255),
   adresse_ligne2 VARCHAR(255),

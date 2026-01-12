@@ -71,7 +71,8 @@ export class DemandesServiceService {
                 adresseCodePostal: normalizeString(c.adresseCodePostal ?? c.adresse_codePostal),
                 adresseVille: normalizeString(c.adresseVille),
                 vehiculeMarque: normalizeString(c.vehiculeMarque ?? c.marqueVehicule),
-                vehiculeModele: normalizeString(c.vehiculeModele ?? c.modeleVehicule)
+                vehiculeModele: normalizeString(c.vehiculeModele ?? c.modeleVehicule),
+                vehiculeEnergie: normalizeString(c.vehiculeEnergie)
               }
               : undefined;
 

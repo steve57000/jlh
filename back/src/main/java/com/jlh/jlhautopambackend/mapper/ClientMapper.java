@@ -31,12 +31,14 @@ public abstract class ClientMapper {
     @Mapping(target = "adresseVille", source = "ville")
     @Mapping(target = "vehiculeMarque", source = "vehiculeMarque")
     @Mapping(target = "vehiculeModele", source = "vehiculeModele")
+    @Mapping(target = "vehiculeEnergie", source = "vehiculeEnergie")
     public abstract Client toEntity(ClientRequest dto);
 
     @Mapping(target = "codePostal", source = "adresseCodePostal")
     @Mapping(target = "ville", source = "adresseVille")
     @Mapping(target = "vehiculeMarque", source = "vehiculeMarque")
     @Mapping(target = "vehiculeModele", source = "vehiculeModele")
+    @Mapping(target = "vehiculeEnergie", source = "vehiculeEnergie")
     public abstract ClientResponse toResponse(Client entity);
 
     @Mapping(target = "adresse", expression = "java(formatAdresse(entity))")

@@ -88,6 +88,15 @@
             <input type="text" formControlName="vehiculeModele" />
           </label>
           <label>
+            <span>Énergie véhicule</span>
+            <select formControlName="vehiculeEnergie">
+              <option value="">Sélectionner…</option>
+              @for (opt of vehicleEnergyOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </label>
+          <label>
             <span>Adresse</span>
             <input type="text" formControlName="adresseLigne1" />
           </label>

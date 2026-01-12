@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ClientAccountService, ClientMeDto } from '../../services/client-account.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { VEHICLE_ENERGY_OPTIONS, VehicleEnergyValue } from '../../shared/vehicle-energy-options';
 
 @Component({
   standalone: true,
@@ -23,6 +24,9 @@ export class AccountComponent implements OnInit {
   loading   = signal<boolean>(false);
   saving    = signal<boolean>(false);
   pwdSaving = signal<boolean>(false);
+  showOldPassword = signal<boolean>(false);
+  showNewPassword = signal<boolean>(false);
+  showConfirmPassword = signal<boolean>(false);
 
   me: ClientMeDto | null = null;
   err = signal<string>('');
@@ -32,6 +36,7 @@ export class AccountComponent implements OnInit {
   private readonly reTel  = /^0[1-9](\s?\d{2}){4}$/;            // 0X XX XX XX XX (espaces optionnels)
   private readonly reSiv  = /^[A-Z]{2}-\d{3}-[A-Z]{2}$/i;       // AA-123-AA
   private readonly reCp   = /^\d{5}$/;                          // 5 chiffres
+  vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
 
   profileForm = this.fb.group({
     nom:   [{ value: '', disabled: true }],
@@ -40,6 +45,9 @@ export class AccountComponent implements OnInit {
 
     telephone: ['', [Validators.pattern(this.reTel)]],
     immatriculation: ['', [Validators.pattern(this.reSiv)]],
+    vehiculeMarque: [''],
+    vehiculeModele: [''],
+    vehiculeEnergie: this.fb.control<VehicleEnergyValue | ''>(''),
 
     adresse_ligne1: [''],
     adresse_ligne2: [''],
@@ -68,6 +76,9 @@ export class AccountComponent implements OnInit {
         email: me.email || '',
         telephone: me.telephone || '',
         immatriculation: me.immatriculation || '',
+        vehiculeMarque: me.vehiculeMarque || '',
+        vehiculeModele: me.vehiculeModele || '',
+        vehiculeEnergie: (me.vehiculeEnergie as VehicleEnergyValue) || '',
         adresse_ligne1: me.adresse?.ligne1 || '',
         adresse_ligne2: me.adresse?.ligne2 || '',
         adresse_codePostal: me.adresse?.codePostal || '',
@@ -82,7 +93,14 @@ export class AccountComponent implements OnInit {
 
   // ————— Helpers erreurs serveur —————
   private clearServerFieldErrors() {
-    (['telephone', 'immatriculation', 'adresse_codePostal'] as const).forEach(name => {
+    ([
+      'telephone',
+      'immatriculation',
+      'vehiculeMarque',
+      'vehiculeModele',
+      'vehiculeEnergie',
+      'adresse_codePostal'
+    ] as const).forEach(name => {
       const c = this.profileForm.get(name);
       if (!c) return;
       const current = c.errors || {};
@@ -102,6 +120,9 @@ export class AccountComponent implements OnInit {
     const map: Record<string, keyof typeof this.profileForm.controls> = {
       telephone: 'telephone',
       immatriculation: 'immatriculation',
+      vehiculeMarque: 'vehiculeMarque',
+      vehiculeModele: 'vehiculeModele',
+      vehiculeEnergie: 'vehiculeEnergie',
       codePostal: 'adresse_codePostal',
       'addr.codePostal': 'adresse_codePostal',
       'adresse.codePostal': 'adresse_codePostal',
@@ -139,6 +160,9 @@ export class AccountComponent implements OnInit {
       this.me = await this.api.updateMe({
         telephone: (v.telephone ?? '').trim() || null,
         immatriculation: immat || null,
+        vehiculeMarque: (v.vehiculeMarque ?? '').trim() || null,
+        vehiculeModele: (v.vehiculeModele ?? '').trim() || null,
+        vehiculeEnergie: (v.vehiculeEnergie as VehicleEnergyValue) || null,
         adresse: {
           ligne1: (v.adresse_ligne1 ?? '').trim() || null,
           ligne2: (v.adresse_ligne2 ?? '').trim() || null,
@@ -190,4 +214,18 @@ export class AccountComponent implements OnInit {
   // Helpers UI
   get f() { return this.profileForm.controls; }
   get fp() { return this.pwdForm.controls; }
+
+  togglePassword(field: 'old' | 'new' | 'confirm') {
+    switch (field) {
+      case 'old':
+        this.showOldPassword.update(value => !value);
+        break;
+      case 'new':
+        this.showNewPassword.update(value => !value);
+        break;
+      case 'confirm':
+        this.showConfirmPassword.update(value => !value);
+        break;
+    }
+  }
 }

@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AdminUsersService } from '../services/admin-users.service';
 import { AdminClientsService } from '../services/admin-clients.service';
 import { ToastService } from '../shared/toast/toast.service';
+import { VEHICLE_ENERGY_OPTIONS } from '../shared/vehicle-energy-options';
 
 @Component({
   selector: 'admin-users',
@@ -18,6 +19,7 @@ export class AdminUsersComponent {
 
   adminForm!: FormGroup;
   clientForm!: FormGroup;
+  vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
 
   constructor(
     private fb: FormBuilder,
@@ -43,6 +45,7 @@ export class AdminUsersComponent {
       immatriculation: ['', Validators.required],
       vehiculeMarque: ['', Validators.required],
       vehiculeModele: ['', Validators.required],
+      vehiculeEnergie: [''],
       adresseLigne1: ['', Validators.required],
       adresseLigne2: [''],
       codePostal: ['', Validators.required],
@@ -78,7 +81,11 @@ export class AdminUsersComponent {
     }
     this.clientSubmitting.set(true);
     const payload = this.clientForm.getRawValue();
-    this.adminClients.create(payload).subscribe({
+    const normalized = {
+      ...payload,
+      vehiculeEnergie: payload.vehiculeEnergie?.trim() ? payload.vehiculeEnergie : null
+    };
+    this.adminClients.create(normalized).subscribe({
       next: () => {
         this.toast.success('Client créé.');
         this.clientForm.reset();

@@ -1,5 +1,6 @@
 package com.jlh.jlhautopambackend.dto;
 
+import com.jlh.jlhautopambackend.modeles.EnergieVehicule;
 import lombok.*;
 
 import java.time.Instant;
@@ -17,6 +18,7 @@ public class ClientResponse {
     private String immatriculation;
     private String vehiculeMarque;
     private String vehiculeModele;
+    private EnergieVehicule vehiculeEnergie;
     private String telephone;
 
     // on garde la forme éclatée
