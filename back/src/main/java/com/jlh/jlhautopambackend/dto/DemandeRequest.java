@@ -1,5 +1,6 @@
 package com.jlh.jlhautopambackend.dto;
 
+import com.jlh.jlhautopambackend.modeles.EnergieVehicule;
 import lombok.*;
 import java.time.Instant;
 import java.util.List;
@@ -18,6 +19,7 @@ public class DemandeRequest {
     private String immatriculation;
     private String vehiculeMarque;
     private String vehiculeModele;
+    private EnergieVehicule vehiculeEnergie;
     private String telephone;
     private String adresseLigne1;
     private String adresseLigne2;

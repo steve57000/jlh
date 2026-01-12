@@ -74,6 +74,7 @@ public class ClientServiceImpl implements ClientService {
                     existing.setImmatriculation(request.getImmatriculation());
                     existing.setVehiculeMarque(request.getVehiculeMarque());
                     existing.setVehiculeModele(request.getVehiculeModele());
+                    existing.setVehiculeEnergie(request.getVehiculeEnergie());
                     existing.setAdresseLigne1(request.getAdresseLigne1());
                     existing.setAdresseLigne2(request.getAdresseLigne2());
                     existing.setAdresseCodePostal(request.getCodePostal());

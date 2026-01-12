@@ -115,6 +115,15 @@
                 <span>Modèle</span>
                 <input type="text" [ngModel]="draft.vehiculeModele || ''" (ngModelChange)="updateField('vehiculeModele', $event)" />
               </label>
+              <label>
+                <span>Énergie</span>
+                <select [ngModel]="draft.vehiculeEnergie || ''" (ngModelChange)="updateField('vehiculeEnergie', $event)">
+                  <option value="">Sélectionner…</option>
+                  @for (opt of vehicleEnergyOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </label>
             </section>
 
             <section class="detail-grid">

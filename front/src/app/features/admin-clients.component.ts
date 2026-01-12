@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminClientsService } from '../services/admin-clients.service';
 import { ClientResponse, UpdateClientPayload } from '../modeles/client.model';
 import { ToastService } from '../shared/toast/toast.service';
+import { VEHICLE_ENERGY_OPTIONS } from '../shared/vehicle-energy-options';
 
 @Component({
   selector: 'admin-clients',
@@ -19,6 +20,7 @@ export class AdminClientsComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   clients = signal<ClientResponse[]>([]);
+  vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
 
   search = signal('');
   verification = signal<'all' | 'verified' | 'unverified'>('all');
@@ -45,6 +47,7 @@ export class AdminClientsComponent implements OnInit {
           client.immatriculation,
           client.vehiculeMarque,
           client.vehiculeModele,
+          client.vehiculeEnergie,
           client.ville,
           client.codePostal
         ].filter(Boolean).join(' ').toLowerCase();
@@ -167,6 +170,7 @@ export class AdminClientsComponent implements OnInit {
       immatriculation: trim(client.immatriculation),
       vehiculeMarque: trim(client.vehiculeMarque),
       vehiculeModele: trim(client.vehiculeModele),
+      vehiculeEnergie: trim(client.vehiculeEnergie),
       adresseLigne1: trim(client.adresseLigne1),
       adresseLigne2: trim(client.adresseLigne2),
       codePostal: trim(client.codePostal),
@@ -184,6 +188,7 @@ export class AdminClientsComponent implements OnInit {
       immatriculation: client.immatriculation?.trim() ?? null,
       vehiculeMarque: client.vehiculeMarque?.trim() ?? null,
       vehiculeModele: client.vehiculeModele?.trim() ?? null,
+      vehiculeEnergie: client.vehiculeEnergie?.trim() ?? null,
       adresseLigne1: client.adresseLigne1?.trim() ?? null,
       adresseLigne2: client.adresseLigne2?.trim() ?? null,
       codePostal: client.codePostal?.trim() ?? null,

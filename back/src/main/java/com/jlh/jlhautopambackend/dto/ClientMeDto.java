@@ -1,6 +1,7 @@
 // src/main/java/com/jlh/jlhautopambackend/dto/ClientMeDto.java
 package com.jlh.jlhautopambackend.dto;
 
+import com.jlh.jlhautopambackend.modeles.EnergieVehicule;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class ClientMeDto {
     private String immatriculation;
     private String vehiculeMarque;
     private String vehiculeModele;
+    private EnergieVehicule vehiculeEnergie;
     private AddressDto adresse;
 
     @Data @Builder

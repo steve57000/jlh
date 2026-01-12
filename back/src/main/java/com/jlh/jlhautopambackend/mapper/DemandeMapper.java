@@ -53,6 +53,7 @@ public interface DemandeMapper {
     @Mapping(target = "immatriculation", source = "immatriculation")
     @Mapping(target = "vehiculeMarque", source = "vehiculeMarque")
     @Mapping(target = "vehiculeModele", source = "vehiculeModele")
+    @Mapping(target = "vehiculeEnergie", source = "vehiculeEnergie")
     @Mapping(target = "adresseLigne1", source = "adresseLigne1")
     @Mapping(target = "adresseLigne2", source = "adresseLigne2")
     @Mapping(target = "adresseCodePostal", source = "adresseCodePostal")

@@ -1,5 +1,6 @@
 package com.jlh.jlhautopambackend.payload;
 
+import com.jlh.jlhautopambackend.modeles.EnergieVehicule;
 import jakarta.validation.constraints.*;
 
 public record RegisterRequest(
@@ -32,6 +33,8 @@ public record RegisterRequest(
         @NotBlank
         @Size(max = 100, message = "Modèle de véhicule trop long")
         String vehiculeModele,
+
+        EnergieVehicule vehiculeEnergie,
 
         // ✅ Adresse éclatée
         @NotBlank String adresseLigne1,

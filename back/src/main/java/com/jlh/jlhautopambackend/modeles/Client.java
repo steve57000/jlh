@@ -46,6 +46,10 @@ public class Client {
     @Column(name = "vehicule_modele", length = 100)
     private String vehiculeModele;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "vehicule_energie", length = 30)
+    private EnergieVehicule vehiculeEnergie;
+
     @Column(length = 20, nullable = false)
     private String telephone;
 
