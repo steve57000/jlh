@@ -22,7 +22,6 @@ public class ClientRequest {
     @NotBlank(message = "L'email est obligatoire")
     private String email;
 
-    @Size(min = 6, message = "Le mot de passe doit faire au moins 6 caractères")
     private String motDePasse;
 
     @NotBlank(message = "L'immatriculation est obligatoire")

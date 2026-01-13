@@ -71,6 +71,14 @@ public class RestExceptionHandler {
         return ResponseEntity.badRequest().body(resp);
     }
 
+    // 400 - paramètres invalides ou incomplets côté service
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException ex) {
+        Map<String, Object> resp = body("Validation error");
+        resp.put("errors", Map.of("message", ex.getMessage()));
+        return ResponseEntity.badRequest().body(resp);
+    }
+
     // 404 - entité non trouvée
     @ExceptionHandler({NoSuchElementException.class, EntityNotFoundException.class})
     public ResponseEntity<?> handleNotFound(RuntimeException ex) {

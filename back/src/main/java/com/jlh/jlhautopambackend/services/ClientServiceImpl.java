@@ -40,6 +40,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public ClientResponse create(ClientRequest request, boolean sendVerification) {
         requirePassword(request);
+        requirePassword(request);
         Client entity = mapper.toEntity(request);
         Client saved = repository.save(entity);
         if (sendVerification && saved.getIdClient() != null) {
@@ -73,6 +74,12 @@ public class ClientServiceImpl implements ClientService {
                     existing.setEmail(request.getEmail());
                     existing.setTelephone(request.getTelephone());
                     existing.setImmatriculation(request.getImmatriculation());
+
+    private void requirePassword(ClientRequest request) {
+        if (request == null || request.getMotDePasse() == null || request.getMotDePasse().isBlank()) {
+            throw new IllegalArgumentException("Le mot de passe est obligatoire.");
+        }
+    }
                     existing.setVehiculeMarque(request.getVehiculeMarque());
                     existing.setVehiculeModele(request.getVehiculeModele());
                     existing.setVehiculeEnergie(request.getVehiculeEnergie());
