@@ -34,7 +34,8 @@ INSERT INTO service_icon (url, label) VALUES
                                           ('/icons/pictos-metiers/picto-metier-amortisseur.png', 'Amortisseurs'),
                                           ('/icons/pictos-metiers/picto-metier-pre_controle.png', 'Pré-contrôle technique'),
                                           ('/icons/pictos-metiers/picto-metier-revision_constructeur.png', 'Révision constructeur'),
-                                          ('/icons/pictos-metiers/picto-metier-vidange.png', 'Vidange')
+                                          ('/icons/pictos-metiers/picto-metier-vidange.png', 'Vidange'),
+                                          ('/icons/pictos-metiers/picto-metier-parebrise.png', 'Pare-brise')
 ON CONFLICT (url) DO NOTHING;
 
 INSERT INTO statut_demande (code_statut, libelle) VALUES
@@ -62,51 +63,51 @@ ON CONFLICT DO NOTHING;
 INSERT INTO service (id_service, libelle, description, id_icon, prix_unitaire, quantite_max, archived) VALUES
                                                                           (1, 'Pneumatiques',
                                                                            'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-pneu.png'),
+                                                                           1,
                                                                            89.00, 4, FALSE),
                                                                           (2, 'Véhicules hybrides',
                                                                            'Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-hybride.png'),
+                                                                           2,
                                                                            149.00, 1, FALSE),
                                                                           (3, 'Géométrie',
                                                                            'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-geometrie.png'),
+                                                                           3,
                                                                            99.00, 1, FALSE),
                                                                           (4, 'Freinage',
                                                                            'Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-freinage.png'),
+                                                                           4,
                                                                            199.00, 2, FALSE),
                                                                           (5, 'Embrayage',
                                                                            'Diagnostic et remplacement des embrayages, volants moteurs et butées pour une transmission souple et fiable.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-embrayage.png'),
+                                                                           5,
                                                                            349.00, 1, FALSE),
                                                                           (6, 'Échappement',
                                                                            'Inspection, réparation et remplacement des lignes d’échappement et filtres à particules pour un moteur sain.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-echappement.png'),
+                                                                           6,
                                                                            129.00, 1, FALSE),
                                                                           (7, 'Distribution',
                                                                            'Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-distribution.png'),
+                                                                           7,
                                                                            699.00, 1, FALSE),
                                                                           (8, 'Climatisation',
                                                                            'Entretien complet du circuit : recharge, nettoyage, contrôle d’étanchéité et désinfection de l’habitacle.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-climatisation.png'),
+                                                                           8,
                                                                            79.00, 1, FALSE),
                                                                           (9, 'Amortisseurs',
                                                                            'Remplacement des amortisseurs, ressorts et biellettes pour une conduite confortable et maîtrisée.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-amortisseur.png'),
-                                                                           249.00, 2, FALSE),
+                                                                           9,
+                                                                           249.00, 1, FALSE),
                                                                           (10, 'Pré-contrôle technique',
                                                                            'Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-pre_controle.png'),
+                                                                           10,
                                                                            59.00, 1, FALSE),
                                                                           (11, 'Révision constructeur',
                                                                            'Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-revision_constructeur.png'),
+                                                                           11,
                                                                            129.90, 1, FALSE),
                                                                           (12, 'Vidange',
                                                                            'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
-                                                                           (SELECT id_icon FROM service_icon WHERE url = '/icons/pictos-metiers/picto-metier-vidange.png'),
+                                                                           12,
                                                                            59.90, 1, FALSE)
 ON CONFLICT DO NOTHING;
 
@@ -163,20 +164,20 @@ ON CONFLICT DO NOTHING;
 -- ==================================================
 INSERT INTO administrateur (id_admin, username, email, mot_de_passe, nom, prenom, niveau_acces) VALUES
     (1,'Michael.B','test@admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Bongeot','Michael', 'PRINCIPAL'),
-    (2,'Test.Gestionnaire','test@gestionnaire.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Gestionnaire','Test', 'GESTIONNAIRE'),
-    (3,'Test.SousAdmin','test@sous-admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Sous-admin','Test', 'ADMIN')
+    (2,'Test.Gestionnaire','test@gestionnaire.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Gestionnaire','Gestionnaire', 'GESTIONNAIRE'),
+    (3,'Test.SousAdmin','test@sous-admin.fr','$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW','Sous-admin','Sous admin', 'ADMIN')
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 5) Créneaux
 -- ==================================================
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-                                                                        (1,'2025-07-01 09:00:00','2025-07-01 10:00:00','Reserve'),   -- utilisé par RDV#1 (Confirmé)
-                                                                        (2,'2025-07-01 10:00:00','2025-07-01 11:00:00','Libre'),
-                                                                        (3,'2025-07-01 11:00:00','2025-07-01 12:00:00','Reserve'),   -- utilisé par RDV#2 (Reporté)
-                                                                        (4,'2025-07-01 14:00:00','2025-07-01 15:00:00','Indisponible'),
-                                                                        (5,'2025-07-02 09:00:00','2025-07-02 10:00:00','Libre'),
-                                                                        (6,'2025-07-02 10:00:00','2025-07-02 11:00:00','Reserve')   -- utilisé par RDV#3 (Annulé)
+                                                                        (1,'2026-07-01 09:00:00','2026-07-01 10:00:00','Reserve'),   -- utilisé par RDV#1 (Confirmé)
+                                                                        (2,'2026-07-01 10:00:00','2026-07-01 11:00:00','Libre'),
+                                                                        (3,'2026-07-01 11:00:00','2026-07-01 12:00:00','Reserve'),   -- utilisé par RDV#2 (Reporté)
+                                                                        (4,'2026-07-01 14:00:00','2026-07-01 15:00:00','Indisponible'),
+                                                                        (5,'2026-07-02 09:00:00','2026-07-02 10:00:00','Libre'),
+                                                                        (6,'2026-07-02 10:00:00','2026-07-02 11:00:00','Reserve')   -- utilisé par RDV#3 (Annulé)
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
@@ -191,32 +192,32 @@ ON CONFLICT DO NOTHING;
 -- ==================================================
 -- Devis: Alice (En attente), multiple services
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (1, 1, '2025-06-20 08:15:00', 'Devis',     'En_attente')
+    (1, 1, '2026-06-20 08:15:00', 'Devis',     'En_attente')
 ON CONFLICT DO NOTHING;
 
 -- Devis: Bob (Traitée)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (2, 2, '2025-06-19 09:30:00', 'Devis',     'Traitee')
+    (2, 2, '2026-06-19 09:30:00', 'Devis',     'Traitee')
 ON CONFLICT DO NOTHING;
 
 -- RDV: Claire (Confirmé ensuite via RDV)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (3, 3, '2025-06-18 10:45:00', 'RendezVous','En_attente')
+    (3, 3, '2026-06-18 10:45:00', 'RendezVous','En_attente')
 ON CONFLICT DO NOTHING;
 
 -- RDV: David (Reporté ensuite via RDV)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (4, 4, '2025-06-17 11:00:00', 'RendezVous','Traitee')
+    (4, 4, '2026-06-17 11:00:00', 'RendezVous','Traitee')
 ON CONFLICT DO NOTHING;
 
 -- Devis: Eva (Annulée)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (5, 5, '2025-06-16 12:00:00', 'Devis',     'Annulee')
+    (5, 5, '2026-06-16 12:00:00', 'Devis',     'Annulee')
 ON CONFLICT DO NOTHING;
 
 -- RDV: Alice (Annulé ensuite via RDV)
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (6, 1, '2025-06-15 13:00:00', 'RendezVous','Annulee')
+    (6, 1, '2026-06-15 13:00:00', 'RendezVous','Annulee')
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
@@ -274,8 +275,8 @@ ON CONFLICT DO NOTHING;
 -- 9) Devis
 -- ==================================================
 INSERT INTO devis (id_devis, id_demande, date_devis, montant_total) VALUES
-                                                                        (1,1,'2025-06-21 14:00:00', 59.90 + 59.00),
-                                                                        (2,2,'2025-06-20 15:00:00', 129.90)
+                                                                        (1,1,'2026-06-21 14:00:00', 59.90 + 59.00),
+                                                                        (2,2,'2026-06-20 15:00:00', 129.90)
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
@@ -297,7 +298,7 @@ INSERT INTO demande_document (
     1, 1, 'devis_jlh_autopam_test.pdf',
     'documents/2b6409c4-8973-4446-ad79-d7a716a61006_devis_jlh_autopam_test.pdf',
     'application/pdf', 20480, TRUE,
-    'Michael', 'ADMIN', '2025-06-20 09:00:00'
+    'Michael', 'ADMIN', '2026-06-20 09:00:00'
 )
 ON CONFLICT DO NOTHING;
 
@@ -307,11 +308,11 @@ INSERT INTO demande_timeline (
     document_id, document_nom, document_url,
     rendezvous_id, rendezvous_statut_code, rendezvous_statut_libelle, rendezvous_date_debut, rendezvous_date_fin
 ) VALUES
-    (1, 1, 'MONTANT', '2025-06-20 08:30:00', 'test@admin.fr', 'ADMIN', TRUE,
+    (1, 1, 'MONTANT', '2026-06-20 08:30:00', 'test@admin.fr', 'ADMIN', TRUE,
      'En_attente', 'En attente', 'Création du devis', 138.90,
      NULL, NULL, NULL,
      NULL, NULL, NULL, NULL, NULL),
-    (2, 1, 'DOCUMENT', '2025-06-20 09:00:00', 'test@admin.fr', 'ADMIN', TRUE,
+    (2, 1, 'DOCUMENT', '2026-06-20 09:00:00', 'test@admin.fr', 'ADMIN', TRUE,
      NULL, NULL, 'Ajout du contrôle technique', NULL,
      1, 'devis_jlh_autopam_test.pdf', 'uploads/documents/devis_jlh_autopam_test',
      NULL, NULL, NULL, NULL, NULL)
@@ -324,7 +325,7 @@ ON CONFLICT DO NOTHING;
 
 -- Nouvelle demande de RDV pour Alice
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut)
-VALUES (7, 1, '2025-06-25 09:00:00', 'RendezVous', 'En_attente')
+VALUES (7, 1, '2026-06-25 09:00:00', 'RendezVous', 'En_attente')
 ON CONFLICT DO NOTHING;
 
 -- Services associés (ex: révision complète)
@@ -340,7 +341,7 @@ ON CONFLICT DO NOTHING;
 
 -- Créneau réservé pour ce RDV (futur)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut)
-VALUES (7, '2025-10-02 09:00:00', '2025-10-02 10:00:00', 'Reserve')
+VALUES (7, '2026-10-02 09:00:00', '2026-10-02 10:00:00', 'Reserve')
 ON CONFLICT DO NOTHING;
 
 -- Disponibilité de l’admin sur ce créneau

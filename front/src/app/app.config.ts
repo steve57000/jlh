@@ -23,7 +23,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(
       routes,
-      withHashLocation(),
       withInMemoryScrolling({
         scrollPositionRestoration: 'top', // always go to top on navigation
         anchorScrolling: 'enabled',       // enable #anchor scrolling
