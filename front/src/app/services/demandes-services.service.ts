@@ -128,6 +128,14 @@ export class DemandesServiceService {
       codeType?: DemandeWithServices['code_type'];
       codeStatut?: DemandeWithServices['code_statut'];
       immatriculation?: string | null;
+      vehiculeMarque?: string | null;
+      vehiculeModele?: string | null;
+      vehiculeEnergie?: string | null;
+      telephone?: string | null;
+      adresseLigne1?: string | null;
+      adresseLigne2?: string | null;
+      adresseCodePostal?: string | null;
+      adresseVille?: string | null;
       client?: {
         telephone?: string | null;
         immatriculation?: string | null;
@@ -150,6 +158,14 @@ export class DemandesServiceService {
     if (payload.codeType) body['codeType'] = payload.codeType;
     if (payload.codeStatut) body['codeStatut'] = payload.codeStatut;
     if ('immatriculation' in payload) body['immatriculation'] = payload.immatriculation;
+    if ('vehiculeMarque' in payload) body['vehiculeMarque'] = payload.vehiculeMarque;
+    if ('vehiculeModele' in payload) body['vehiculeModele'] = payload.vehiculeModele;
+    if ('vehiculeEnergie' in payload) body['vehiculeEnergie'] = payload.vehiculeEnergie;
+    if ('telephone' in payload) body['telephone'] = payload.telephone;
+    if ('adresseLigne1' in payload) body['adresseLigne1'] = payload.adresseLigne1;
+    if ('adresseLigne2' in payload) body['adresseLigne2'] = payload.adresseLigne2;
+    if ('adresseCodePostal' in payload) body['adresseCodePostal'] = payload.adresseCodePostal;
+    if ('adresseVille' in payload) body['adresseVille'] = payload.adresseVille;
     if (payload.services) body['services'] = payload.services;
     if (payload.client) body['client'] = payload.client;
 

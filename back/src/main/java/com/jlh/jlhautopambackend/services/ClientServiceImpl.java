@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.services;
 
 import com.jlh.jlhautopambackend.dto.ClientRequest;
 import com.jlh.jlhautopambackend.dto.ClientResponse;
+import com.jlh.jlhautopambackend.dto.ClientUpdateRequest;
 import com.jlh.jlhautopambackend.mapper.ClientMapper;
 import com.jlh.jlhautopambackend.modeles.Client;
 import com.jlh.jlhautopambackend.repository.ClientRepository;
@@ -64,21 +65,45 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public Optional<ClientResponse> update(Integer id, ClientRequest request) {
+    public Optional<ClientResponse> update(Integer id, ClientUpdateRequest request) {
         return repository.findById(id)
                 .map(existing -> {
-                    existing.setNom(request.getNom());
-                    existing.setPrenom(request.getPrenom());
-                    existing.setEmail(request.getEmail());
-                    existing.setTelephone(request.getTelephone());
-                    existing.setImmatriculation(request.getImmatriculation());
-                    existing.setVehiculeMarque(request.getVehiculeMarque());
-                    existing.setVehiculeModele(request.getVehiculeModele());
-                    existing.setVehiculeEnergie(request.getVehiculeEnergie());
-                    existing.setAdresseLigne1(request.getAdresseLigne1());
-                    existing.setAdresseLigne2(request.getAdresseLigne2());
-                    existing.setAdresseCodePostal(request.getCodePostal());
-                    existing.setAdresseVille(request.getVille());
+                    if (request.getNom() != null) {
+                        existing.setNom(request.getNom().trim());
+                    }
+                    if (request.getPrenom() != null) {
+                        existing.setPrenom(normalizeOptional(request.getPrenom()));
+                    }
+                    if (request.getEmail() != null) {
+                        existing.setEmail(request.getEmail().trim());
+                    }
+                    if (request.getTelephone() != null) {
+                        existing.setTelephone(normalizeOptional(request.getTelephone()));
+                    }
+                    if (request.getImmatriculation() != null) {
+                        existing.setImmatriculation(normalizeOptional(request.getImmatriculation()));
+                    }
+                    if (request.getVehiculeMarque() != null) {
+                        existing.setVehiculeMarque(normalizeOptional(request.getVehiculeMarque()));
+                    }
+                    if (request.getVehiculeModele() != null) {
+                        existing.setVehiculeModele(normalizeOptional(request.getVehiculeModele()));
+                    }
+                    if (request.getVehiculeEnergie() != null) {
+                        existing.setVehiculeEnergie(request.getVehiculeEnergie());
+                    }
+                    if (request.getAdresseLigne1() != null) {
+                        existing.setAdresseLigne1(normalizeOptional(request.getAdresseLigne1()));
+                    }
+                    if (request.getAdresseLigne2() != null) {
+                        existing.setAdresseLigne2(normalizeOptional(request.getAdresseLigne2()));
+                    }
+                    if (request.getCodePostal() != null) {
+                        existing.setAdresseCodePostal(normalizeOptional(request.getCodePostal()));
+                    }
+                    if (request.getVille() != null) {
+                        existing.setAdresseVille(normalizeOptional(request.getVille()));
+                    }
                     if (request.getMotDePasse() != null && !request.getMotDePasse().isBlank()) {
                         existing.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
                     }
@@ -88,6 +113,14 @@ public class ClientServiceImpl implements ClientService {
                     }
                     return mapper.toResponse(updated);
                 });
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     @Override
