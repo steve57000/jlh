@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.controllers;
 
 import com.jlh.jlhautopambackend.dto.ClientRequest;
 import com.jlh.jlhautopambackend.dto.ClientResponse;
+import com.jlh.jlhautopambackend.dto.ClientUpdateRequest;
 import com.jlh.jlhautopambackend.services.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -49,7 +50,7 @@ public class ClientController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<ClientResponse> update(
             @PathVariable Integer id,
-            @Valid @RequestBody ClientRequest request) {
+            @Valid @RequestBody ClientUpdateRequest request) {
         return service.update(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
