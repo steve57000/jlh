@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.services;
 
 import com.jlh.jlhautopambackend.dto.ClientRequest;
 import com.jlh.jlhautopambackend.dto.ClientResponse;
+import com.jlh.jlhautopambackend.dto.ClientUpdateRequest;
 import com.jlh.jlhautopambackend.mapper.ClientMapper;
 import com.jlh.jlhautopambackend.modeles.Client;
 import com.jlh.jlhautopambackend.repository.ClientRepository;
@@ -171,7 +172,7 @@ class ClientServiceImplTest {
 
     @Test
     void testUpdate_WhenExists() {
-        ClientRequest updateReq = ClientRequest.builder()
+        ClientUpdateRequest updateReq = ClientUpdateRequest.builder()
                 .nom("Updated")
                 .prenom("User")
                 .email("updated.user@example.com")
@@ -203,7 +204,7 @@ class ClientServiceImplTest {
         Client existing = buildClientFromRequest(existingRequest, 3);
         existing.setMotDePasse("ENC(secret123)");
 
-        Client updatedEntity = buildClientFromRequest(updateReq, 3);
+        Client updatedEntity = applyUpdate(existing, updateReq);
         updatedEntity.setMotDePasse("ENC(password999)");
 
         ClientResponse updatedResp = ClientResponse.builder()
@@ -238,7 +239,7 @@ class ClientServiceImplTest {
 
     @Test
     void testUpdate_WhenNotExists() {
-        ClientRequest updateReq = ClientRequest.builder()
+        ClientUpdateRequest updateReq = ClientUpdateRequest.builder()
                 .nom("Updated")
                 .prenom("User")
                 .email("updated.user@example.com")
@@ -302,6 +303,25 @@ class ClientServiceImplTest {
         client.setVehiculeMarque(source.getVehiculeMarque());
         client.setVehiculeModele(source.getVehiculeModele());
         client.setVehiculeEnergie(source.getVehiculeEnergie());
+        return client;
+    }
+
+    private Client applyUpdate(Client base, ClientUpdateRequest update) {
+        Client client = Client.builder()
+                .idClient(base.getIdClient())
+                .nom(update.getNom())
+                .prenom(update.getPrenom())
+                .email(update.getEmail())
+                .telephone(update.getTelephone())
+                .adresseLigne1(update.getAdresseLigne1())
+                .adresseLigne2(update.getAdresseLigne2())
+                .adresseVille(update.getVille())
+                .adresseCodePostal(update.getCodePostal())
+                .build();
+        client.setImmatriculation(update.getImmatriculation());
+        client.setVehiculeMarque(update.getVehiculeMarque());
+        client.setVehiculeModele(update.getVehiculeModele());
+        client.setVehiculeEnergie(update.getVehiculeEnergie());
         return client;
     }
 }

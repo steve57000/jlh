@@ -3,6 +3,7 @@ package com.jlh.jlhautopambackend.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jlh.jlhautopambackend.dto.ClientRequest;
 import com.jlh.jlhautopambackend.dto.ClientResponse;
+import com.jlh.jlhautopambackend.dto.ClientUpdateRequest;
 import com.jlh.jlhautopambackend.services.ClientService;
 import com.jlh.jlhautopambackend.config.JwtAuthenticationFilter;
 import org.junit.jupiter.api.DisplayName;
@@ -174,7 +175,7 @@ class ClientControllerTest {
     @Test
     @DisplayName("PUT /api/clients/{id} ➔ 200, retourne JSON mis à jour")
     void testUpdateFound() throws Exception {
-        ClientRequest updates = ClientRequest.builder()
+        ClientUpdateRequest updates = ClientUpdateRequest.builder()
                 .nom("NewNom").prenom("NewPrenom")
                 .email("new@example.com")
                 .motDePasse("changeMe1")
@@ -201,7 +202,7 @@ class ClientControllerTest {
                 .codePostal("12345")
                 .build();
 
-        Mockito.when(service.update(Mockito.eq(7), Mockito.any(ClientRequest.class)))
+        Mockito.when(service.update(Mockito.eq(7), Mockito.any(ClientUpdateRequest.class)))
                 .thenReturn(Optional.of(updated));
 
         mvc.perform(put("/api/clients/7")
@@ -215,7 +216,7 @@ class ClientControllerTest {
     @Test
     @DisplayName("PUT /api/clients/{id} ➔ 404")
     void testUpdateNotFound() throws Exception {
-        ClientRequest updates = ClientRequest.builder()
+        ClientUpdateRequest updates = ClientUpdateRequest.builder()
                 .nom("X").prenom("Y")
                 .email("x@y.com")
                 .motDePasse("secret56")
@@ -228,7 +229,7 @@ class ClientControllerTest {
                 .ville("Metz")
                 .codePostal("12345")
                 .build();
-        Mockito.when(service.update(Mockito.eq(42), Mockito.any(ClientRequest.class)))
+        Mockito.when(service.update(Mockito.eq(42), Mockito.any(ClientUpdateRequest.class)))
                 .thenReturn(Optional.empty());
 
         mvc.perform(put("/api/clients/42")
