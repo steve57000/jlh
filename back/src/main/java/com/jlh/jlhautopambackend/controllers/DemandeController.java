@@ -195,4 +195,27 @@ public class DemandeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PatchMapping("/{id}/immatriculation")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<DemandeResponse> changeImmatriculation(
+            @PathVariable Integer id,
+            @RequestBody Map<String, String> body,
+            Authentication auth
+    ) {
+        String immatriculation = body.get("immatriculation");
+        Client client = requireClient(auth);
+        var opt = service.findById(id);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+        var d = opt.get();
+        if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        var req = new DemandeRequest();
+        req.setImmatriculation(immatriculation);
+        return service.update(id, req)
+                .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }
