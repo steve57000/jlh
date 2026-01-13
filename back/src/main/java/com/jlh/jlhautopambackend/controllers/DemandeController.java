@@ -1,6 +1,7 @@
 package com.jlh.jlhautopambackend.controllers;
 
 import com.jlh.jlhautopambackend.dto.ClientStatsDto;
+import com.jlh.jlhautopambackend.dto.DemandeClientUpdateRequest;
 import com.jlh.jlhautopambackend.dto.DemandeRequest;
 import com.jlh.jlhautopambackend.dto.DemandeResponse;
 import com.jlh.jlhautopambackend.dto.DemandeTimelineEntryDto;
@@ -213,6 +214,36 @@ public class DemandeController {
 
         var req = new DemandeRequest();
         req.setImmatriculation(immatriculation);
+        return service.update(id, req)
+                .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/client")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<DemandeResponse> updateClientInfo(
+            @PathVariable Integer id,
+            @RequestBody DemandeClientUpdateRequest body,
+            Authentication auth
+    ) {
+        Client client = requireClient(auth);
+        var opt = service.findById(id);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+        var d = opt.get();
+        if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        var req = new DemandeRequest();
+        req.setImmatriculation(body.getImmatriculation());
+        req.setVehiculeMarque(body.getVehiculeMarque());
+        req.setVehiculeModele(body.getVehiculeModele());
+        req.setVehiculeEnergie(body.getVehiculeEnergie());
+        req.setTelephone(body.getTelephone());
+        req.setAdresseLigne1(body.getAdresseLigne1());
+        req.setAdresseLigne2(body.getAdresseLigne2());
+        req.setAdresseCodePostal(body.getAdresseCodePostal());
+        req.setAdresseVille(body.getAdresseVille());
         return service.update(id, req)
                 .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
                 .orElse(ResponseEntity.notFound().build());
