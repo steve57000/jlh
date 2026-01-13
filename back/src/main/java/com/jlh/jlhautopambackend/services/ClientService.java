@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.services;
 
 import com.jlh.jlhautopambackend.dto.ClientRequest;
 import com.jlh.jlhautopambackend.dto.ClientResponse;
+import com.jlh.jlhautopambackend.dto.ClientUpdateRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,6 @@ public interface ClientService {
 
     Optional<ClientResponse> findById(Integer id);
     List<ClientResponse> findAll();
-    Optional<ClientResponse> update(Integer id, ClientRequest request);
+    Optional<ClientResponse> update(Integer id, ClientUpdateRequest request);
     boolean delete(Integer id);
 }
