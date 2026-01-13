@@ -111,6 +111,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         entity.setDateDemande(resolveDate(request.getDateDemande()));
         Client client = clientRepo.findById(request.getClientId())
                 .orElseThrow(() -> new IllegalArgumentException("Client introuvable : " + request.getClientId()));
+        applyClientUpdates(client, request);
         TypeDemande type = typeRepo.findById(request.getCodeType())
                 .orElseThrow(() -> new IllegalArgumentException("TypeDemande introuvable: " + request.getCodeType()));
         StatutDemande statut = statutRepo.findById(request.getCodeStatut())
@@ -142,6 +143,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         Client client = clientRepo.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Client introuvable : " + clientId));
         entity.setClient(client);
+        applyClientUpdates(client, payload);
 
         String typeCode = (payload.getCodeType() == null || payload.getCodeType().isBlank())
                 ? TYPE_DEFAULT
@@ -199,6 +201,9 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                         Client client = clientRepo.findById(request.getClientId())
                                 .orElseThrow(() -> new IllegalArgumentException("Client introuvable : " + request.getClientId()));
                         existing.setClient(client);
+                    }
+                    if (existing.getClient() != null) {
+                        applyClientUpdates(existing.getClient(), request);
                     }
 
                     if (request.getCodeType() != null && !request.getCodeType().isBlank()) {
@@ -286,6 +291,47 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
 
     private Instant resolveDate(Instant provided) {
         return provided != null ? provided : Instant.now();
+    }
+
+    private void applyClientUpdates(Client client, DemandeRequest request) {
+        if (client == null || request == null) {
+            return;
+        }
+        if (request.getImmatriculation() != null) {
+            client.setImmatriculation(normalizeOptional(request.getImmatriculation()));
+        }
+        if (request.getVehiculeMarque() != null) {
+            client.setVehiculeMarque(normalizeOptional(request.getVehiculeMarque()));
+        }
+        if (request.getVehiculeModele() != null) {
+            client.setVehiculeModele(normalizeOptional(request.getVehiculeModele()));
+        }
+        if (request.getVehiculeEnergie() != null) {
+            client.setVehiculeEnergie(request.getVehiculeEnergie());
+        }
+        if (request.getTelephone() != null) {
+            client.setTelephone(request.getTelephone().trim());
+        }
+        if (request.getAdresseLigne1() != null) {
+            client.setAdresseLigne1(normalizeOptional(request.getAdresseLigne1()));
+        }
+        if (request.getAdresseLigne2() != null) {
+            client.setAdresseLigne2(normalizeOptional(request.getAdresseLigne2()));
+        }
+        if (request.getAdresseCodePostal() != null) {
+            client.setAdresseCodePostal(normalizeOptional(request.getAdresseCodePostal()));
+        }
+        if (request.getAdresseVille() != null) {
+            client.setAdresseVille(normalizeOptional(request.getAdresseVille()));
+        }
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private ProchainRdvDto toProchainRdvDto(RendezVous rendezVous) {
