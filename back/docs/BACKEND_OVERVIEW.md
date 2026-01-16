@@ -1,18 +1,18 @@
 # JLH AutoPam Backend – Guide technique
 
 ## 1. Stack et point d'entrée
-- **Pile technique** : Spring Boot 3.5 tourne sur Java 17 avec les starters Web, Data JPA, Security, Validation, Actuator et Mail, complétés par MapStruct, Lombok, jjwt et MySQL/H2 côté base de données et Mockito/Spring Security Test pour la couverture automatisée.【F:pom.xml†L8-L135】
+- **Pile technique** : Spring Boot 3.5 tourne sur Java 17 avec les starters Web, Data JPA, Security, Validation, Actuator et Mail, complétés par MapStruct, Lombok, jjwt et PostgreSQL/H2 côté base de données et Mockito/Spring Security Test pour la couverture automatisée.【F:pom.xml†L8-L135】
 - **Application principale** : `JlhApplication` active la planification Spring et lie les `GarageProperties` (nom, adresse, fuseau, e-mail organisateur) pour alimenter les ICS et communications sortantes.【F:src/main/java/com/jlh/jlhautopambackend/JlhApplication.java†L1-L20】【F:src/main/java/com/jlh/jlhautopambackend/config/GarageProperties.java†L1-L13】
 
 ## 2. Build, exécution et conteneurs
 - **Build Maven** : le `pom` fixe l'encodage, configure MapStruct/Lombok comme annotation processors, empaquette le JAR via `spring-boot-maven-plugin` et active Surefire pour les tests unitaires.【F:pom.xml†L137-L205】
 - **Dockerfile** : image multi-étapes (`maven:3.9.2-temurin-17` ➜ `eclipse-temurin:17-jre`) qui compile l'app (`mvn clean package -DskipTests`) puis exécute `app.jar` avec un healthcheck HTTP et le profil Spring `prod` par défaut.【F:Dockerfile†L1-L30】
-- **Compose développement** : `docker-compose.dev.yml` monte MySQL 8, MailHog, le backend (profil `dev`) avec montages `./src`, `./pom.xml`, volume `promo-images` partagé avec un répertoire `./uploads` exposé via Nginx, et un cache Maven (`m2-repo`). Les services sont reliés par variables d'env (`DB_*`, `MAIL_*`) et healthchecks.【F:docker-compose.dev.yml†L1-L81】
-- **Compose production** : `docker-compose.prod.yml` déploie MySQL, l'image `steve57/jlh-autopam-backend:latest` en profil `prod` et Nginx. Les volumes `db-data`/`promo-images` et le réseau `backend` sont partagés afin d'exposer les images de promotion sur le frontal HTTP.【F:docker-compose.prod.yml†L1-L57】
+- **Compose développement** : `docker-compose.dev.yml` monte PostgreSQL 16, MailHog, le backend (profil `dev`) avec montages `./src`, `./pom.xml`, volume `promo-images` partagé avec un répertoire `./uploads` exposé via Nginx, et un cache Maven (`m2-repo`). Les services sont reliés par variables d'env (`DB_*`, `MAIL_*`) et healthchecks.【F:docker-compose.dev.yml†L1-L81】
+- **Compose production** : `docker-compose.prod.yml` déploie PostgreSQL 16, l'image `steve57/jlh-autopam-backend:latest` en profil `prod` et Nginx. Les volumes `db-data`/`promo-images` et le réseau `backend` sont partagés afin d'exposer les images de promotion sur le frontal HTTP.【F:docker-compose.prod.yml†L1-L68】
 
 ## 3. Configuration applicative
 - **Configuration commune** : `application.yml` fixe les méta-données du garage, les URLs back/front, l'adresse e-mail d'envoi, le répertoire d'upload `/var/www/promo`, les limites multipart et les paramètres JWT (clé BASE64 + durée).【F:src/main/resources/application.yml†L1-L26】
-- **Profil `dev`** : connexion MySQL paramétrable via `DB_HOST/PORT/NAME/USERNAME/PASSWORD`, dialecte MySQL 8, initialisation `schema_jlh_autopam.sql` + `data.sql`, répertoire d'upload synchronisé avec le volume Docker et base URL des images pointant sur Nginx (`http://localhost:80/promotions/images/`).【F:src/main/resources/application-dev.properties†L1-L35】
+- **Profil `dev`** : connexion PostgreSQL paramétrable via `DB_HOST/PORT/NAME/USERNAME/PASSWORD`, dialecte PostgreSQL, initialisation `schema_jlh_autopam.sql` + `data.sql`, répertoire d'upload synchronisé avec le volume Docker et base URL des images pointant sur Nginx (`http://localhost:80/promotions/images/`).【F:src/main/resources/application-dev.properties†L1-L35】
 - **Profil `prod`** : attend `DB_URL/USERNAME/PASSWORD`, garde `app.upload-dir` synchronisé avec `/var/www/promo`, publie les images via `https://api.jlh-auto.fr/promotions/images/` et configure Hostinger comme SMTP.【F:src/main/resources/application-prod.properties†L1-L21】
 - **Profil `test`** : active un H2 en mémoire, Hibernate `update` et un SMTP factice, ce qui permet d'exécuter les tests sans dépendances externes.【F:src/main/resources/application-test.properties†L1-L18】
 
@@ -33,7 +33,7 @@
 - **Mail & stockage** : `MailService` envoie les messages HTML via `JavaMailSender`, tandis que `FileSystemStorageService` encapsule la création du dossier d'upload et la suppression sécurisée des fichiers (utilisé par les promotions et les documents).【F:src/main/java/com/jlh/jlhautopambackend/services/MailService.java†L1-L29】【F:src/main/java/com/jlh/jlhautopambackend/services/FileSystemStorageService.java†L1-L44】
 
 ## 6. Données de référence et tests
-- **Schéma et données** : `schema_jlh_autopam.sql` décrit l'ensemble des tables (clients, demandes, services, créneaux, statuts, documents, devis) et `data.sql` ajoute les données de référence tout en évoluant le schéma MySQL (colonnes de vérification e-mail, véhicules, username administrateur) et en insérant un catalogue complet de services/statuts/utilisateurs de test.【F:src/main/resources/schema_jlh_autopam.sql†L1-L86】【F:src/main/resources/data.sql†L1-L86】
+- **Schéma et données** : `schema_jlh_autopam.sql` décrit l'ensemble des tables (clients, demandes, services, créneaux, statuts, documents, devis) et `data.sql` ajoute les données de référence tout en évoluant le schéma (colonnes de vérification e-mail, véhicules, username administrateur) et en insérant un catalogue complet de services/statuts/utilisateurs de test.【F:src/main/resources/schema_jlh_autopam.sql†L1-L86】【F:src/main/resources/data.sql†L1-L86】
 - **Tests automatisés** : les tests Web MVC comme `PromotionControllerTest` vérifient la sérialisation JSON et les endpoints multipart, tandis que d'autres classes de test couvrent services/mappers en s'appuyant sur le profil `test` H2.【F:src/test/java/com/jlh/jlhautopambackend/controllers/PromotionControllerTest.java†L1-L118】【F:src/main/resources/application-test.properties†L1-L18】
 
 ## 7. À surveiller avant mise en production

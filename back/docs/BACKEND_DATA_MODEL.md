@@ -1,6 +1,6 @@
 # Guide d'intégration Frontend – modèle de données & API
 
-Ce document résume le modèle métier exposé par le backend Spring Boot et décrit comment le frontend (client comme administrateur) doit consommer les entités et endpoints critiques : clients, demandes, services et rendez-vous.
+Ce document résume le modèle métier exposé par le backend Spring Boot (persisté sur PostgreSQL en dev/prod) et décrit comment le frontend (client comme administrateur) doit consommer les entités et endpoints critiques : clients, demandes, services et rendez-vous. Pour les aspects de configuration locale, d’authentification et de CORS, voir aussi `FRONTEND_DEVELOPMENT.md`.
 
 ## 1. Vue d'ensemble du domaine
 

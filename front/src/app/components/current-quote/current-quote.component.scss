@@ -1,4 +1,5 @@
-@use '../../../styles/variables' as v;
+@use 'sass:color';
+@use '../../../styles/variables.scss' as v;
 
 .quote { background:#fff; border-radius:v.$border-radius-small; box-shadow:v.$shadow-small-light; padding:1rem; }
 .quote.empty { text-align:center; color:#666; }
@@ -9,7 +10,7 @@
 }
 
 .row { display:grid; grid-template-columns: 140px 1fr; gap:.5rem; align-items:center; margin:.25rem 0; }
-.label { color:#6c757d; }
+.label { color:v.$color-secondary; }
 .value { color:v.$color-primary; }
 .row textarea {
   resize: vertical;
