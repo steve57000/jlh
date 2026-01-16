@@ -119,31 +119,37 @@ INSERT INTO client (
     id_client, nom, prenom, email, telephone,
     adresse_ligne1, adresse_ligne2, adresse_code_postal, adresse_ville,
     mot_de_passe,
+    anonymized,
     email_verified, email_verified_at
 ) VALUES
       (1,'Durand','Alice','test@client1.fr','0601020304',
        '12 rue Victor Hugo', NULL, '75003', 'Paris',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
+       FALSE,
        TRUE, '2025-06-01 10:00:00'),
 
       (2,'Martin','Bob','test@client2.fr','0605060708',
        '45 av. Jean Jaurès', NULL, '69007', 'Lyon',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
+       FALSE,
        TRUE, '2025-06-01 10:00:00'),
 
       (3,'Bernard','Claire','test@client3.fr','0611121314',
        '78 bd Haussmann', NULL, '75009', 'Paris',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
+       FALSE,
        TRUE, '2025-06-01 10:00:00'),
 
       (4,'Lefevre','David','test@client4.fr','0622232425',
        '3 place Bellecour', NULL, '69002', 'Lyon',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
+       FALSE,
        TRUE, '2025-06-01 10:00:00'),
 
       (5,'Dupont','Eva','test@client5.fr','0633343536',
        '6 quai de la Loire', NULL, '44000', 'Nantes',
        '$2a$10$KIjgzG.nEJCuPd2Dx0.peuC4q1aQfHPHvv5ODXrzqMLe0QR7LhtGW',
+       FALSE,
        FALSE, NULL)
 ON CONFLICT DO NOTHING;
 
