@@ -1,8 +1,13 @@
 package com.jlh.jlhautopambackend.services;
 
+import com.jlh.jlhautopambackend.dto.ClientDocumentDto;
 import com.jlh.jlhautopambackend.dto.DemandeDocumentDownload;
 import com.jlh.jlhautopambackend.dto.DemandeDocumentDto;
 import com.jlh.jlhautopambackend.dto.DemandeTimelineRequest;
+import com.jlh.jlhautopambackend.dto.RendezVousResponse;
+import com.jlh.jlhautopambackend.dto.StatutDemandeDto;
+import com.jlh.jlhautopambackend.dto.TypeDemandeDto;
+import com.jlh.jlhautopambackend.mapper.RendezVousMapper;
 import com.jlh.jlhautopambackend.modeles.Demande;
 import com.jlh.jlhautopambackend.modeles.DemandeDocument;
 import com.jlh.jlhautopambackend.modeles.DemandeTimelineType;
@@ -26,17 +31,20 @@ public class DemandeDocumentServiceImpl implements DemandeDocumentService {
     private final DemandeDocumentRepository documentRepo;
     private final FileStorageService storageService;
     private final DemandeTimelineService timelineService;
+    private final RendezVousMapper rendezVousMapper;
 
     public DemandeDocumentServiceImpl(
             DemandeRepository demandeRepo,
             DemandeDocumentRepository documentRepo,
             FileStorageService storageService,
-            DemandeTimelineService timelineService
+            DemandeTimelineService timelineService,
+            RendezVousMapper rendezVousMapper
     ) {
         this.demandeRepo = demandeRepo;
         this.documentRepo = documentRepo;
         this.storageService = storageService;
         this.timelineService = timelineService;
+        this.rendezVousMapper = rendezVousMapper;
     }
 
     @Override
@@ -149,12 +157,54 @@ public class DemandeDocumentServiceImpl implements DemandeDocumentService {
         return dto;
     }
 
+    @Override
     public List<DemandeDocumentDto> listDocumentsForClient(Integer demandeId) {
         return documentRepo.findByDemande_IdDemandeOrderByCreeLeDesc(demandeId)
                 .stream()
                 .map(doc -> toDtoWithUrl(doc, demandeId, false)) // CLIENT
                 .filter(DemandeDocumentDto::isVisibleClient)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClientDocumentDto> listClientDocuments(Integer clientId) {
+        if (clientId == null) {
+            return List.of();
+        }
+        return documentRepo.findByDemande_Client_IdClientOrderByCreeLeDesc(clientId)
+                .stream()
+                .filter(doc -> doc != null && doc.isVisibleClient())
+                .map(this::toClientDocumentDto)
+                .toList();
+    }
+
+    private ClientDocumentDto toClientDocumentDto(DemandeDocument doc) {
+        Demande demande = doc.getDemande();
+        TypeDemandeDto typeDemande = null;
+        StatutDemandeDto statutDemande = null;
+        RendezVousResponse rendezVous = null;
+        if (demande != null) {
+            if (demande.getTypeDemande() != null) {
+                typeDemande = new TypeDemandeDto(demande.getTypeDemande().getCodeType(),
+                        demande.getTypeDemande().getLibelle());
+            }
+            if (demande.getStatutDemande() != null) {
+                statutDemande = new StatutDemandeDto(demande.getStatutDemande().getCodeStatut(),
+                        demande.getStatutDemande().getLibelle());
+            }
+            if (demande.getRendezVous() != null) {
+                rendezVous = rendezVousMapper.toResponse(demande.getRendezVous());
+            }
+        }
+        return ClientDocumentDto.builder()
+                .demandeId(demande != null ? demande.getIdDemande() : null)
+                .dateDemande(demande != null ? demande.getDateDemande() : null)
+                .typeDemande(typeDemande)
+                .statutDemande(statutDemande)
+                .rendezVous(rendezVous)
+                .document(toDto(doc))
+                .build();
     }
 
 }

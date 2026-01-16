@@ -1,5 +1,6 @@
 package com.jlh.jlhautopambackend.services;
 
+import com.jlh.jlhautopambackend.dto.ClientDocumentDto;
 import com.jlh.jlhautopambackend.dto.DemandeDocumentDownload;
 import com.jlh.jlhautopambackend.dto.DemandeDocumentDto;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +27,8 @@ public interface DemandeDocumentService {
     List<DemandeDocumentDto> listDocuments(Integer demandeId);
 
     List<DemandeDocumentDto> listDocumentsForClient(Integer demandeId);
+
+    List<ClientDocumentDto> listClientDocuments(Integer clientId);
 
     Optional<DemandeDocumentDownload> loadDocument(Integer demandeId, Long documentId);
 
