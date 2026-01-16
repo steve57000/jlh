@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS client (
   mot_de_passe VARCHAR(255) NOT NULL,
   email_verified BOOLEAN NOT NULL DEFAULT FALSE,
   email_verified_at TIMESTAMP NULL,
+  anonymized BOOLEAN NOT NULL DEFAULT FALSE,
+  anonymized_at TIMESTAMP NULL,
   telephone VARCHAR(20) NOT NULL,
   adresse_ligne1 VARCHAR(255),
   adresse_ligne2 VARCHAR(255),

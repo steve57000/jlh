@@ -4,6 +4,7 @@
       <aside class="aside">
         <app-current-quote
           [demande]="draft"
+          [locked]="isDemandeLocked(draft)"
           (remove)="onRemoveLine($event)"
           (submit)="onSubmitDemand($event)">
         </app-current-quote>

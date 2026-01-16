@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.EntityGraph;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,6 +62,13 @@ public interface DemandeRepository extends JpaRepository<Demande, Integer> {
     })
     List<Demande> findByClient_IdClient(Integer clientId);
 
+    boolean existsByClient_IdClientAndStatutDemande_CodeStatutIn(Integer clientId, Collection<String> statuts);
+
+    @Query("""
+        select max(d.dateDemande) from Demande d
+        where d.client.idClient = :clientId
+    """)
+    Optional<Instant> findLatestDateDemandeByClientId(Integer clientId);
 
     // Variante 2 — Demande a une relation @ManyToOne Client client
     Optional<Demande> findFirstByClient_IdClientAndStatutDemande_CodeStatutOrderByDateDemandeDesc(
