@@ -14,8 +14,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +49,24 @@ public class DemandeController {
                     .toList());
         }
         return response;
+    }
+
+    private void assertDemandeEditableForClient(DemandeResponse demande) {
+        if (demande == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Demande introuvable.");
+        }
+        String statut = demande.getStatutDemande() != null ? demande.getStatutDemande().getCodeStatut() : null;
+        Instant now = Instant.now();
+        Instant rdvDebut = demande.getRendezVous() != null ? demande.getRendezVous().getDateDebut() : null;
+        boolean rdvPasse = rdvDebut != null && !rdvDebut.isAfter(now);
+        boolean verrouillee = "Annulee".equals(statut)
+                || ("Traitee".equals(statut) && (rdvDebut == null || rdvPasse))
+                || rdvPasse;
+
+        if (verrouillee) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La demande est verrouillée. Seul l'ajout de documents reste possible.");
+        }
     }
 
     @GetMapping
@@ -171,6 +192,7 @@ public class DemandeController {
         if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
             return ResponseEntity.status(403).build();
         }
+        assertDemandeEditableForClient(d);
 
         var req = new DemandeRequest();
         req.setCodeStatut("En_attente");
@@ -190,6 +212,16 @@ public class DemandeController {
         if (codeType == null || codeType.isBlank()) return ResponseEntity.badRequest().build();
         boolean isClient = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
+        if (isClient) {
+            var opt = service.findById(id);
+            if (opt.isEmpty()) return ResponseEntity.notFound().build();
+            var d = opt.get();
+            Client client = requireClient(auth);
+            if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
+                return ResponseEntity.status(403).build();
+            }
+            assertDemandeEditableForClient(d);
+        }
         return service.update(id, DemandeRequest.builder().codeType(codeType).build())
                 .map(resp -> isClient ? filterTimelineForClient(resp) : resp)
                 .map(ResponseEntity::ok)
@@ -211,6 +243,7 @@ public class DemandeController {
         if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
             return ResponseEntity.status(403).build();
         }
+        assertDemandeEditableForClient(d);
 
         var req = new DemandeRequest();
         req.setImmatriculation(immatriculation);
@@ -233,6 +266,7 @@ public class DemandeController {
         if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
             return ResponseEntity.status(403).build();
         }
+        assertDemandeEditableForClient(d);
 
         var req = new DemandeRequest();
         req.setImmatriculation(body.getImmatriculation());

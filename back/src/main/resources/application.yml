@@ -12,6 +12,11 @@ app:
     verificationExpiryHours: 24
   upload-dir: ${APP_UPLOAD_DIR:/var/www/promo}  # dossier partagé avec Nginx pour les images
 
+rgpd:
+  anonymizationEnabled: true
+  retentionDays: 1095
+  anonymizationCron: "0 0 3 * * *"
+
 spring:
   application:
     name: jlh

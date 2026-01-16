@@ -45,6 +45,12 @@ public class Client {
     @Column(name="email_verified_at")
     private Instant emailVerifiedAt;
 
+    @Column(name = "anonymized", nullable = false)
+    private boolean anonymized = false;
+
+    @Column(name = "anonymized_at")
+    private Instant anonymizedAt;
+
     @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private ClientVehicle vehicule;
 

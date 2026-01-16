@@ -51,7 +51,7 @@ Ces tables de référence sont consultables/modifiables via les endpoints `/api/
 
 ### 3.2 Demandes
 
-`DemandeRequest` sert aux créations/mises à jour : date, `clientId` (admin uniquement), `codeType`, `codeStatut`, informations véhicule/contact et la collection `services` (chaque entrée reprend `idService`, `quantite`, libellés et prix déjà figés).
+`DemandeRequest` sert aux créations/mises à jour : date, `clientId` (admin uniquement), `codeType`, `codeStatut`, informations véhicule/contact et la collection `services` (chaque entrée reprend `idService`, `quantite`, libellés et prix déjà figés). L'immatriculation est désormais **figée par demande** : une modification d'immatriculation sur une demande n'altère pas l'immatriculation par défaut du client, et l'immatriculation par défaut n'écrase pas les demandes existantes.
 
 `DemandeResponse` renvoie :
 - métadonnées (id, `dateDemande`),
@@ -88,11 +88,13 @@ Chaque entrée (`DemandeTimelineEntryDto`) expose :
 2. **Consultation**
    - `GET /api/demandes/mes-demandes` : liste paginée côté frontend (le backend renvoie toutes les demandes du client). Filtrer la timeline via `visibleClient=true` (le contrôleur le fait déjà).
    - `GET /api/demandes/mes-demandes/stats` & `/prochain-rdv` pour alimenter tableaux de bord.
+   - `GET /api/demandes/mes-documents` : liste des documents visibles côté client, regroupés avec les informations de demande associées (type, statut, RDV lié).
 
 3. **Mise à jour**
    - `PATCH /api/demandes/{id}/type` : change `codeType` (payload `{ "codeType": "RendezVous" }`).
    - `PATCH /api/demandes/{id}/submit` : passe la demande du client de `Brouillon` à `En_attente`.
    - `PATCH /api/rendezvous/{id}/submit` : même transition mais à partir d'un RDV créé (vérifie l'appartenance du client).
+   - Les demandes traitées/annulées ou dont le RDV est passé sont verrouillées côté client (modification impossible, seuls les documents restent accessibles).
 
 4. **Rendez-vous**
    - Lecture : `GET /api/rendezvous/{id}` (restreint au propriétaire) et `GET /api/demandes/mes-demandes/prochain-rdv.ics` / `/api/demandes/rendezvous/{id}/ics` pour exporter un fichier calendrier.
@@ -100,6 +102,13 @@ Chaque entrée (`DemandeTimelineEntryDto`) expose :
 
 5. **Documents & timeline**
    - `GET /api/demandes/{id}` renvoie déjà `documents` + `timeline`. Pour ajouter un document, le frontend client doit passer par le workflow géré par `DemandeDocumentController` (upload multipart).
+
+## 7. RGPD : anonymisation
+
+- **Automatique** : un job planifié anonymise les clients inactifs (aucune demande active, aucun RDV à venir) au-delà de la durée de conservation configurée.
+- **Manuel (ADMIN_PRINCIPAL)** : `POST /api/clients/{id}/anonymize` force l'anonymisation d'un client.
+- Les données remplacées incluent : nom/prénom, email, téléphone, adresses, immatriculation des demandes, métadonnées des documents (nom/éditeur).
+- Configuration : `rgpd.retentionDays`, `rgpd.anonymizationEnabled`, `rgpd.anonymizationCron` dans `application.yml`.
 
 ## 5. Flux côté administrateur (ROLE_ADMIN)
 
