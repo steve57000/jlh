@@ -112,6 +112,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         Client client = clientRepo.findById(request.getClientId())
                 .orElseThrow(() -> new IllegalArgumentException("Client introuvable : " + request.getClientId()));
         applyClientUpdates(client, request);
+        applyDemandeImmatriculation(entity, request, client, true);
         TypeDemande type = typeRepo.findById(request.getCodeType())
                 .orElseThrow(() -> new IllegalArgumentException("TypeDemande introuvable: " + request.getCodeType()));
         StatutDemande statut = statutRepo.findById(request.getCodeStatut())
@@ -144,6 +145,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                 .orElseThrow(() -> new IllegalArgumentException("Client introuvable : " + clientId));
         entity.setClient(client);
         applyClientUpdates(client, payload);
+        applyDemandeImmatriculation(entity, payload, client, true);
 
         String typeCode = (payload.getCodeType() == null || payload.getCodeType().isBlank())
                 ? TYPE_DEFAULT
@@ -205,6 +207,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                     if (existing.getClient() != null) {
                         applyClientUpdates(existing.getClient(), request);
                     }
+                    applyDemandeImmatriculation(existing, request, existing.getClient(), false);
 
                     if (request.getCodeType() != null && !request.getCodeType().isBlank()) {
                         TypeDemande type = typeRepo.findById(request.getCodeType())
@@ -297,9 +300,6 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         if (client == null || request == null) {
             return;
         }
-        if (request.getImmatriculation() != null) {
-            client.setImmatriculation(normalizeOptional(request.getImmatriculation()));
-        }
         if (request.getVehiculeMarque() != null) {
             client.setVehiculeMarque(normalizeOptional(request.getVehiculeMarque()));
         }
@@ -323,6 +323,19 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         }
         if (request.getAdresseVille() != null) {
             client.setAdresseVille(normalizeOptional(request.getAdresseVille()));
+        }
+    }
+
+    private void applyDemandeImmatriculation(Demande demande, DemandeRequest request, Client client, boolean setDefault) {
+        if (demande == null) {
+            return;
+        }
+        if (request != null && request.getImmatriculation() != null) {
+            demande.setImmatriculation(normalizeOptional(request.getImmatriculation()));
+            return;
+        }
+        if (setDefault && demande.getImmatriculation() == null && client != null) {
+            demande.setImmatriculation(normalizeOptional(client.getImmatriculation()));
         }
     }
 
@@ -409,6 +422,9 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     private DemandeResponse enrichDemandeResponse(Demande demande, DemandeResponse response) {
         if (demande == null || response == null) {
             return response;
+        }
+        if (response.getClient() != null && demande.getImmatriculation() != null) {
+            response.getClient().setImmatriculation(demande.getImmatriculation());
         }
         devisRepository.findByDemande_IdDemande(demande.getIdDemande())
                 .map(devisMapper::toResponse)
