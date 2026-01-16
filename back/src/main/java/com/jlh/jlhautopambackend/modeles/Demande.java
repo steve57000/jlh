@@ -33,6 +33,9 @@ public class Demande {
     @Column(name = "date_demande", nullable = false)
     private Instant dateDemande;
 
+    @Column(name = "immatriculation")
+    private String immatriculation;
+
     @ManyToOne
     @JoinColumn(name = "code_type", referencedColumnName = "code_type", nullable = false)
     private TypeDemande typeDemande;
