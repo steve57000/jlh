@@ -359,3 +359,72 @@ ON CONFLICT DO NOTHING;
 INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire)
 VALUES (4, 7, 1, 7, 'Confirme', 'Révision complète avant contrôle technique.')
 ON CONFLICT DO NOTHING;
+
+-- ==================================================
+-- 12) Historique (N-1 à N-4) pour statistiques admin
+-- ==================================================
+-- Créneaux historiques
+INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
+                                                                        (8, '2025-04-15 09:00:00', '2025-04-15 10:30:00', 'Reserve'),
+                                                                        (9, '2024-06-12 08:30:00', '2024-06-12 09:30:00', 'Reserve'),
+                                                                        (10,'2023-05-05 14:00:00', '2023-05-05 15:00:00', 'Reserve'),
+                                                                        (11,'2022-11-12 10:00:00', '2022-11-12 11:00:00', 'Reserve'),
+                                                                        (12,'2024-03-10 15:00:00', '2024-03-10 16:00:00', 'Reserve')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO disponibilite (id_admin, id_creneau) VALUES
+                                                     (1,8),(1,9),(1,10),(1,11),(1,12)
+ON CONFLICT DO NOTHING;
+
+-- Demandes historiques
+INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
+    (8, 2, '2025-04-10 09:00:00', 'Service',    'Traitee'),
+    (9, 3, '2024-03-05 11:00:00', 'Devis',      'Traitee'),
+    (10,4, '2023-05-01 08:30:00', 'RendezVous', 'Traitee'),
+    (11,5, '2022-11-01 14:00:00', 'Service',    'Traitee'),
+    (12,1, '2025-09-01 10:15:00', 'Devis',      'Traitee'),
+    (13,2, '2024-06-10 16:00:00', 'RendezVous', 'Traitee')
+ON CONFLICT DO NOTHING;
+
+-- Services associés aux demandes historiques
+INSERT INTO demande_service (
+    id_demande, id_service, quantite,
+    libelle_service, description_service, prix_unitaire_service
+) VALUES
+    (8, 2, 1,
+     'Véhicules hybrides',
+     'Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.',
+     149.00),
+    (9, 4, 2,
+     'Freinage',
+     'Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.',
+     199.00),
+    (10, 1, 4,
+     'Pneumatiques',
+     'Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.',
+     89.00),
+    (11, 12, 1,
+     'Vidange',
+     'Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.',
+     59.90),
+    (12, 7, 1,
+     'Distribution',
+     'Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.',
+     699.00),
+    (13, 3, 1,
+     'Géométrie',
+     'Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.',
+     99.00)
+ON CONFLICT DO NOTHING;
+
+-- Devis historiques
+INSERT INTO devis (id_devis, id_demande, date_devis, montant_total) VALUES
+                                                                        (3, 9, '2024-03-06 09:00:00', 398.00),
+                                                                        (4,12, '2025-09-02 09:30:00', 699.00)
+ON CONFLICT DO NOTHING;
+
+-- Rendez-vous historiques
+INSERT INTO rendez_vous (id_rdv, id_demande, id_admin, id_creneau, code_statut, commentaire) VALUES
+                                                                                    (5,10,1,10,'Confirme', 'Remplacement pneus saisonniers.'),
+                                                                                    (6,13,1,9,'Confirme', 'Contrôle géométrie après intervention.')
+ON CONFLICT DO NOTHING;
