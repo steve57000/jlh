@@ -142,6 +142,42 @@
           </p>
         </article>
 
+        <article class="card chart-card chart-card--history">
+          <header>
+            <p class="card__eyebrow">Historique & prévisions</p>
+            <h3>Services, devis et rendez-vous (N à N-4 + N+1)</h3>
+          </header>
+          @if (yearlyStats().length) {
+            <div class="history-table">
+              <div class="history-table__row history-table__head">
+                <span>Année</span>
+                <span>Services</span>
+                <span>CA services</span>
+                <span>Devis</span>
+                <span>Montant devis</span>
+                <span>RDV</span>
+              </div>
+              @for (row of yearlyStats(); track row.year) {
+                <div class="history-table__row" [class.history-table__row--forecast]="row.forecast">
+                  <span class="history-table__year">
+                    {{ row.forecast ? 'Prévision ' + row.year : row.year }}
+                  </span>
+                  <span>{{ row.serviceCount }}</span>
+                  <span>{{ row.serviceRevenue | number:'1.0-0' }} €</span>
+                  <span>{{ row.devisCount }}</span>
+                  <span>{{ row.devisRevenue | number:'1.0-0' }} €</span>
+                  <span>{{ row.rendezVousCount }}</span>
+                </div>
+              }
+            </div>
+            <p class="muted">
+              Les prévisions N+1 sont calculées sur la moyenne des 3 dernières années disponibles.
+            </p>
+          } @else {
+            <p class="dashboard__state">Aucune donnée historique disponible.</p>
+          }
+        </article>
+
         <article class="card activity-card">
           <header>
             <p class="card__eyebrow">Dernières notifications</p>

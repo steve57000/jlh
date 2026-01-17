@@ -8,6 +8,11 @@ import { LookupsService } from '../services/lookups.service';
 import { ServicesService } from '../services/services.service';
 import { ServiceDto } from '../modeles/service.model';
 import { RendezVousService, RendezVousUpsertPayload } from '../services/rendezvous.service';
+import { RendezVousPropositionsService } from '../services/rendezvous-propositions.service';
+import {
+  RendezVousProposition,
+  RendezVousPropositionBatchPayload
+} from '../modeles/rendezvous-proposition.model';
 import { AuthService } from '../services/auth.service';
 import { VEHICLE_ENERGY_OPTIONS } from '../shared/vehicle-energy-options';
 
@@ -47,6 +52,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   private readonly lookups = inject(LookupsService);
   private readonly servicesApi = inject(ServicesService);
   private readonly rendezVousApi = inject(RendezVousService);
+  private readonly rdvPropositionsApi = inject(RendezVousPropositionsService);
   private readonly auth = inject(AuthService);
 
   // Données
@@ -110,6 +116,12 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   rdvSaving = signal(false);
   rdvFeedback = signal<string | null>(null);
   rdvFeedbackType = signal<'success' | 'error' | null>(null);
+  rdvProposals = signal<RendezVousProposition[]>([]);
+  rdvProposalDraft = signal<Array<{ dateDebut: string; dateFin: string }>>([
+    { dateDebut: '', dateFin: '' }
+  ]);
+  rdvProposalFeedback = signal<string | null>(null);
+  rdvProposalFeedbackType = signal<'success' | 'error' | null>(null);
   vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
 
   filtered = computed(() => {
@@ -300,6 +312,8 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.documentError.set(null);
     this.newServiceSelection.set({ serviceId: null, quantite: 1, prix: null });
     this.syncRendezVousForm(clone.rendezVous ?? null);
+    this.loadRendezVousProposals(id);
+    this.resetProposalDraft();
     this.setBodyScrollLock(true);
   }
 
@@ -315,7 +329,137 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.feedbackType.set(null);
     this.rdvForm.set(null);
     this.rdvFeedback.set(null);
+    this.rdvProposals.set([]);
+    this.rdvProposalDraft.set([{ dateDebut: '', dateFin: '' }]);
+    this.rdvProposalFeedback.set(null);
+    this.rdvProposalFeedbackType.set(null);
     this.setBodyScrollLock(false);
+  }
+
+  private loadRendezVousProposals(demandeId: number) {
+    this.rdvPropositionsApi.listByDemande(demandeId).subscribe({
+      next: proposals => this.rdvProposals.set(proposals ?? []),
+      error: () => this.rdvProposals.set([])
+    });
+  }
+
+  private resetProposalDraft() {
+    this.rdvProposalDraft.set([{ dateDebut: '', dateFin: '' }]);
+    this.rdvProposalFeedback.set(null);
+    this.rdvProposalFeedbackType.set(null);
+  }
+
+  addProposalSlot() {
+    const current = this.rdvProposalDraft();
+    if (current.length >= 3) {
+      this.rdvProposalFeedback.set('Vous pouvez proposer jusqu’à 3 créneaux.');
+      this.rdvProposalFeedbackType.set('error');
+      return;
+    }
+    this.rdvProposalDraft.set([...current, { dateDebut: '', dateFin: '' }]);
+  }
+
+  removeProposalSlot(index: number) {
+    const current = this.rdvProposalDraft();
+    if (current.length <= 1) return;
+    this.rdvProposalDraft.set(current.filter((_, i) => i !== index));
+  }
+
+  setProposalSlot(index: number, field: 'dateDebut' | 'dateFin', value: string) {
+    const current = this.rdvProposalDraft();
+    const next = current.map((slot, i) => i === index ? { ...slot, [field]: value } : slot);
+    this.rdvProposalDraft.set(next);
+  }
+
+  submitProposalSlots() {
+    const demandeId = this.selectedId();
+    if (demandeId == null) return;
+    const payload = this.buildProposalPayload();
+    if (!payload) {
+      return;
+    }
+    this.rdvProposalFeedback.set(null);
+    this.rdvProposalFeedbackType.set(null);
+    this.rdvPropositionsApi.create(demandeId, payload).subscribe({
+      next: proposals => {
+        this.rdvProposals.set(proposals ?? []);
+        this.resetProposalDraft();
+        this.rdvProposalFeedback.set('Créneaux envoyés au client. Il dispose de 24h pour répondre.');
+        this.rdvProposalFeedbackType.set('success');
+      },
+      error: err => {
+        const msg = err?.error?.message || 'Impossible d’envoyer les créneaux.';
+        this.rdvProposalFeedback.set(msg);
+        this.rdvProposalFeedbackType.set('error');
+      }
+    });
+  }
+
+  acceptProposal(propositionId: number) {
+    const demandeId = this.selectedId();
+    if (demandeId == null) return;
+    this.rdvPropositionsApi.accept(demandeId, propositionId).subscribe({
+      next: () => {
+        this.loadRendezVousProposals(demandeId);
+        this.reload();
+      },
+      error: err => {
+        const msg = err?.error?.message || 'Impossible de valider ce créneau.';
+        this.rdvProposalFeedback.set(msg);
+        this.rdvProposalFeedbackType.set('error');
+      }
+    });
+  }
+
+  declineProposal(propositionId: number) {
+    const demandeId = this.selectedId();
+    if (demandeId == null) return;
+    this.rdvPropositionsApi.decline(demandeId, propositionId).subscribe({
+      next: () => this.loadRendezVousProposals(demandeId),
+      error: err => {
+        const msg = err?.error?.message || 'Impossible de refuser ce créneau.';
+        this.rdvProposalFeedback.set(msg);
+        this.rdvProposalFeedbackType.set('error');
+      }
+    });
+  }
+
+  proposalStatusLabel(statut: RendezVousProposition['statut']) {
+    switch (statut) {
+      case 'PROPOSE':
+        return 'Proposé';
+      case 'ACCEPTE':
+        return 'Accepté';
+      case 'REFUSE':
+        return 'Refusé';
+      case 'EXPIRE':
+        return 'Expiré';
+      default:
+        return statut;
+    }
+  }
+
+  private buildProposalPayload(): RendezVousPropositionBatchPayload | null {
+    const slots = this.rdvProposalDraft()
+      .map(slot => ({
+        dateDebut: this.parseDateInput(slot.dateDebut),
+        dateFin: this.parseDateInput(slot.dateFin)
+      }))
+      .filter(slot => slot.dateDebut && slot.dateFin) as { dateDebut: string; dateFin: string }[];
+
+    if (!slots.length) {
+      this.rdvProposalFeedback.set('Ajoutez au moins un créneau complet.');
+      this.rdvProposalFeedbackType.set('error');
+      return null;
+    }
+
+    if (slots.length > 3) {
+      this.rdvProposalFeedback.set('Vous pouvez proposer jusqu’à 3 créneaux.');
+      this.rdvProposalFeedbackType.set('error');
+      return null;
+    }
+
+    return { propositions: slots };
   }
 
   updateDraft(mutator: (draft: DemandeWithServices) => void) {

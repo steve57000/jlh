@@ -3,7 +3,7 @@
     <div class="quote__header">
       <h3>Ma demande en cours</h3>
       <span class="badge">
-        {{ d.statutDemande?.libelle || d.statutDemande?.codeStatut || 'Brouillon' }}
+        {{ statusLabel() }}
       </span>
     </div>
     @if (locked) {

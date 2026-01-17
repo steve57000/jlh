@@ -3,6 +3,11 @@ import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { DemandeWithServices } from '../modeles/demande.model';
 import { DemandesServiceService } from '../services/demandes-services.service';
+import {
+  AdminDashboardStats,
+  AdminDashboardStatsService,
+  AdminYearlyStats
+} from '../services/admin-dashboard-stats.service';
 import { filter, Subscription } from 'rxjs';
 
 type DemandeType = DemandeWithServices['code_type'];
@@ -54,12 +59,15 @@ interface DashboardStats {
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   private readonly demandesApi = inject(DemandesServiceService);
+  private readonly adminStatsApi = inject(AdminDashboardStatsService);
   private readonly router = inject(Router);
   private navSub?: Subscription;
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly demandes = signal<DemandeWithServices[]>([]);
+  readonly yearlyStats = signal<AdminYearlyStats[]>([]);
+  readonly statsMeta = signal<AdminDashboardStats | null>(null);
 
   readonly stats = computed<DashboardStats>(() => {
     const rows = this.demandes();
@@ -180,9 +188,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadDemandes();
+    this.loadYearlyStats();
     this.navSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(() => this.loadDemandes(true));
+      .subscribe(() => {
+        this.loadDemandes(true);
+        this.loadYearlyStats(true);
+      });
   }
 
   ngOnDestroy(): void {
@@ -191,6 +203,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.loadDemandes(true);
+    this.loadYearlyStats(true);
   }
 
   private loadDemandes(silent = false): void {
@@ -207,6 +220,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         const fallback = 'Impossible de charger les indicateurs du tableau de bord.';
         this.error.set(err?.error?.message || err?.message || fallback);
         this.loading.set(false);
+      }
+    });
+  }
+
+  private loadYearlyStats(silent = false): void {
+    this.adminStatsApi.getStats().subscribe({
+      next: data => {
+        this.statsMeta.set(data);
+        this.yearlyStats.set(data?.yearly ?? []);
+      },
+      error: err => {
+        if (!silent) {
+          const fallback = 'Impossible de charger les statistiques annuelles.';
+          this.error.set(err?.error?.message || err?.message || fallback);
+        }
       }
     });
   }
