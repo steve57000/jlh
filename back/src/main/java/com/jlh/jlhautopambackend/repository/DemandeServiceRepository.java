@@ -21,4 +21,6 @@ public interface DemandeServiceRepository extends JpaRepository<DemandeService, 
     List<DemandeService> findByService_IdService(Integer idService);
 
     java.util.Optional<DemandeService> findByDemande_IdDemandeAndService_IdService(Integer demandeId, Integer serviceId);
+
+    List<DemandeService> findByDemande_IdDemande(Integer demandeId);
 }

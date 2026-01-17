@@ -448,6 +448,107 @@
 
         @if ((draft.code_type === 'RendezVous' || draft.code_type === 'Service') && rdvForm(); as rdv) {
           <section class="details-block details-block--editable" [class.details-block--locked]="isLockedForEdit()">
+            <h4>Créneaux proposés au client</h4>
+            <p class="muted">
+              Proposez 1 à 3 créneaux. Le client dispose de 24h pour accepter ou demander une nouvelle proposition.
+            </p>
+
+            @if (rdvProposals().length) {
+              <ul class="proposal-list">
+                @for (proposal of rdvProposals(); track proposal.idProposition) {
+                  <li>
+                    <div>
+                      <strong>{{ proposal.dateDebut | date:'dd/MM/yyyy HH:mm' }}</strong>
+                      → {{ proposal.dateFin | date:'dd/MM/yyyy HH:mm' }}
+                      <span class="badge badge--proposal">{{ proposalStatusLabel(proposal.statut) }}</span>
+                      <small class="muted">Expire le {{ proposal.expiresAt | date:'dd/MM/yyyy HH:mm' }}</small>
+                    </div>
+                    <div class="proposal-actions">
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-small"
+                        (click)="acceptProposal(proposal.idProposition)"
+                        [disabled]="isLockedForEdit() || proposal.statut !== 'PROPOSE'"
+                      >
+                        Valider ce créneau
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-small"
+                        (click)="declineProposal(proposal.idProposition)"
+                        [disabled]="isLockedForEdit() || proposal.statut !== 'PROPOSE'"
+                      >
+                        Refuser
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="empty">Aucun créneau proposé pour le moment.</p>
+            }
+
+            <div class="proposal-form">
+              @for (slot of rdvProposalDraft(); let i = $index; track i) {
+                <div class="proposal-form__row">
+                  <label>
+                    <span>Début</span>
+                    <input
+                      type="datetime-local"
+                      [value]="slot.dateDebut"
+                      (change)="setProposalSlot(i, 'dateDebut', ($any($event.target)).value)"
+                      [disabled]="isLockedForEdit()"
+                    />
+                  </label>
+                  <label>
+                    <span>Fin</span>
+                    <input
+                      type="datetime-local"
+                      [value]="slot.dateFin"
+                      (change)="setProposalSlot(i, 'dateFin', ($any($event.target)).value)"
+                      [disabled]="isLockedForEdit()"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-small"
+                    (click)="removeProposalSlot(i)"
+                    [disabled]="isLockedForEdit()"
+                  >
+                    Retirer
+                  </button>
+                </div>
+              }
+              <div class="proposal-form__actions">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-small"
+                  (click)="addProposalSlot()"
+                  [disabled]="isLockedForEdit()"
+                >
+                  Ajouter un créneau
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-small"
+                  (click)="submitProposalSlots()"
+                  [disabled]="isLockedForEdit()"
+                >
+                  Envoyer les propositions
+                </button>
+              </div>
+              @if (rdvProposalFeedback()) {
+                <p
+                  class="feedback"
+                  [class.feedback--error]="rdvProposalFeedbackType()==='error'"
+                >
+                  {{ rdvProposalFeedback() }}
+                </p>
+              }
+            </div>
+          </section>
+
+          <section class="details-block details-block--editable" [class.details-block--locked]="isLockedForEdit()">
             <h4>Planification du rendez-vous</h4>
             <p class="muted">
               Renseignez un rendez-vous confirmé ou attendez la validation client lorsqu'un créneau est proposé.
