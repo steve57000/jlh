@@ -13,8 +13,13 @@ import {
   RendezVousSummary
 } from '../services/client-dashboard.service';
 import type { DemandeTypeCode } from '../modeles/demande.model';
+import {
+  RendezVousProposition,
+  RendezVousPropositionStatut
+} from '../modeles/rendezvous-proposition.model';
+import { RendezVousPropositionsService } from '../services/rendezvous-propositions.service';
 import { ToastService } from '../shared/toast/toast.service';
-import { firstValueFrom, filter, Subscription } from 'rxjs';
+import { firstValueFrom, filter, forkJoin, of, Subscription, catchError } from 'rxjs';
 import { LookupsService } from '../services/lookups.service';
 import { ServicesComponent } from '../pages/services.component';
 import { AccountComponent } from '../account/account.component/account.component';
@@ -94,6 +99,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   showArchived = true;
   readonly activeSection = signal<'overview' | 'services' | 'account' | 'documents'>('overview');
   documents = signal<ClientDocumentDto[]>([]);
+  rdvProposals = signal<Record<number, RendezVousProposition[]>>({});
   // safe api base (no trailing slash)
   private api = environment.apiBaseUrl ? environment.apiBaseUrl.replace(/\/+$/, '') : '';
 
@@ -199,7 +205,8 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private router: Router,
     private toast: ToastService,
-    private lookups: LookupsService
+    private lookups: LookupsService,
+    private rdvPropositionsApi: RendezVousPropositionsService
   ) {}
 
   private navSub?: Subscription;
@@ -296,7 +303,9 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
     this.srv.getMyDemandes(httpOptions).subscribe({
       next: list => {
-        this.demandes.set(list ?? []);
+        const demandes = list ?? [];
+        this.demandes.set(demandes);
+        this.loadProposalsForDemandes(demandes);
         finalize();
       },
       error: err => {
@@ -347,6 +356,45 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
           this.error ||= err?.error?.message || err.message || 'Erreur de chargement des documents';
         }
         finalize();
+      }
+    });
+  }
+
+  private loadProposalsForDemandes(demandes: DemandeResponse[]) {
+    if (!demandes?.length) {
+      this.rdvProposals.set({});
+      return;
+    }
+    const requests = demandes
+      .map(demande => {
+        const demandeId = Number(demande?.idDemande);
+        if (!Number.isFinite(demandeId)) {
+          return null;
+        }
+        return {
+          demandeId,
+          request: this.rdvPropositionsApi.listByDemande(demandeId).pipe(
+            catchError(() => of([] as RendezVousProposition[]))
+          )
+        };
+      })
+      .filter((item): item is { demandeId: number; request: any } => item !== null);
+
+    if (!requests.length) {
+      this.rdvProposals.set({});
+      return;
+    }
+
+    forkJoin(requests.map(item => item.request)).subscribe({
+      next: results => {
+        const map: Record<number, RendezVousProposition[]> = {};
+        requests.forEach((item, index) => {
+          map[item.demandeId] = results[index] ?? [];
+        });
+        this.rdvProposals.set(map);
+      },
+      error: () => {
+        this.rdvProposals.set({});
       }
     });
   }
@@ -525,6 +573,46 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     }
     const entry = this.visibleTimeline(d).find(item => !!item.rendezVous);
     return entry?.rendezVous ?? null;
+  }
+
+  proposalsFor(d?: DemandeResponse): RendezVousProposition[] {
+    if (!d?.idDemande) return [];
+    return this.rdvProposals()[Number(d.idDemande)] ?? [];
+  }
+
+  proposalStatusLabel(statut: RendezVousPropositionStatut) {
+    switch (statut) {
+      case 'PROPOSE':
+        return 'Proposé';
+      case 'ACCEPTE':
+        return 'Accepté';
+      case 'REFUSE':
+        return 'Refusé';
+      case 'EXPIRE':
+        return 'Expiré';
+      default:
+        return statut;
+    }
+  }
+
+  acceptProposal(demandeId: number, propositionId: number) {
+    this.rdvPropositionsApi.accept(demandeId, propositionId).subscribe({
+      next: () => this.refresh({ silent: true, delayMs: 200 }),
+      error: err => {
+        const msg = err?.error?.message || 'Impossible de valider ce créneau.';
+        this.toast.error('Erreur', msg);
+      }
+    });
+  }
+
+  declineProposal(demandeId: number, propositionId: number) {
+    this.rdvPropositionsApi.decline(demandeId, propositionId).subscribe({
+      next: () => this.refresh({ silent: true, delayMs: 200 }),
+      error: err => {
+        const msg = err?.error?.message || 'Impossible de refuser ce créneau.';
+        this.toast.error('Erreur', msg);
+      }
+    });
   }
 
   isArchived(d?: DemandeResponse): boolean {
