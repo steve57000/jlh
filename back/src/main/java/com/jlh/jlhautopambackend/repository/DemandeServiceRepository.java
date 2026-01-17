@@ -3,7 +3,9 @@ package com.jlh.jlhautopambackend.repository;
 
 import com.jlh.jlhautopambackend.modeles.DemandeService;
 import com.jlh.jlhautopambackend.modeles.DemandeServiceKey;
+import java.math.BigDecimal;
 import java.util.List;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -23,4 +25,19 @@ public interface DemandeServiceRepository extends JpaRepository<DemandeService, 
     java.util.Optional<DemandeService> findByDemande_IdDemandeAndService_IdService(Integer demandeId, Integer serviceId);
 
     List<DemandeService> findByDemande_IdDemande(Integer demandeId);
+
+    @Query("""
+        select function('year', ds.demande.dateDemande) as year,
+               count(ds) as count,
+               sum(ds.prixUnitaireService * ds.quantite) as amount
+        from DemandeService ds
+        group by function('year', ds.demande.dateDemande)
+    """)
+    List<YearlyAmountCount> aggregateYearlyServiceStats();
+
+    interface YearlyAmountCount {
+        Integer getYear();
+        Long getCount();
+        BigDecimal getAmount();
+    }
 }
