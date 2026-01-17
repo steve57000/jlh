@@ -69,4 +69,18 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
         and (rv.demandeService is not null or rv.devis is not null)
     """)
     long countLinkedByClientId(@Param("clientId") Integer clientId);
+
+    @Query("""
+      select function('date_part', 'year', cr.dateDebut) as year,
+             count(rv) as count
+      from RendezVous rv
+        join rv.creneau cr
+      group by function('date_part', 'year', cr.dateDebut)
+    """)
+    List<YearlyCount> aggregateYearlyRendezVousStats();
+
+    interface YearlyCount {
+        Integer getYear();
+        Long getCount();
+    }
 }

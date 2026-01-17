@@ -346,6 +346,9 @@ export class ServicesComponent implements OnInit, OnDestroy {
       return false;
     }
     const statut = demande.statutDemande?.codeStatut;
+    if (statut && statut !== 'Brouillon') {
+      return true;
+    }
     const rdvDate = demande.rendezVous?.dateDebut ? new Date(demande.rendezVous.dateDebut) : null;
     const rdvPasse = rdvDate ? rdvDate.getTime() <= Date.now() : false;
     if (statut === 'Annulee') {
