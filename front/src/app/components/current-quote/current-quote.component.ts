@@ -33,6 +33,10 @@ export class CurrentQuoteComponent implements OnChanges {
   rendezVousCommentaire: string | null = null;
   validationPrix = false;
 
+  requiresValidation(): boolean {
+    return this.type === 'Service' || this.type === 'Devis';
+  }
+
   statusLabel(): string {
     if (!this.demande) {
       return 'Brouillon';

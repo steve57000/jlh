@@ -145,7 +145,12 @@ export class ServicesComponent implements OnInit, OnDestroy {
   async refreshDraft() {
     try {
       const q = await this.state.loadDraft({ silent: true });
-      this.draft = q ?? null;
+      if (this.isDraftEditable(q)) {
+        this.draft = q ?? null;
+      } else {
+        this.draft = null;
+        this.state.resetCache();
+      }
     } catch {
       this.draft = null;
     }
@@ -358,5 +363,13 @@ export class ServicesComponent implements OnInit, OnDestroy {
       return true;
     }
     return rdvPasse;
+  }
+
+  private isDraftEditable(demande?: DemandeResponse | null): boolean {
+    if (!demande) {
+      return false;
+    }
+    const statut = demande.statutDemande?.codeStatut;
+    return !statut || statut === 'Brouillon';
   }
 }

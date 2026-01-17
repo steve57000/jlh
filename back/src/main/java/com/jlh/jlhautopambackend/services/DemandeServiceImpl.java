@@ -268,8 +268,8 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
 
     @Override
     public Optional<DemandeResponse> findCurrentForClient(Integer clientId) {
-        return repository.findFirstByClient_IdClientAndStatutDemande_CodeStatutOrderByDateDemandeDesc(clientId, STATUT_BROUILLON)
-                .or(() -> repository.findFirstByClient_IdClientAndStatutDemande_CodeStatutOrderByDateDemandeDesc(clientId, STATUT_EN_ATTENTE))
+        return repository.findFirstByClient_IdClientAndStatutDemande_CodeStatutOrderByDateDemandeDesc(
+                        clientId, STATUT_BROUILLON)
                 .map(demande -> enrichDemandeResponse(demande, mapper.toResponse(demande, userService)));
     }
 
