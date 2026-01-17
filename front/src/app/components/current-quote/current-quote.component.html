@@ -86,7 +86,7 @@
       <strong>{{ total() | number:'1.2-2' }} €</strong>
     </div>
 
-    @if (type === 'Service' || type === 'Devis') {
+    @if (requiresValidation()) {
       <div class="quote__validation">
         <label class="checkbox">
           <input type="checkbox" [(ngModel)]="validationPrix" name="validationPrix" [disabled]="locked" />
@@ -100,7 +100,7 @@
       <button
         class="cta-btn"
         type="submit"
-        [disabled]="locked || (type !== 'RendezVous' && !(($any(d).services?.length || 0) > 0))">
+        [disabled]="locked || (requiresValidation() && !validationPrix) || (type !== 'RendezVous' && !(($any(d).services?.length || 0) > 0))">
         Valider ma demande
       </button>
     </form>
