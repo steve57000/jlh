@@ -27,11 +27,11 @@ public interface DemandeServiceRepository extends JpaRepository<DemandeService, 
     List<DemandeService> findByDemande_IdDemande(Integer demandeId);
 
     @Query("""
-        select function('year', ds.demande.dateDemande) as year,
+        select function('date_part', 'year', ds.demande.dateDemande) as year,
                count(ds) as count,
                sum(ds.prixUnitaireService * ds.quantite) as amount
         from DemandeService ds
-        group by function('year', ds.demande.dateDemande)
+        group by function('date_part', 'year', ds.demande.dateDemande)
     """)
     List<YearlyAmountCount> aggregateYearlyServiceStats();
 

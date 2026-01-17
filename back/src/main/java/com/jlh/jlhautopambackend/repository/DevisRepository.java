@@ -12,11 +12,11 @@ public interface DevisRepository extends JpaRepository<Devis, Integer> {
     java.util.Optional<Devis> findByDemande_IdDemande(Integer idDemande);
 
     @Query("""
-        select function('year', d.dateDevis) as year,
+        select function('date_part', 'year', d.dateDevis) as year,
                count(d) as count,
                sum(d.montantTotal) as amount
         from Devis d
-        group by function('year', d.dateDevis)
+        group by function('date_part', 'year', d.dateDevis)
     """)
     List<YearlyAmountCount> aggregateYearlyDevisStats();
 
