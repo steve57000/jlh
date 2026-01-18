@@ -275,6 +275,10 @@ $card-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
 }
 
 .chart-card--history {
+  @media (min-width: 900px) {
+    grid-column: span 2;
+  }
+
   .history-table {
     display: grid;
     gap: 0.4rem;
