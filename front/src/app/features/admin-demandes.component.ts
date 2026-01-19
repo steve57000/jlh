@@ -440,12 +440,27 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   }
 
   private buildProposalPayload(): RendezVousPropositionBatchPayload | null {
-    const slots = this.rdvProposalDraft()
+    const draftSlots = this.rdvProposalDraft()
       .map(slot => ({
         dateDebut: this.parseDateInput(slot.dateDebut),
         dateFin: this.parseDateInput(slot.dateFin)
       }))
       .filter(slot => slot.dateDebut && slot.dateFin) as { dateDebut: string; dateFin: string }[];
+
+    const existingSlots = this.rdvProposals()
+      .filter(proposal => proposal.statut === 'PROPOSE' && this.isProposalActive(proposal))
+      .map(proposal => ({
+        dateDebut: proposal.dateDebut,
+        dateFin: proposal.dateFin
+      }));
+
+    const slots = [...existingSlots, ...draftSlots].reduce((acc, slot) => {
+      const key = `${slot.dateDebut}|${slot.dateFin}`;
+      if (!acc.some(item => `${item.dateDebut}|${item.dateFin}` === key)) {
+        acc.push(slot);
+      }
+      return acc;
+    }, [] as { dateDebut: string; dateFin: string }[]);
 
     if (!slots.length) {
       this.rdvProposalFeedback.set('Ajoutez au moins un créneau complet.');
@@ -454,12 +469,20 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     }
 
     if (slots.length > 3) {
-      this.rdvProposalFeedback.set('Vous pouvez proposer jusqu’à 3 créneaux.');
+      this.rdvProposalFeedback.set('Supprimez un créneau existant avant d’en ajouter un nouveau (max 3).');
       this.rdvProposalFeedbackType.set('error');
       return null;
     }
 
     return { propositions: slots };
+  }
+
+  private isProposalActive(proposal: RendezVousProposition): boolean {
+    if (!proposal.expiresAt) {
+      return true;
+    }
+    const expiresAt = new Date(proposal.expiresAt).getTime();
+    return Number.isFinite(expiresAt) && expiresAt > Date.now();
   }
 
   updateDraft(mutator: (draft: DemandeWithServices) => void) {

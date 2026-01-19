@@ -501,6 +501,29 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     return value ? new Date(value).getTime() : 0;
   }
 
+  latestUpdateTimestamp(d?: DemandeResponse): number {
+    const timeline = d?.timeline ?? [];
+    const timelineTs = timeline
+      .map(item => (item.createdAt ? new Date(item.createdAt).getTime() : 0))
+      .filter(ts => Number.isFinite(ts));
+    const latestTimeline = timelineTs.length ? Math.max(...timelineTs) : 0;
+    return Math.max(latestTimeline, this.demandeTimestamp(d));
+  }
+
+  latestUpdateDate(d?: DemandeResponse): string | null {
+    const ts = this.latestUpdateTimestamp(d);
+    return ts > 0 ? new Date(ts).toISOString() : null;
+  }
+
+  isRecentlyUpdated(d?: DemandeResponse): boolean {
+    const ts = this.latestUpdateTimestamp(d);
+    if (!ts) {
+      return false;
+    }
+    const fortyEightHours = 48 * 60 * 60 * 1000;
+    return Date.now() - ts <= fortyEightHours;
+  }
+
   totalDemande(d: DemandeResponse): number {
     if (!d?.services?.length) return 0;
     return d.services.reduce((sum, s) => sum + (s.prixUnitaire || 0) * (s.quantite || 0), 0);
@@ -523,6 +546,38 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
       case 'Annule':   return 'badge danger';
       default: return 'badge';
     }
+  }
+
+  shouldShowProchainRdv(rdv?: ProchainRdvDto | null): boolean {
+    if (!rdv) {
+      return false;
+    }
+    if (this.isCancelledRdv(rdv)) {
+      return false;
+    }
+    return this.isUpcomingRdv(rdv);
+  }
+
+  canDownloadIcs(rdv?: ProchainRdvDto | null): boolean {
+    if (!rdv) {
+      return false;
+    }
+    return !this.isCancelledRdv(rdv) && this.isUpcomingRdv(rdv);
+  }
+
+  private isCancelledRdv(rdv: ProchainRdvDto): boolean {
+    const statut = rdv.codeStatut;
+    return statut === 'Annulee' || statut === 'Annule';
+  }
+
+  private isUpcomingRdv(rdv: ProchainRdvDto): boolean {
+    const dateFin = rdv.dateFin ? new Date(rdv.dateFin).getTime() : NaN;
+    const dateDebut = rdv.dateDebut ? new Date(rdv.dateDebut).getTime() : NaN;
+    const compareDate = Number.isFinite(dateFin) ? dateFin : dateDebut;
+    if (!Number.isFinite(compareDate)) {
+      return false;
+    }
+    return compareDate > Date.now();
   }
 
   visibleDocuments(d?: DemandeResponse): DemandeDocumentDto[] {
