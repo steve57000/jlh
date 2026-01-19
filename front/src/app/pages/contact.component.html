@@ -27,26 +27,6 @@
 
         @if (isClient) {
           <form class="rdv-form" (ngSubmit)="submitRendezVousRequest()">
-            <div class="rdv-form__grid">
-              <label>
-                <span>Téléphone</span>
-                <input
-                  type="tel"
-                  name="rdvTelephone"
-                  [(ngModel)]="rdvTelephone"
-                  placeholder="06 00 00 00 00"
-                  [disabled]="submitting" />
-              </label>
-              <label>
-                <span>Immatriculation</span>
-                <input
-                  type="text"
-                  name="rdvImmatriculation"
-                  [(ngModel)]="rdvImmatriculation"
-                  placeholder="AA-123-BB"
-                  [disabled]="submitting" />
-              </label>
-            </div>
             <label>
               <span>Description de la demande *</span>
               <textarea

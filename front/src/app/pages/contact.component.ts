@@ -18,8 +18,6 @@ import { firstValueFrom } from 'rxjs';
   styleUrl: './contact.component.scss'
 })
 export class ContactComponent {
-  rdvTelephone = '';
-  rdvImmatriculation = '';
   rdvDescription = '';
   submitting = false;
 
@@ -49,10 +47,8 @@ export class ContactComponent {
     const skipErrorOptions = { headers: new HttpHeaders({ 'X-Skip-Error-Toast': '1' }) };
     try {
       const idDemande = await this.state.initDemande({ silent: true });
-      const immat = this.rdvImmatriculation.trim();
-      const telephone = this.rdvTelephone.trim();
 
-      const fallback: { codeType?: 'RendezVous'; immatriculation?: string | null; telephone?: string | null } = {};
+      const fallback: { codeType?: 'RendezVous' } = {};
 
       try {
         await firstValueFrom(
@@ -66,36 +62,12 @@ export class ContactComponent {
         fallback.codeType = 'RendezVous';
       }
 
-      const clientPatch: { immatriculation?: string | null; telephone?: string | null } = {};
-      if (immat) {
-        clientPatch.immatriculation = immat;
-      }
-      if (telephone) {
-        clientPatch.telephone = telephone;
-      }
-      if (Object.keys(clientPatch).length) {
-        try {
-          await firstValueFrom(
-            this.http.patch<void>(
-              `${api}/demandes/${idDemande}/client`,
-              clientPatch,
-              skipErrorOptions
-            )
-          );
-        } catch {
-          fallback.immatriculation = immat || null;
-          fallback.telephone = telephone || null;
-        }
-      }
-
-      if (fallback.codeType || 'immatriculation' in fallback || 'telephone' in fallback) {
+      if (fallback.codeType) {
         await firstValueFrom(
           this.demandesService.updateDemande(
             idDemande,
             {
-              ...(fallback.codeType ? { codeType: fallback.codeType } : {}),
-              ...('immatriculation' in fallback ? { immatriculation: fallback.immatriculation ?? null } : {}),
-              ...('telephone' in fallback ? { telephone: fallback.telephone ?? null } : {})
+              ...(fallback.codeType ? { codeType: fallback.codeType } : {})
             },
             { silentError: true }
           )
