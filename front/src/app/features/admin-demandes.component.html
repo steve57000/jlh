@@ -147,6 +147,13 @@
           <button type="button" class="btn-close" (click)="closeDetails()" aria-label="Fermer la fiche">×</button>
         </header>
 
+        @if (draft.code_statut === 'Brouillon') {
+          <p class="lock-note">
+            Brouillon client non validé : le client peut encore modifier sa demande.
+            Vous pouvez tout de même éditer et valider ce brouillon pour l'aider (ex : assistance téléphonique).
+          </p>
+        }
+
         @if (isLockedForEdit()) {
           <p class="lock-note">
             Demande confirmée : les modifications sont verrouillées (sauf ajout de document).
@@ -166,6 +173,8 @@
             <p><strong>2. Fixer le rendez-vous</strong> : appelez le client ou proposez 1 à 3 créneaux via le site.</p>
             <p><strong>3. Confirmer</strong> : verrouille la demande une fois le rendez-vous validé.</p>
           </div>
+          <p class="muted">Le statut <strong>Brouillon</strong> indique que le client n’a pas encore validé sa demande.</p>
+          <p class="muted">Le statut <strong>En attente</strong> correspond à une demande envoyée et en cours de traitement.</p>
           <p class="muted">Le statut <strong>Confirmée</strong> correspond à une demande validée et enregistrée.</p>
           <p class="muted">Le client dispose de 24h pour accepter un créneau proposé via le site.</p>
           @if (autoConfirmOnSave()) {
