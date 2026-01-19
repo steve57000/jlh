@@ -1,5 +1,6 @@
 import {Component, OnDestroy, OnInit, Inject, PLATFORM_ID, inject} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { takeUntil } from 'rxjs/operators';
 import { Subject, firstValueFrom, Subscription } from 'rxjs';
 
@@ -37,6 +38,7 @@ type ServicesTab = {
   selector: 'app-services',
   imports: [
     CommonModule,
+    FormsModule,
     RouterModule,
     ServiceCardComponent,
     CurrentQuoteComponent,
@@ -52,6 +54,10 @@ export class ServicesComponent implements OnInit, OnDestroy {
   services: ServiceDto[] = [];
   draft?: DemandeResponse | null;
   activeTab = 'services';
+  rdvTelephone = '';
+  rdvImmatriculation = '';
+  rdvDescription = '';
+  rdvSubmitting = false;
   tabs: ServicesTab[] = [
     {
       id: 'services',
@@ -60,6 +66,13 @@ export class ServicesComponent implements OnInit, OnDestroy {
       description:
         'Découvrez l’ensemble de nos prestations et trouvez rapidement la solution adaptée à votre véhicule.',
       cta: 'Découvrir nos services'
+    },
+    {
+      id: 'rendezvous',
+      label: 'Demande de rendez-vous',
+      title: 'Demander un rendez-vous',
+      description:
+        'Expliquez votre besoin, nous reviendrons vers vous avec des créneaux proposés sous 24h.'
     },
     {
       id: 'entretien',
@@ -147,6 +160,7 @@ export class ServicesComponent implements OnInit, OnDestroy {
       const q = await this.state.loadDraft({ silent: true });
       if (this.isDraftEditable(q)) {
         this.draft = q ?? null;
+        this.syncRendezVousForm(this.draft);
       } else {
         this.draft = null;
         this.state.resetCache();
@@ -322,6 +336,9 @@ export class ServicesComponent implements OnInit, OnDestroy {
 
     this.state.resetCache();
     this.draft = null;
+    if (payload.type === 'RendezVous') {
+      this.rdvDescription = '';
+    }
 
     try {
       await this.router.navigate(['/dashboard'], { replaceUrl: true });
@@ -355,5 +372,50 @@ export class ServicesComponent implements OnInit, OnDestroy {
     }
     const statut = demande.statutDemande?.codeStatut;
     return !statut || statut === 'Brouillon';
+  }
+
+  private syncRendezVousForm(demande?: DemandeResponse | null) {
+    const client = demande?.client;
+    if (!client) {
+      return;
+    }
+    if (!this.rdvTelephone) {
+      this.rdvTelephone = client.telephone ?? '';
+    }
+    if (!this.rdvImmatriculation) {
+      this.rdvImmatriculation = client.immatriculation ?? '';
+    }
+  }
+
+  async submitRendezVousRequest() {
+    if (!this.isClient || this.rdvSubmitting) {
+      return;
+    }
+    const description = this.rdvDescription.trim();
+    if (!description) {
+      this.toast.error('Description requise', 'Merci de préciser la raison du rendez-vous.');
+      return;
+    }
+    this.rdvSubmitting = true;
+    try {
+      if (!this.draft?.idDemande) {
+        await this.state.initDemande({ silent: true });
+        await this.refreshDraft();
+      }
+      if (!this.draft?.idDemande) {
+        throw new Error('Demande introuvable.');
+      }
+      await this.onSubmitDemand({
+        type: 'RendezVous',
+        immatriculation: this.rdvImmatriculation.trim() || null,
+        telephone: this.rdvTelephone.trim() || null,
+        rendezVousCommentaire: description
+      });
+    } catch (err: any) {
+      const msg = err?.error?.message || err?.message || 'Envoi impossible';
+      this.toast.error('Échec de l’envoi', msg);
+    } finally {
+      this.rdvSubmitting = false;
+    }
   }
 }
