@@ -160,6 +160,38 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     return this.demandes().find(d => this.getDemandeId(d) === id) ?? null;
   });
 
+  stepLabels(draft: DemandeWithServices) {
+    const type = draft.code_type;
+    if (type === 'Devis') {
+      return {
+        step1: 'Demande devis',
+        step2: 'Validation du devis',
+        step3: 'Prise de rendez-vous',
+        guide1: '1. Vérifier la demande : services, quantités, prix et pièces jointes.',
+        guide2: '2. Valider le devis : ajustez les services et confirmez le montant.',
+        guide3: '3. Fixer le rendez-vous : appelez le client ou proposez 1 à 3 créneaux via le site.'
+      };
+    }
+    if (type === 'RendezVous') {
+      return {
+        step1: 'Demande rendez-vous',
+        step2: 'Prise de rendez-vous',
+        step3: 'Confirmation',
+        guide1: '1. Vérifier la demande : coordonnées et commentaire du client.',
+        guide2: '2. Fixer le rendez-vous : choisissez un créneau disponible.',
+        guide3: '3. Confirmer : le statut passe automatiquement en confirmé dès que le rendez-vous est validé.'
+      };
+    }
+    return {
+      step1: 'Demande service',
+      step2: 'Prise de rendez-vous',
+      step3: 'Confirmation',
+      guide1: '1. Vérifier la demande : services, quantités, prix et pièces jointes.',
+      guide2: '2. Fixer le rendez-vous : appelez le client ou proposez 1 à 3 créneaux via le site.',
+      guide3: '3. Confirmer : le statut passe automatiquement en confirmé dès que le rendez-vous est validé.'
+    };
+  }
+
   readonly editDraft = computed(() => this.draft());
 
   readonly hasChanges = computed(() => {
@@ -980,7 +1012,12 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
 
     const request = form.idRdv
       ? this.rendezVousApi.update(form.idRdv, payload)
-      : this.createRendezVousFromDraft(payload, draft?.code_type, draft?.services?.[0]?.id_service ?? null);
+      : this.createRendezVousFromDraft(
+        payload,
+        draft?.code_type,
+        draft?.services?.[0]?.id_service ?? null,
+        draft?.devis?.id_devis ?? null
+      );
 
     request.subscribe({
       next: rdv => {
@@ -1015,8 +1052,12 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   private createRendezVousFromDraft(
     payload: RendezVousUpsertPayload,
     type: DemandeWithServices['code_type'] | null | undefined,
-    serviceId: number | null
+    serviceId: number | null,
+    devisId: number | null
   ) {
+    if (type === 'Devis' && devisId) {
+      return this.rendezVousApi.createForDevis(devisId, payload);
+    }
     if (type === 'Service' && serviceId) {
       return this.rendezVousApi.createForService(serviceId, payload);
     }

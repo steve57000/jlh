@@ -157,14 +157,14 @@
           <h4>Étapes de la demande</h4>
           <p class="muted">Suivez ce cheminement pour traiter la demande sans ambiguïté.</p>
           <ol class="steps">
-            <li [class.step--done]="draft.services.length">Demande service</li>
-            <li [class.step--done]="draft.rendezVous?.dateDebut">Prise de rendez-vous</li>
-            <li [class.step--done]="draft.code_statut === 'Traitee'">Confirmation</li>
+            <li [class.step--done]="draft.services.length">{{ stepLabels(draft).step1 }}</li>
+            <li [class.step--done]="draft.rendezVous?.dateDebut">{{ stepLabels(draft).step2 }}</li>
+            <li [class.step--done]="draft.code_statut === 'Traitee'">{{ stepLabels(draft).step3 }}</li>
           </ol>
           <div class="steps-guide">
-            <p><strong>1. Vérifier la demande</strong> : services, quantités, prix et pièces jointes.</p>
-            <p><strong>2. Fixer le rendez-vous</strong> : appelez le client ou proposez 1 à 3 créneaux via le site.</p>
-            <p><strong>3. Confirmer</strong> : le statut passe automatiquement en confirmé dès que le rendez-vous est validé.</p>
+            <p><strong>{{ stepLabels(draft).step1 }}</strong> : {{ stepLabels(draft).guide1 }}</p>
+            <p><strong>{{ stepLabels(draft).step2 }}</strong> : {{ stepLabels(draft).guide2 }}</p>
+            <p><strong>{{ stepLabels(draft).step3 }}</strong> : {{ stepLabels(draft).guide3 }}</p>
           </div>
           <p class="muted">Le statut <strong>Brouillon</strong> indique que le client n’a pas encore validé sa demande.</p>
           <p class="muted">Le statut <strong>En attente</strong> correspond à une demande envoyée et en cours de traitement.</p>

@@ -90,6 +90,14 @@ export class DemandesServiceService {
             const documents = this.normalizeDocuments(d?.documents);
             const timeline = this.normalizeTimeline(d?.timeline);
             const rendezVous = this.normalizeRendezVous(d?.rendezVous ?? d?.rdv ?? null);
+            const devisId = toNum(d?.devis?.idDevis);
+            const devis = devisId != null
+              ? {
+                id_devis: devisId,
+                montant_total: toNum(d?.devis?.montantTotal ?? d?.devis?.montant_total),
+                rendezVousId: toNum(d?.devis?.rendezVousId)
+              }
+              : null;
 
             const out: DemandeWithServices = {
               id_demande: id,
@@ -102,7 +110,8 @@ export class DemandesServiceService {
               services,
               documents,
               timeline,
-              rendezVous
+              rendezVous,
+              devis
             };
             return out;
           })

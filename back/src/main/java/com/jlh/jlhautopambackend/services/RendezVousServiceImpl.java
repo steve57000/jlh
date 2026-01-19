@@ -368,6 +368,9 @@ public class RendezVousServiceImpl implements RendezVousService {
         if (demande == null) {
             throw new IllegalArgumentException("Demande introuvable pour validation du prix.");
         }
+        if (demande.getDevis() != null) {
+            return;
+        }
         boolean validated = timelineRepository.existsByDemande_IdDemandeAndType(
                 demande.getIdDemande(), DemandeTimelineType.MONTANT);
         if (!validated) {
