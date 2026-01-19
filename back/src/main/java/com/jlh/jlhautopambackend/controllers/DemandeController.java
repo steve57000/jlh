@@ -194,9 +194,7 @@ public class DemandeController {
         }
         assertDemandeEditableForClient(d);
 
-        var req = new DemandeRequest();
-        req.setCodeStatut("En_attente");
-        return service.update(id, req)
+        return service.submitDemande(id, client.getEmail(), "CLIENT")
                 .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
                 .orElse(ResponseEntity.notFound().build());
     }

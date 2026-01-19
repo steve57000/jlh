@@ -115,8 +115,8 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         applyDemandeImmatriculation(entity, request, client, true);
         TypeDemande type = typeRepo.findById(request.getCodeType())
                 .orElseThrow(() -> new IllegalArgumentException("TypeDemande introuvable: " + request.getCodeType()));
-        StatutDemande statut = statutRepo.findById(request.getCodeStatut())
-                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + request.getCodeStatut()));
+        StatutDemande statut = statutRepo.findById(STATUT_EN_ATTENTE)
+                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + STATUT_EN_ATTENTE));
         entity.setClient(client);
         entity.setTypeDemande(type);
         entity.setStatutDemande(statut);
@@ -154,11 +154,8 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                 .orElseThrow(() -> new IllegalArgumentException("TypeDemande introuvable: " + typeCode));
         entity.setTypeDemande(type);
 
-        String statutCode = (payload.getCodeStatut() == null || payload.getCodeStatut().isBlank())
-                ? STATUT_BROUILLON
-                : payload.getCodeStatut();
-        StatutDemande statut = statutRepo.findById(statutCode)
-                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + statutCode));
+        StatutDemande statut = statutRepo.findById(STATUT_BROUILLON)
+                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + STATUT_BROUILLON));
         entity.setStatutDemande(statut);
 
         Demande saved = repository.save(entity);
@@ -215,26 +212,31 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                         existing.setTypeDemande(type);
                     }
 
-                    String previousStatut = existing.getStatutDemande() != null
-                            ? existing.getStatutDemande().getCodeStatut()
-                            : null;
-                    boolean statutChanged = false;
-                    if (request.getCodeStatut() != null && !request.getCodeStatut().isBlank()) {
-                        StatutDemande statut = statutRepo.findById(request.getCodeStatut())
-                                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + request.getCodeStatut()));
-                        existing.setStatutDemande(statut);
-                        statutChanged = previousStatut == null || !previousStatut.equals(statut.getCodeStatut());
-                    }
-
                     if (request.getServices() != null && !request.getServices().isEmpty()) {
                         applyServiceUpdates(existing, request.getServices());
                     }
 
                     Demande saved = repository.save(existing);
-                    if (statutChanged) {
-                        timelineService.logStatusChange(saved, saved.getStatutDemande(), previousStatut, null, null);
-                    }
                     return enrichDemandeResponse(saved, mapper.toResponse(saved, userService));
+                });
+    }
+
+    @Override
+    public Optional<DemandeResponse> submitDemande(Integer id, String actorEmail, String actorRole) {
+        return repository.findById(id)
+                .map(existing -> {
+                    String previousStatut = existing.getStatutDemande() != null
+                            ? existing.getStatutDemande().getCodeStatut()
+                            : null;
+                    if (previousStatut == null || STATUT_BROUILLON.equals(previousStatut)) {
+                        StatutDemande statut = statutRepo.findById(STATUT_EN_ATTENTE)
+                                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + STATUT_EN_ATTENTE));
+                        existing.setStatutDemande(statut);
+                        Demande saved = repository.save(existing);
+                        timelineService.logStatusChange(saved, statut, previousStatut, actorEmail, actorRole);
+                        return enrichDemandeResponse(saved, mapper.toResponse(saved, userService));
+                    }
+                    return enrichDemandeResponse(existing, mapper.toResponse(existing, userService));
                 });
     }
 
