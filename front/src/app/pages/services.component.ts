@@ -160,6 +160,15 @@ export class ServicesComponent implements OnInit, OnDestroy {
     return svc.idService as number;
   }
 
+  setActiveTab(tabId: string) {
+    const match = this.tabs.find(tab => tab.id === tabId);
+    const target = match?.link ?? '/services';
+    this.activeTab = match ? match.id : 'services';
+    if (this.router.url !== target) {
+      this.router.navigateByUrl(target);
+    }
+  }
+
   private syncActiveTabFromUrl(url: string) {
     const path = url.split('?')[0].split('#')[0];
     const segments = path.split('/').filter(Boolean);
