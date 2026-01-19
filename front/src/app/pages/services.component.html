@@ -1,6 +1,6 @@
 <section class="services-page">
   <div class="container-max grid">
-    @if (isClient && draft) {
+    @if (isClient && draft?.services?.length) {
       <aside class="aside">
         <app-current-quote
           [demande]="draft"

@@ -201,6 +201,7 @@ export class ServicesComponent implements OnInit, OnDestroy {
 
     const immat = (payload.immatriculation || '').trim();
     const telephone = (payload.telephone || '').trim();
+    const commentaire = payload.rendezVousCommentaire?.trim() || null;
     try {
       const clientPatch: { immatriculation?: string | null; telephone?: string | null } = {};
       if (payload.immatriculation !== undefined) {
@@ -266,7 +267,6 @@ export class ServicesComponent implements OnInit, OnDestroy {
         }
       }
 
-      const commentaire = payload.rendezVousCommentaire?.trim() || null;
       const needsValidation = payload.type === 'Service' || payload.type === 'Devis';
       if (needsValidation && !payload.validationPrix) {
         this.toast.error('Validation du prix requise avant la planification.');
@@ -285,22 +285,6 @@ export class ServicesComponent implements OnInit, OnDestroy {
             },
             skipErrorOptions
           )
-        );
-      }
-
-      if (
-        payload.type === 'RendezVous' &&
-        this.selectedCreneauId &&
-        this.assignedAdminId
-      ) {
-        await firstValueFrom(
-          this.http.post(`${api}/rendezvous`, {
-            demandeId: id,
-            creneauId: this.selectedCreneauId,
-            administrateurId: this.assignedAdminId,
-            codeStatut: 'Confirme',
-            commentaire
-          }, skipErrorOptions)
         );
       }
 
