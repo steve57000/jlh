@@ -13,6 +13,43 @@
       </div>
     </header>
 
+    <section class="page__section rdv-section" id="rendezvous">
+      <article class="page-card contact-card rdv-card">
+        <h2 class="page-card__title">Demande de rendez-vous</h2>
+        <p class="page-card__lead">
+          @if (isClient) {
+            Décrivez votre besoin : nous vous proposerons rapidement un créneau.
+          } @else {
+            Connectez-vous pour demander un rendez-vous en ligne. Sinon, contactez-nous par téléphone ou email.
+          }
+        </p>
+
+        @if (isClient) {
+          <form class="rdv-form" (ngSubmit)="submitRendezVousRequest()">
+            <label>
+              <span>Description de la demande *</span>
+              <textarea
+                name="rdvDescription"
+                rows="4"
+                [(ngModel)]="rdvDescription"
+                placeholder="Expliquez la raison du rendez-vous (entretien, bruit, diagnostic...)"
+                [disabled]="submitting"></textarea>
+            </label>
+            <div class="rdv-form__actions">
+              <button class="cta-btn" type="submit" [disabled]="submitting">
+                {{ submitting ? 'Envoi…' : 'Demander un rendez-vous' }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="rdv-unauth">
+            <a class="cta-btn" routerLink="/login">Se connecter</a>
+            <a class="cta-btn-secondary" href="mailto:contact@jlh-auto-pam.fr">Écrire un email</a>
+          </div>
+        }
+      </article>
+    </section>
+
     <section class="page__section contact-grid">
       <article class="page-card contact-card">
         <h2 class="page-card__title">Horaires d’ouverture</h2>

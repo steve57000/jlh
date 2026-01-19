@@ -18,6 +18,8 @@ public interface DemandeTimelineService {
 
     void logStatusChange(Demande demande, StatutDemande newStatut, String previousCode, String actorEmail, String actorUsername);
 
+    DemandeTimelineEntryDto logClientComment(Demande demande, String commentaire, String actorEmail);
+
     void logMontantValidation(Demande demande, BigDecimal montant, String commentaire, String actorEmail, String actorUsername);
 
     void logRendezVousEvent(Demande demande, RendezVous rendezVous, String commentaire, String actorEmail, String actorUsername);

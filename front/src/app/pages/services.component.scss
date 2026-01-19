@@ -36,11 +36,12 @@
   }
 
   .services-tabs {
-    background: vars.$color-quaternary;
+    background: transparent;
     border-radius: vars.$border-radius-high;
-    box-shadow: vars.$shadow-small-light;
+    box-shadow: none;
     padding: 16px;
     margin-bottom: 24px;
+    border: 1px solid rgba(vars.$color-quaternary, 0.15);
 
     &__list {
       display: flex;
