@@ -13,7 +13,30 @@ import { ServicesService } from '../services/services.service';
 import { ServiceDto } from '../modeles/service.model';
 import { filter, Subscription } from 'rxjs';
 
-type DemandeType = DemandeWithServices['code_type'];
+type ChartView =
+  | 'histogram'
+  | 'histogram-side-by-side'
+  | 'bar'
+  | 'bar-grouped'
+  | 'bar-stacked'
+  | 'pareto'
+  | 'mosaic'
+  | 'treemap'
+  | 'boxplot';
+
+type ChartViewSection = 'types' | 'services' | 'revenue' | 'history';
+
+const CHART_VIEW_OPTIONS: Array<{ value: ChartView; label: string }> = [
+  { value: 'histogram', label: 'Histogrammes' },
+  { value: 'histogram-side-by-side', label: 'Histogrammes côte à côte' },
+  { value: 'bar', label: 'Diagrammes en barres' },
+  { value: 'bar-grouped', label: 'Diagrammes en barres groupées' },
+  { value: 'bar-stacked', label: 'Diagrammes en barres empilées' },
+  { value: 'pareto', label: 'Diagrammes de Pareto' },
+  { value: 'mosaic', label: 'Graphiques en mosaïque' },
+  { value: 'treemap', label: 'Treemaps' },
+  { value: 'boxplot', label: 'Boîtes à moustaches' }
+];
 
 interface DashboardStats extends AdminDashboardAnalytics {
   budget: {
@@ -43,15 +66,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   readonly yearlyStats = signal<AdminYearlyStats[]>([]);
   readonly statsMeta = signal<AdminDashboardStats | null>(null);
   readonly analytics = signal<AdminDashboardAnalytics | null>(null);
-  readonly servicesCatalog = signal<ServiceDto[]>([]);
-
-  readonly filters = signal({
-    from: '',
-    to: '',
-    types: [] as DemandeType[],
-    statuts: [] as Array<'Brouillon' | 'En_attente' | 'Traitee' | 'Annulee'>,
-    serviceIds: [] as number[]
+  readonly chartViews = signal({
+    types: 'histogram' as ChartView,
+    services: 'bar' as ChartView,
+    revenue: 'pareto' as ChartView,
+    history: 'bar-grouped' as ChartView
   });
+
+  readonly chartViewOptions = CHART_VIEW_OPTIONS;
 
   readonly stats = computed<DashboardStats | null>(() => {
     const analytics = this.analytics();
@@ -88,7 +110,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.loadDemandes();
     this.loadYearlyStats();
     this.loadAnalytics();
-    this.loadServicesCatalog();
     this.navSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
@@ -142,16 +163,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadAnalytics(silent = false): void {
-    const filters = this.filters();
-    const params = {
-      from: filters.from ? new Date(filters.from).toISOString() : undefined,
-      to: filters.to ? new Date(filters.to).toISOString() : undefined,
-      types: filters.types.length ? filters.types : undefined,
-      statuts: filters.statuts.length ? filters.statuts : undefined,
-      serviceIds: filters.serviceIds.length ? filters.serviceIds : undefined,
-      includeForecast: true
-    };
-    this.adminStatsApi.getAnalytics(params).subscribe({
+    this.adminStatsApi.getAnalytics({ includeForecast: true }).subscribe({
       next: data => {
         this.analytics.set(data);
         if (data?.yearly) {
@@ -167,61 +179,16 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadServicesCatalog(): void {
-    this.servicesApi.getAll().subscribe({
-      next: rows => this.servicesCatalog.set(Array.isArray(rows) ? rows : []),
-      error: () => this.servicesCatalog.set([])
-    });
-  }
-
-  updateFilterDate(field: 'from' | 'to', value: string) {
-    this.filters.update(current => ({ ...current, [field]: value }));
-  }
-
-  updateFilterMultiSelect(field: 'types' | 'statuts' | 'serviceIds', value: string[]) {
-    if (field === 'serviceIds') {
-      this.filters.update(current => ({
-        ...current,
-        serviceIds: value.map(item => Number(item)).filter(id => Number.isFinite(id))
-      }));
+  updateChartView(section: ChartViewSection, value: string): void {
+    const normalized = this.chartViewOptions.find(option => option.value === value)?.value;
+    if (!normalized) {
       return;
     }
-    this.filters.update(current => ({ ...current, [field]: value }));
+    this.chartViews.update(current => ({ ...current, [section]: normalized }));
   }
 
-  applyFilters(): void {
-    this.loadAnalytics(true);
-  }
-
-  resetFilters(): void {
-    this.filters.set({
-      from: '',
-      to: '',
-      types: [],
-      statuts: [],
-      serviceIds: []
-    });
-    this.loadAnalytics(true);
-  }
-
-  getSelectedValues(event: Event): string[] {
-    const target = event.target as HTMLSelectElement;
-    if (!target?.selectedOptions) {
-      return [];
-    }
-    return Array.from(target.selectedOptions).map(option => option.value).filter(Boolean);
-  }
-
-  private computeDemandeAmount(demande: DemandeWithServices): number {
-    if (!demande?.services?.length) return 0;
-    return demande.services.reduce((total, service) => {
-      const unit = Number(service.prix_unitaire ?? 0);
-      const qty = Number(service.quantite ?? 1);
-      if (!isFinite(unit) || !isFinite(qty)) {
-        return total;
-      }
-      return total + unit * qty;
-    }, 0);
+  getChartViewLabel(view: ChartView): string {
+    return this.chartViewOptions.find(option => option.value === view)?.label ?? 'Vue';
   }
 
   getDemandeId(demande: DemandeWithServices): number {

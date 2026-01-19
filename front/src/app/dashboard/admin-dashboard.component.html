@@ -112,6 +112,19 @@
             <p class="card__eyebrow">Types de demandes</p>
             <h3>Répartition et panier moyen</h3>
           </header>
+          <div class="chart-card__controls">
+            <label class="chart-card__label" for="types-view">Vue</label>
+            <select
+              id="types-view"
+              [value]="chartViews().types"
+              (change)="updateChartView('types', ($any($event.target)).value)"
+            >
+              @for (view of chartViewOptions; track view.value) {
+                <option [value]="view.value">{{ view.label }}</option>
+              }
+            </select>
+          </div>
+          <p class="chart-card__hint">Vue actuelle : {{ getChartViewLabel(chartViews().types) }}</p>
           <div class="type-chart">
             @for (row of overview.typeStats; track row.type) {
               <div class="type-chart__row">
@@ -133,6 +146,19 @@
             <p class="card__eyebrow">Types de services</p>
             <h3>Répartition par prestation</h3>
           </header>
+          <div class="chart-card__controls">
+            <label class="chart-card__label" for="services-view">Vue</label>
+            <select
+              id="services-view"
+              [value]="chartViews().services"
+              (change)="updateChartView('services', ($any($event.target)).value)"
+            >
+              @for (view of chartViewOptions; track view.value) {
+                <option [value]="view.value">{{ view.label }}</option>
+              }
+            </select>
+          </div>
+          <p class="chart-card__hint">Vue actuelle : {{ getChartViewLabel(chartViews().services) }}</p>
           @if (overview.serviceStats.length) {
             <div class="type-chart">
               @for (row of overview.serviceStats; track row.label) {
@@ -157,6 +183,19 @@
             <p class="card__eyebrow">Chiffre d'affaires</p>
             <h3>Services les plus rentables</h3>
           </header>
+          <div class="chart-card__controls">
+            <label class="chart-card__label" for="revenue-view">Vue</label>
+            <select
+              id="revenue-view"
+              [value]="chartViews().revenue"
+              (change)="updateChartView('revenue', ($any($event.target)).value)"
+            >
+              @for (view of chartViewOptions; track view.value) {
+                <option [value]="view.value">{{ view.label }}</option>
+              }
+            </select>
+          </div>
+          <p class="chart-card__hint">Vue actuelle : {{ getChartViewLabel(chartViews().revenue) }}</p>
           @if (overview.revenueStats.length) {
             <div class="revenue-chart">
               @for (row of overview.revenueStats; track row.label) {
@@ -207,6 +246,19 @@
             <p class="card__eyebrow">Historique & prévisions</p>
             <h3>Services, devis et rendez-vous (N à N-4 + N+1)</h3>
           </header>
+          <div class="chart-card__controls">
+            <label class="chart-card__label" for="history-view">Vue</label>
+            <select
+              id="history-view"
+              [value]="chartViews().history"
+              (change)="updateChartView('history', ($any($event.target)).value)"
+            >
+              @for (view of chartViewOptions; track view.value) {
+                <option [value]="view.value">{{ view.label }}</option>
+              }
+            </select>
+          </div>
+          <p class="chart-card__hint">Vue actuelle : {{ getChartViewLabel(chartViews().history) }}</p>
           @if (yearlyStats().length) {
             <div class="history-table">
               <div class="history-table__row history-table__head">
