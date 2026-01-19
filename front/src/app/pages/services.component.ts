@@ -68,13 +68,6 @@ export class ServicesComponent implements OnInit, OnDestroy {
       cta: 'Découvrir nos services'
     },
     {
-      id: 'rendezvous',
-      label: 'Demande de rendez-vous',
-      title: 'Demander un rendez-vous',
-      description:
-        'Expliquez votre besoin, nous reviendrons vers vous avec des créneaux proposés sous 24h.'
-    },
-    {
       id: 'entretien',
       label: 'Entretien & révision',
       title: 'Entretien & révision constructeur',

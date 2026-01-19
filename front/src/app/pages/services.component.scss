@@ -36,7 +36,6 @@
   }
 
   .services-tabs {
-    background: transparent;
     border-radius: vars.$border-radius-high;
     box-shadow: none;
     padding: 16px;
@@ -54,7 +53,7 @@
 
     &__tab {
       border: none;
-      background: color.scale(vars.$color-primary, $alpha: -85%);
+      background: white;
       color: vars.$color-primary;
       padding: 10px 16px;
       border-radius: 999px;
@@ -168,4 +167,8 @@
       align-items: start;
     }
   }
+}
+
+.page {
+  background: transparent !important;
 }
