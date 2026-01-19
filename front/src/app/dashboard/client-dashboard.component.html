@@ -199,7 +199,7 @@
             </article>
           }
 
-          @if (prochainRdv) {
+          @if (prochainRdv && shouldShowProchainRdv(prochainRdv)) {
             <article class="card activity-card next-rdv">
               <header>
                 <p class="card__eyebrow">Agenda</p>
@@ -220,11 +220,13 @@
                   <span>Fin :</span>
                   <span>{{ prochainRdv.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
                 </div>
-                <div class="actions">
-                  <button class="btn btn-outline btn-small" type="button" (click)="downloadIcs()">
-                    Ajouter à mon agenda (.ics)
-                  </button>
-                </div>
+                @if (canDownloadIcs(prochainRdv)) {
+                  <div class="actions">
+                    <button class="btn btn-outline btn-small" type="button" (click)="downloadIcs()">
+                      Ajouter à mon agenda (.ics)
+                    </button>
+                  </div>
+                }
               </div>
             </article>
           }
