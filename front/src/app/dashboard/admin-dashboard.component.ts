@@ -235,12 +235,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.loadAnalytics(true);
   }
 
-  getSelectedValues(event: Event): string[] {
+  getSingleSelectedValue(event: Event): string[] {
     const target = event.target as HTMLSelectElement;
-    if (!target?.selectedOptions) {
-      return [];
-    }
-    return Array.from(target.selectedOptions).map(option => option.value).filter(Boolean);
+    const value = target?.value?.trim();
+    return value ? [value] : [];
   }
 
   updateChartView(section: ChartViewSection, value: string): void {

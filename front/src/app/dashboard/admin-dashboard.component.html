@@ -24,7 +24,8 @@
     </div>
     <div class="filters__field">
       <span>Type de demande</span>
-      <select multiple (change)="updateFilterMultiSelect('types', getSelectedValues($event))">
+      <select (change)="updateFilterMultiSelect('types', getSingleSelectedValue($event))">
+        <option value="">Tous</option>
         <option value="Devis">Devis</option>
         <option value="Service">Service</option>
         <option value="RendezVous">Rendez-vous</option>
@@ -32,7 +33,8 @@
     </div>
     <div class="filters__field">
       <span>Statut</span>
-      <select multiple (change)="updateFilterMultiSelect('statuts', getSelectedValues($event))">
+      <select (change)="updateFilterMultiSelect('statuts', getSingleSelectedValue($event))">
+        <option value="">Tous</option>
         <option value="Brouillon">Brouillon</option>
         <option value="En_attente">En attente</option>
         <option value="Traitee">Confirmée</option>
@@ -41,7 +43,8 @@
     </div>
     <div class="filters__field">
       <span>Services</span>
-      <select multiple (change)="updateFilterMultiSelect('serviceIds', getSelectedValues($event))">
+      <select (change)="updateFilterMultiSelect('serviceIds', getSingleSelectedValue($event))">
+        <option value="">Tous</option>
         @for (svc of servicesCatalog(); track svc.idService) {
           <option [value]="svc.idService">{{ svc.libelle }}</option>
         }
