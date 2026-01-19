@@ -21,17 +21,16 @@
       <section class="services-tabs" aria-label="Nos services et expertises détaillées">
         <div class="services-tabs__list" role="tablist">
           @for (tab of tabs; track tab.id) {
-            <button
-              type="button"
+            <a
               role="tab"
               class="services-tabs__tab"
               [class.is-active]="activeTab === tab.id"
               [attr.aria-selected]="activeTab === tab.id"
               [attr.aria-controls]="'panel-' + tab.id"
               [attr.id]="'tab-' + tab.id"
-              (click)="setActiveTab(tab.id)">
+              [routerLink]="tab.link">
               {{ tab.label }}
-            </button>
+            </a>
           }
         </div>
         <div class="services-tabs__panels">
