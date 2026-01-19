@@ -36,11 +36,12 @@
   }
 
   .services-tabs {
-    background: vars.$color-quaternary;
+    background: transparent;
     border-radius: vars.$border-radius-high;
-    box-shadow: vars.$shadow-small-light;
+    box-shadow: none;
     padding: 16px;
     margin-bottom: 24px;
+    border: 1px solid rgba(vars.$color-quaternary, 0.15);
 
     &__list {
       display: flex;
@@ -106,42 +107,6 @@
 
       a {
         justify-self: start;
-      }
-    }
-  }
-
-  .rdv-request {
-    display: grid;
-    gap: 16px;
-    margin-top: 16px;
-
-    &__grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-
-      label {
-        font-weight: 600;
-        color: vars.$color-primary;
-      }
-
-      input,
-      textarea {
-        border-radius: 12px;
-        border: 1px solid color.scale(vars.$color-primary, $alpha: -70%);
-        padding: 10px 12px;
-        font-size: 0.95rem;
-        background: vars.$color-tertiary;
-      }
-
-      textarea {
-        resize: vertical;
-        min-height: 120px;
       }
     }
   }
