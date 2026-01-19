@@ -30,6 +30,7 @@ class RendezVousServiceImplTest {
     @Mock private DevisRepository devisRepository;
     @Mock private CreneauRepository creneauRepo;
     @Mock private AdministrateurRepository adminRepo;
+    @Mock private ClientRepository clientRepository;
     @Mock private StatutCreneauRepository statutCreneauRepo;
     @Mock private StatutRendezVousRepository statutRepo;
     @Mock private StatutDemandeRepository statutDemandeRepo;
@@ -206,11 +207,13 @@ class RendezVousServiceImplTest {
     @Test
     void testCreate_ShouldSetRelationsAndReturnResponse() {
         when(demandeRepo.findById(1)).thenReturn(Optional.of(demande));
-        when(typeDemandeRepo.findById("Libre")).thenReturn(Optional.of(TypeDemande.builder().codeType("Libre").build()));
+        when(typeDemandeRepo.findById("RendezVous")).thenReturn(Optional.of(TypeDemande.builder().codeType("RendezVous").build()));
         when(demandeRepo.save(demande)).thenReturn(demande);
         when(creneauRepo.findById(2)).thenReturn(Optional.of(creneau));
         when(adminRepo.findById(3)).thenReturn(Optional.of(admin));
         when(statutRepo.findById("ST1")).thenReturn(Optional.of(statut));
+        when(statutDemandeRepo.findById("En_attente"))
+                .thenReturn(Optional.of(StatutDemande.builder().codeStatut("En_attente").build()));
         when(mapper.toEntity(request)).thenReturn(entityWithoutRel);
         when(repo.save(entityWithoutRel)).thenReturn(savedEntity);
         when(mapper.toResponse(savedEntity)).thenReturn(response);
@@ -273,6 +276,9 @@ class RendezVousServiceImplTest {
         when(adminRepo.findById(3)).thenReturn(Optional.of(admin));
         when(statutRepo.findById("ST1")).thenReturn(Optional.of(statut));
         when(repo.save(savedEntity)).thenReturn(updated);
+        when(statutDemandeRepo.findById("En_attente"))
+                .thenReturn(Optional.of(StatutDemande.builder().codeStatut("En_attente").build()));
+        when(demandeRepo.save(demande)).thenReturn(demande);
         when(mapper.toResponse(updated)).thenReturn(updatedResp);
 
         Optional<RendezVousResponse> result = service.update(10, request);

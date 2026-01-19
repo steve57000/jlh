@@ -118,15 +118,10 @@ export class DemandesServiceService {
     return { headers: new HttpHeaders({ 'X-Skip-Error-Toast': '1' }) };
   }
 
-  setStatut(id: number, newStatut: 'Brouillon' | 'En_attente' | 'Traitee' | 'Annulee') {
-    return this.http.put<void>(`${this.apiBase}/demandes/${id}`, { codeStatut: newStatut });
-  }
-
   updateDemande(
     id: number,
     payload: {
       codeType?: DemandeWithServices['code_type'];
-      codeStatut?: DemandeWithServices['code_statut'];
       immatriculation?: string | null;
       vehiculeMarque?: string | null;
       vehiculeModele?: string | null;
@@ -156,7 +151,6 @@ export class DemandesServiceService {
     const body: Record<string, unknown> = {};
 
     if (payload.codeType) body['codeType'] = payload.codeType;
-    if (payload.codeStatut) body['codeStatut'] = payload.codeStatut;
     if ('immatriculation' in payload) body['immatriculation'] = payload.immatriculation;
     if ('vehiculeMarque' in payload) body['vehiculeMarque'] = payload.vehiculeMarque;
     if ('vehiculeModele' in payload) body['vehiculeModele'] = payload.vehiculeModele;
