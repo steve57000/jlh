@@ -159,6 +159,12 @@ public class DemandeTimelineServiceImpl implements DemandeTimelineService {
     }
 
     @Override
+    public DemandeTimelineEntryDto logClientComment(Demande demande, String commentaire, String actorEmail) {
+        DemandeTimeline saved = saveCommentEvent(demande, commentaire, actorEmail, "CLIENT", true);
+        return timelineMapper.toDto(saved, userService);
+    }
+
+    @Override
     public void logMontantValidation(Demande demande, BigDecimal montant, String commentaire, String actorEmail, String actorRole) {
         saveMontantEvent(demande, montant, commentaire, actorEmail, actorRole, null);
     }

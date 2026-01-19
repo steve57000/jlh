@@ -84,4 +84,27 @@ public class DemandeTimelineController {
         );
         return ResponseEntity.status(201).build();
     }
+
+    @PostMapping("/commentaire")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<DemandeTimelineEntryDto> addClientComment(@PathVariable Integer demandeId,
+                                                                    @Valid @RequestBody DemandeTimelineRequest request,
+                                                                    Authentication auth) {
+        Client client = clientResolver.requireCurrentClient(auth);
+        boolean owns = demandeRepository.existsByIdDemandeAndClient_IdClient(demandeId, client.getIdClient());
+        if (!owns) {
+            return ResponseEntity.status(403).build();
+        }
+        if (request.getCommentaire() == null || request.getCommentaire().isBlank()) {
+            return ResponseEntity.badRequest().body(
+                    DemandeTimelineEntryDto.builder()
+                            .commentaire("Le commentaire ne peut pas être vide.")
+                            .build()
+            );
+        }
+        Demande demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Demande introuvable"));
+        DemandeTimelineEntryDto dto = timelineService.logClientComment(demande, request.getCommentaire(), client.getEmail());
+        return ResponseEntity.status(201).body(dto);
+    }
 }

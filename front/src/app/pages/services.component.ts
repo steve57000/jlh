@@ -216,10 +216,6 @@ export class ServicesComponent implements OnInit, OnDestroy {
     const immat = (payload.immatriculation || '').trim();
     const telephone = (payload.telephone || '').trim();
     const commentaire = payload.rendezVousCommentaire?.trim() || null;
-    if (payload.type === 'RendezVous' && !commentaire) {
-      this.toast.error('Description requise', 'Merci de préciser la raison du rendez-vous.');
-      return;
-    }
     try {
       const clientPatch: { immatriculation?: string | null; telephone?: string | null } = {};
       if (payload.immatriculation !== undefined) {
@@ -303,22 +299,6 @@ export class ServicesComponent implements OnInit, OnDestroy {
             },
             skipErrorOptions
           )
-        );
-      }
-
-      if (
-        payload.type === 'RendezVous' &&
-        this.selectedCreneauId &&
-        this.assignedAdminId
-      ) {
-        await firstValueFrom(
-          this.http.post(`${api}/rendezvous`, {
-            demandeId: id,
-            creneauId: this.selectedCreneauId,
-            administrateurId: this.assignedAdminId,
-            codeStatut: 'Confirme',
-            commentaire
-          }, skipErrorOptions)
         );
       }
 

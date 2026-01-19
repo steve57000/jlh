@@ -9,10 +9,38 @@
     </div>
     <div class="dashboard__actions">
       <button class="btn" (click)="refresh()">Actualiser</button>
-      <button class="btn btn-outline" type="button" (click)="showOverview()">Vue d'ensemble</button>
-      <button class="btn btn-outline" type="button" (click)="showAccount()">Mon compte</button>
-      <button class="btn btn-outline" type="button" (click)="showDocuments()">Mes documents</button>
-      <button class="btn btn-outline" type="button" (click)="showHistory()">Historique</button>
+      <button
+        class="btn btn-outline"
+        type="button"
+        [class.is-active]="activeSection() === 'overview'"
+        (click)="showOverview()"
+      >
+        Vue d'ensemble
+      </button>
+      <button
+        class="btn btn-outline"
+        type="button"
+        [class.is-active]="activeSection() === 'account'"
+        (click)="showAccount()"
+      >
+        Mon compte
+      </button>
+      <button
+        class="btn btn-outline"
+        type="button"
+        [class.is-active]="activeSection() === 'documents'"
+        (click)="showDocuments()"
+      >
+        Mes documents
+      </button>
+      <button
+        class="btn btn-outline"
+        type="button"
+        [class.is-active]="activeSection() === 'history'"
+        (click)="showHistory()"
+      >
+        Historique
+      </button>
     </div>
   </header>
 
