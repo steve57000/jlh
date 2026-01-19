@@ -43,6 +43,9 @@ interface DashboardStats {
   pending: number;
   traitees: number;
   annulees: number;
+  devisTotal: number;
+  devisAvecRdv: number;
+  devisSansSuite: number;
   typeStats: TypeStats[];
   serviceStats: ServiceStats[];
   revenueStats: ServiceRevenueStats[];
@@ -96,6 +99,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     let annulees = 0;
     let totalAmount = 0;
     const clientSpend = new Map<number, number>();
+    let devisTotal = 0;
+    let devisAvecRdv = 0;
 
     const serviceCounts = new Map<string, number>();
     const serviceRevenue = new Map<string, number>();
@@ -107,6 +112,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       if (demande.code_statut === 'En_attente') pending += 1;
       if (demande.code_statut === 'Traitee') traitees += 1;
       if (demande.code_statut === 'Annulee') annulees += 1;
+
+      if (demande.code_type === 'Devis') {
+        devisTotal += 1;
+        if (demande.rendezVous || demande.devis?.rendezVousId) {
+          devisAvecRdv += 1;
+        }
+      }
 
       const totalDemande = this.computeDemandeAmount(demande);
       totalAmount += totalDemande;
@@ -171,6 +183,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       pending,
       traitees,
       annulees,
+      devisTotal,
+      devisAvecRdv,
+      devisSansSuite: Math.max(0, devisTotal - devisAvecRdv),
       typeStats,
       serviceStats,
       revenueStats,
