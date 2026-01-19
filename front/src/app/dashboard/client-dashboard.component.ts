@@ -525,6 +525,38 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  shouldShowProchainRdv(rdv?: ProchainRdvDto | null): boolean {
+    if (!rdv) {
+      return false;
+    }
+    if (this.isCancelledRdv(rdv)) {
+      return false;
+    }
+    return this.isUpcomingRdv(rdv);
+  }
+
+  canDownloadIcs(rdv?: ProchainRdvDto | null): boolean {
+    if (!rdv) {
+      return false;
+    }
+    return !this.isCancelledRdv(rdv) && this.isUpcomingRdv(rdv);
+  }
+
+  private isCancelledRdv(rdv: ProchainRdvDto): boolean {
+    const statut = rdv.codeStatut;
+    return statut === 'Annulee' || statut === 'Annule';
+  }
+
+  private isUpcomingRdv(rdv: ProchainRdvDto): boolean {
+    const dateFin = rdv.dateFin ? new Date(rdv.dateFin).getTime() : NaN;
+    const dateDebut = rdv.dateDebut ? new Date(rdv.dateDebut).getTime() : NaN;
+    const compareDate = Number.isFinite(dateFin) ? dateFin : dateDebut;
+    if (!Number.isFinite(compareDate)) {
+      return false;
+    }
+    return compareDate > Date.now();
+  }
+
   visibleDocuments(d?: DemandeResponse): DemandeDocumentDto[] {
     return (d?.documents ?? []).filter(doc => doc.visibleClient !== false && !!doc.urlPrivate);
   }
