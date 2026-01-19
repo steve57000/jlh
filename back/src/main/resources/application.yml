@@ -10,6 +10,7 @@ app:
   email:
     from: "JLH Auto Pam <contact@jlh-autopam.fr>"
     verificationExpiryHours: 24
+    enabled: ${APP_EMAIL_ENABLED:true}
   upload-dir: ${APP_UPLOAD_DIR:/var/www/promo}  # dossier partagé avec Nginx pour les images
 
 rgpd:
