@@ -102,6 +102,12 @@ $card-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
     color: v.$color-secondary;
   }
 
+  &-ghost {
+    background: transparent;
+    color: v.$color-secondary;
+    border-color: rgba(v.$color-secondary, 0.3);
+  }
+
   &-small {
     padding: 0.45rem 1rem;
   }
@@ -136,6 +142,36 @@ $card-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
     font-size: 1.2rem;
     color: v.$color-primary;
   }
+}
+
+.chart-card__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  select {
+    border: 1px solid rgba(v.$color-secondary, 0.2);
+    border-radius: v.$border-radius-high;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+    background: #fff;
+  }
+}
+
+.chart-card__label {
+  font-weight: 600;
+  color: rgba(v.$color-primary, 0.75);
+  font-size: 0.85rem;
+}
+
+.chart-card__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(v.$color-primary, 0.6);
+}
+
+.card--full {
+  grid-column: 1 / -1;
 }
 
 .summary-card__metrics {

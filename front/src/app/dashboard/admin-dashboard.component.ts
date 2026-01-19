@@ -4,50 +4,44 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { DemandeWithServices } from '../modeles/demande.model';
 import { DemandesServiceService } from '../services/demandes-services.service';
 import {
+  AdminDashboardAnalytics,
   AdminDashboardStats,
   AdminDashboardStatsService,
   AdminYearlyStats
 } from '../services/admin-dashboard-stats.service';
 import { filter, Subscription } from 'rxjs';
 
-type DemandeType = DemandeWithServices['code_type'];
+type ChartView =
+  | 'histogram'
+  | 'histogram-side-by-side'
+  | 'bar'
+  | 'bar-grouped'
+  | 'bar-stacked'
+  | 'pareto'
+  | 'mosaic'
+  | 'treemap'
+  | 'boxplot';
 
-interface TypeStats {
-  type: DemandeType;
-  label: string;
-  count: number;
-  percentage: number;
-  averageValue: number;
-}
+type ChartViewSection = 'types' | 'services' | 'revenue' | 'history';
 
-interface ServiceStats {
-  label: string;
-  count: number;
-  percentage: number;
-}
+const CHART_VIEW_OPTIONS: Array<{ value: ChartView; label: string }> = [
+  { value: 'histogram', label: 'Histogrammes' },
+  { value: 'histogram-side-by-side', label: 'Histogrammes côte à côte' },
+  { value: 'bar', label: 'Diagrammes en barres' },
+  { value: 'bar-grouped', label: 'Diagrammes en barres groupées' },
+  { value: 'bar-stacked', label: 'Diagrammes en barres empilées' },
+  { value: 'pareto', label: 'Diagrammes de Pareto' },
+  { value: 'mosaic', label: 'Graphiques en mosaïque' },
+  { value: 'treemap', label: 'Treemaps' },
+  { value: 'boxplot', label: 'Boîtes à moustaches' }
+];
 
-interface ServiceRevenueStats {
-  label: string;
-  amount: number;
-  percentage: number;
-}
-
-interface BudgetStats {
-  total: number;
-  averagePerDemande: number;
-  averagePerClient: number;
-}
-
-interface DashboardStats {
-  totalDemandes: number;
-  pending: number;
-  traitees: number;
-  annulees: number;
-  typeStats: TypeStats[];
-  serviceStats: ServiceStats[];
-  revenueStats: ServiceRevenueStats[];
-  revenueTotal: number;
-  budget: BudgetStats;
+interface DashboardStats extends AdminDashboardAnalytics {
+  budget: {
+    total: number;
+    averagePerDemande: number;
+    averagePerClient: number;
+  };
 }
 
 @Component({
@@ -68,114 +62,37 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   readonly demandes = signal<DemandeWithServices[]>([]);
   readonly yearlyStats = signal<AdminYearlyStats[]>([]);
   readonly statsMeta = signal<AdminDashboardStats | null>(null);
+  readonly analytics = signal<AdminDashboardAnalytics | null>(null);
+  readonly chartViews = signal({
+    types: 'histogram' as ChartView,
+    services: 'bar' as ChartView,
+    revenue: 'pareto' as ChartView,
+    history: 'bar-grouped' as ChartView
+  });
 
-  readonly stats = computed<DashboardStats>(() => {
-    const rows = this.demandes();
-    const total = rows.length;
-    const typeOrder: DemandeType[] = ['Devis', 'RendezVous', 'Service'];
-    const labels: Record<DemandeType, string> = {
-      Devis: 'Demandes de devis',
-      RendezVous: 'Rendez-vous',
-      Service: 'Demandes de service'
-    };
+  readonly chartViewOptions = CHART_VIEW_OPTIONS;
 
-    const typeTotals: Record<DemandeType, number> = {
-      Devis: 0,
-      RendezVous: 0,
-      Service: 0
-    };
-
-    const typeAmounts: Record<DemandeType, number> = {
-      Devis: 0,
-      RendezVous: 0,
-      Service: 0
-    };
-
-    let pending = 0;
-    let traitees = 0;
-    let annulees = 0;
-    let totalAmount = 0;
-    const clientSpend = new Map<number, number>();
-
-    const serviceCounts = new Map<string, number>();
-    const serviceRevenue = new Map<string, number>();
-
-    for (const demande of rows) {
-      typeTotals[demande.code_type] ??= 0;
-      typeTotals[demande.code_type] += 1;
-
-      if (demande.code_statut === 'En_attente') pending += 1;
-      if (demande.code_statut === 'Traitee') traitees += 1;
-      if (demande.code_statut === 'Annulee') annulees += 1;
-
-      const totalDemande = this.computeDemandeAmount(demande);
-      totalAmount += totalDemande;
-      typeAmounts[demande.code_type] ??= 0;
-      typeAmounts[demande.code_type] += totalDemande;
-
-      for (const service of demande.services ?? []) {
-        const label = (service?.libelle || 'Service').trim();
-        serviceCounts.set(label, (serviceCounts.get(label) ?? 0) + 1);
-        const unit = Number(service.prix_unitaire ?? 0);
-        const qty = Number(service.quantite ?? 1);
-        if (isFinite(unit) && isFinite(qty)) {
-          serviceRevenue.set(label, (serviceRevenue.get(label) ?? 0) + unit * qty);
-        }
-      }
-
-      const clientId = demande.client?.id_client;
-      if (clientId != null) {
-        clientSpend.set(clientId, (clientSpend.get(clientId) ?? 0) + totalDemande);
-      }
+  readonly stats = computed<DashboardStats | null>(() => {
+    const analytics = this.analytics();
+    if (!analytics) {
+      return null;
     }
-
-    const typeStats: TypeStats[] = typeOrder.map(type => {
-      const count = typeTotals[type] ?? 0;
-      return {
-        type,
-        label: labels[type],
-        count,
-        percentage: total ? Math.round((count / total) * 100) : 0,
-        averageValue: count ? typeAmounts[type] / count : 0
-      };
-    });
-
-    const totalServices = Array.from(serviceCounts.values()).reduce((sum, value) => sum + value, 0);
-    const serviceStats: ServiceStats[] = Array.from(serviceCounts.entries())
-      .map(([label, count]) => ({
-        label,
-        count,
-        percentage: totalServices ? Math.round((count / totalServices) * 100) : 0
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-
-    const totalRevenue = Array.from(serviceRevenue.values()).reduce((sum, value) => sum + value, 0);
-    const revenueStats: ServiceRevenueStats[] = Array.from(serviceRevenue.entries())
-      .map(([label, amount]) => ({
-        label,
-        amount,
-        percentage: totalRevenue ? Math.round((amount / totalRevenue) * 100) : 0
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 6);
-
-    const budget: BudgetStats = {
-      total: totalAmount,
-      averagePerDemande: total ? totalAmount / total : 0,
-      averagePerClient: clientSpend.size ? totalAmount / clientSpend.size : 0
-    };
-
+    const totalAmount = analytics.revenueTotal ?? 0;
+    const totalDemandes = analytics.totalDemandes ?? 0;
+    const averagePerDemande = totalDemandes ? totalAmount / totalDemandes : 0;
+    const clientCount = new Set(
+      this.demandes()
+        .map(demande => demande.client?.id_client)
+        .filter((id): id is number => Number.isFinite(id))
+    ).size;
+    const averagePerClient = clientCount ? totalAmount / clientCount : 0;
     return {
-      totalDemandes: total,
-      pending,
-      traitees,
-      annulees,
-      typeStats,
-      serviceStats,
-      revenueStats,
-      revenueTotal: totalRevenue,
-      budget
+      ...analytics,
+      budget: {
+        total: totalAmount,
+        averagePerDemande,
+        averagePerClient
+      }
     };
   });
 
@@ -189,11 +106,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadDemandes();
     this.loadYearlyStats();
+    this.loadAnalytics();
     this.navSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
         this.loadDemandes(true);
         this.loadYearlyStats(true);
+        this.loadAnalytics(true);
       });
   }
 
@@ -204,6 +123,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   refresh(): void {
     this.loadDemandes(true);
     this.loadYearlyStats(true);
+    this.loadAnalytics(true);
   }
 
   private loadDemandes(silent = false): void {
@@ -239,16 +159,33 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  private computeDemandeAmount(demande: DemandeWithServices): number {
-    if (!demande?.services?.length) return 0;
-    return demande.services.reduce((total, service) => {
-      const unit = Number(service.prix_unitaire ?? 0);
-      const qty = Number(service.quantite ?? 1);
-      if (!isFinite(unit) || !isFinite(qty)) {
-        return total;
+  private loadAnalytics(silent = false): void {
+    this.adminStatsApi.getAnalytics({ includeForecast: true }).subscribe({
+      next: data => {
+        this.analytics.set(data);
+        if (data?.yearly) {
+          this.yearlyStats.set(data.yearly);
+        }
+      },
+      error: err => {
+        if (!silent) {
+          const fallback = 'Impossible de charger les statistiques analytiques.';
+          this.error.set(err?.error?.message || err?.message || fallback);
+        }
       }
-      return total + unit * qty;
-    }, 0);
+    });
+  }
+
+  updateChartView(section: ChartViewSection, value: string): void {
+    const normalized = this.chartViewOptions.find(option => option.value === value)?.value;
+    if (!normalized) {
+      return;
+    }
+    this.chartViews.update(current => ({ ...current, [section]: normalized }));
+  }
+
+  getChartViewLabel(view: ChartView): string {
+    return this.chartViewOptions.find(option => option.value === view)?.label ?? 'Vue';
   }
 
   getDemandeId(demande: DemandeWithServices): number {
