@@ -13,9 +13,14 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "baseUrl": "./src",
+    "paths": {
+      "@environments/*": [
+        "environments/*"
+      ]
+    },
     "target": "ES2022",
     "module": "preserve",
-    "moduleResolution": "bundler"
+    "moduleResolution": "node16"
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
