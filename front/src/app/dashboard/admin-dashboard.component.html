@@ -13,6 +13,46 @@
     </div>
   </header>
 
+  <section class="dashboard__filters">
+    <div class="filters__field">
+      <span>Période (du)</span>
+      <input type="date" [value]="filters().from" (change)="updateFilterDate('from', ($any($event.target)).value)" />
+    </div>
+    <div class="filters__field">
+      <span>au</span>
+      <input type="date" [value]="filters().to" (change)="updateFilterDate('to', ($any($event.target)).value)" />
+    </div>
+    <div class="filters__field">
+      <span>Type de demande</span>
+      <select multiple (change)="updateFilterMultiSelect('types', getSelectedValues($event))">
+        <option value="Devis">Devis</option>
+        <option value="Service">Service</option>
+        <option value="RendezVous">Rendez-vous</option>
+      </select>
+    </div>
+    <div class="filters__field">
+      <span>Statut</span>
+      <select multiple (change)="updateFilterMultiSelect('statuts', getSelectedValues($event))">
+        <option value="Brouillon">Brouillon</option>
+        <option value="En_attente">En attente</option>
+        <option value="Traitee">Confirmée</option>
+        <option value="Annulee">Annulée</option>
+      </select>
+    </div>
+    <div class="filters__field">
+      <span>Services</span>
+      <select multiple (change)="updateFilterMultiSelect('serviceIds', getSelectedValues($event))">
+        @for (svc of servicesCatalog(); track svc.idService) {
+          <option [value]="svc.idService">{{ svc.libelle }}</option>
+        }
+      </select>
+    </div>
+    <div class="filters__actions">
+      <button type="button" class="btn btn-outline" (click)="applyFilters()">Appliquer</button>
+      <button type="button" class="btn btn-ghost" (click)="resetFilters()">Réinitialiser</button>
+    </div>
+  </section>
+
   @if (loading()) {
     <div class="dashboard__state" aria-live="polite">Chargement des statistiques…</div>
   } @else if (error()) {

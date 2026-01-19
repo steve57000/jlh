@@ -9,6 +9,8 @@ import {
   AdminDashboardStatsService,
   AdminYearlyStats
 } from '../services/admin-dashboard-stats.service';
+import { ServicesService } from '../services/services.service';
+import { ServiceDto } from '../modeles/service.model';
 import { filter, Subscription } from 'rxjs';
 
 type ChartView =
@@ -54,6 +56,7 @@ interface DashboardStats extends AdminDashboardAnalytics {
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   private readonly demandesApi = inject(DemandesServiceService);
   private readonly adminStatsApi = inject(AdminDashboardStatsService);
+  private readonly servicesApi = inject(ServicesService);
   private readonly router = inject(Router);
   private navSub?: Subscription;
 
