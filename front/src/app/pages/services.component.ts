@@ -1,7 +1,7 @@
 import {Component, OnDestroy, OnInit, Inject, PLATFORM_ID, inject} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 import { Subject, firstValueFrom, Subscription } from 'rxjs';
 
 import { ServiceCardComponent } from '../components/service-card.component';
@@ -16,7 +16,7 @@ import { DemandeResponse } from '../services/client-dashboard.service';
 import { ToastService} from '../shared/toast/toast.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { Router, RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { ServiceEntretienComponent } from './service-entretien.component';
 import { ServiceMecaniqueComponent } from './service-mecanique.component';
 import { ServicePneumatiquesComponent } from './service-pneumatiques.component';
@@ -65,7 +65,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
       title: 'Nos services',
       description:
         'Découvrez l’ensemble de nos prestations et trouvez rapidement la solution adaptée à votre véhicule.',
-      cta: 'Découvrir nos services'
+      cta: 'Découvrir nos services',
+      link: '/services'
     },
     {
       id: 'entretien',
@@ -73,7 +74,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
       title: 'Entretien & révision constructeur',
       description:
         'Révisions complètes, contrôles de sécurité et mise à jour du carnet d’entretien digital, tout en respectant les préconisations constructeurs.',
-      component: 'entretien'
+      component: 'entretien',
+      link: '/services/entretien'
     },
     {
       id: 'mecanique',
@@ -81,7 +83,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
       title: 'Mécanique générale',
       description:
         'Réparations lourdes, distribution, transmission et motorisation : nos techniciens couvrent toutes les opérations mécaniques complexes.',
-      component: 'mecanique'
+      component: 'mecanique',
+      link: '/services/mecanique'
     },
     {
       id: 'pneumatiques',
@@ -89,7 +92,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
       title: 'Pneumatiques & géométrie',
       description:
         'Conseil sur vos pneus, montage rapide, équilibrage et géométrie 3D pour assurer tenue de route et sécurité.',
-      component: 'pneumatiques'
+      component: 'pneumatiques',
+      link: '/services/pneumatiques'
     },
     {
       id: 'diagnostic',
@@ -97,7 +101,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
       title: 'Diagnostic électronique',
       description:
         'Diagnostic multimarque, calibrations ADAS et mises à jour logicielles pour détecter et résoudre rapidement les anomalies.',
-      component: 'diagnostic'
+      component: 'diagnostic',
+      link: '/services/diagnostic'
     }
   ];
 
@@ -121,6 +126,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     this.srv.getPublicServices().subscribe(list => (this.services = list));
 
+    this.syncActiveTabFromUrl(this.router.url);
+
     if (this.isClient) {
       await this.refreshDraft();
     }
@@ -128,6 +135,15 @@ export class ServicesComponent implements OnInit, OnDestroy {
     this.state.refresh$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.refreshDraft());
+
+    this.router.events
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(event => {
+        this.syncActiveTabFromUrl((event as NavigationEnd).urlAfterRedirects);
+      });
   }
 
   ngOnDestroy() {
@@ -145,7 +161,23 @@ export class ServicesComponent implements OnInit, OnDestroy {
   }
 
   setActiveTab(tabId: string) {
-    this.activeTab = tabId;
+    const match = this.tabs.find(tab => tab.id === tabId);
+    const target = match?.link ?? '/services';
+    this.activeTab = match ? match.id : 'services';
+    if (this.router.url !== target) {
+      this.router.navigateByUrl(target);
+    }
+  }
+
+  private syncActiveTabFromUrl(url: string) {
+    const path = url.split('?')[0].split('#')[0];
+    const segments = path.split('/').filter(Boolean);
+    if (segments[0] !== 'services') {
+      return;
+    }
+    const tabId = segments[1] || 'services';
+    const match = this.tabs.find(tab => tab.id === tabId);
+    this.activeTab = match ? match.id : 'services';
   }
 
   async refreshDraft() {
