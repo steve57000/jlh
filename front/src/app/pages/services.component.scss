@@ -111,6 +111,42 @@
     }
   }
 
+  .rdv-request {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+
+    &__grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+
+      label {
+        font-weight: 600;
+        color: vars.$color-primary;
+      }
+
+      input,
+      textarea {
+        border-radius: 12px;
+        border: 1px solid color.scale(vars.$color-primary, $alpha: -70%);
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        background: vars.$color-tertiary;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+    }
+  }
+
   .services-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
