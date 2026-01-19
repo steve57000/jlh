@@ -61,14 +61,23 @@ public class DemandeTimelineController {
     }
 
     @PostMapping("/validation-prix")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<Void> validatePrice(@PathVariable Integer demandeId,
                                               @Valid @RequestBody DemandeTimelineRequest request,
                                               Authentication auth) {
-        Client client = clientResolver.requireCurrentClient(auth);
-        boolean owns = demandeRepository.existsByIdDemandeAndClient_IdClient(demandeId, client.getIdClient());
-        if (!owns) {
-            return ResponseEntity.status(403).build();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_MANAGER".equals(a.getAuthority()));
+        String actorRole = isAdmin
+                ? (auth.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority())) ? "MANAGER" : "ADMIN")
+                : "CLIENT";
+        String actorEmail = auth != null ? auth.getName() : null;
+        if (!isAdmin) {
+            Client client = clientResolver.requireCurrentClient(auth);
+            boolean owns = demandeRepository.existsByIdDemandeAndClient_IdClient(demandeId, client.getIdClient());
+            if (!owns) {
+                return ResponseEntity.status(403).build();
+            }
+            actorEmail = client.getEmail();
         }
         if (request.getMontantValide() == null || request.getType() != com.jlh.jlhautopambackend.modeles.DemandeTimelineType.MONTANT) {
             return ResponseEntity.badRequest().build();
@@ -79,8 +88,8 @@ public class DemandeTimelineController {
                 demande,
                 request.getMontantValide(),
                 request.getCommentaire(),
-                client.getEmail(),
-                "CLIENT"
+                actorEmail,
+                actorRole
         );
         return ResponseEntity.status(201).build();
     }

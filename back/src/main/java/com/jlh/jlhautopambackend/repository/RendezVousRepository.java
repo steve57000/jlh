@@ -14,6 +14,7 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Integer>
 
     // ✅ chemins d’associations corrects
     boolean existsByCreneau_IdCreneau(Integer idCreneau);
+    boolean existsByDemande_IdDemande(Integer demandeId);
 
     @Query("""
       select rv from RendezVous rv

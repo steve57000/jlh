@@ -4,50 +4,23 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { DemandeWithServices } from '../modeles/demande.model';
 import { DemandesServiceService } from '../services/demandes-services.service';
 import {
+  AdminDashboardAnalytics,
   AdminDashboardStats,
   AdminDashboardStatsService,
   AdminYearlyStats
 } from '../services/admin-dashboard-stats.service';
+import { ServicesService } from '../services/services.service';
+import { ServiceDto } from '../modeles/service.model';
 import { filter, Subscription } from 'rxjs';
 
 type DemandeType = DemandeWithServices['code_type'];
 
-interface TypeStats {
-  type: DemandeType;
-  label: string;
-  count: number;
-  percentage: number;
-  averageValue: number;
-}
-
-interface ServiceStats {
-  label: string;
-  count: number;
-  percentage: number;
-}
-
-interface ServiceRevenueStats {
-  label: string;
-  amount: number;
-  percentage: number;
-}
-
-interface BudgetStats {
-  total: number;
-  averagePerDemande: number;
-  averagePerClient: number;
-}
-
-interface DashboardStats {
-  totalDemandes: number;
-  pending: number;
-  traitees: number;
-  annulees: number;
-  typeStats: TypeStats[];
-  serviceStats: ServiceStats[];
-  revenueStats: ServiceRevenueStats[];
-  revenueTotal: number;
-  budget: BudgetStats;
+interface DashboardStats extends AdminDashboardAnalytics {
+  budget: {
+    total: number;
+    averagePerDemande: number;
+    averagePerClient: number;
+  };
 }
 
 @Component({
@@ -60,6 +33,7 @@ interface DashboardStats {
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   private readonly demandesApi = inject(DemandesServiceService);
   private readonly adminStatsApi = inject(AdminDashboardStatsService);
+  private readonly servicesApi = inject(ServicesService);
   private readonly router = inject(Router);
   private navSub?: Subscription;
 
@@ -68,114 +42,38 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   readonly demandes = signal<DemandeWithServices[]>([]);
   readonly yearlyStats = signal<AdminYearlyStats[]>([]);
   readonly statsMeta = signal<AdminDashboardStats | null>(null);
+  readonly analytics = signal<AdminDashboardAnalytics | null>(null);
+  readonly servicesCatalog = signal<ServiceDto[]>([]);
 
-  readonly stats = computed<DashboardStats>(() => {
-    const rows = this.demandes();
-    const total = rows.length;
-    const typeOrder: DemandeType[] = ['Devis', 'RendezVous', 'Service'];
-    const labels: Record<DemandeType, string> = {
-      Devis: 'Demandes de devis',
-      RendezVous: 'Rendez-vous',
-      Service: 'Demandes de service'
-    };
+  readonly filters = signal({
+    from: '',
+    to: '',
+    types: [] as DemandeType[],
+    statuts: [] as Array<'Brouillon' | 'En_attente' | 'Traitee' | 'Annulee'>,
+    serviceIds: [] as number[]
+  });
 
-    const typeTotals: Record<DemandeType, number> = {
-      Devis: 0,
-      RendezVous: 0,
-      Service: 0
-    };
-
-    const typeAmounts: Record<DemandeType, number> = {
-      Devis: 0,
-      RendezVous: 0,
-      Service: 0
-    };
-
-    let pending = 0;
-    let traitees = 0;
-    let annulees = 0;
-    let totalAmount = 0;
-    const clientSpend = new Map<number, number>();
-
-    const serviceCounts = new Map<string, number>();
-    const serviceRevenue = new Map<string, number>();
-
-    for (const demande of rows) {
-      typeTotals[demande.code_type] ??= 0;
-      typeTotals[demande.code_type] += 1;
-
-      if (demande.code_statut === 'En_attente') pending += 1;
-      if (demande.code_statut === 'Traitee') traitees += 1;
-      if (demande.code_statut === 'Annulee') annulees += 1;
-
-      const totalDemande = this.computeDemandeAmount(demande);
-      totalAmount += totalDemande;
-      typeAmounts[demande.code_type] ??= 0;
-      typeAmounts[demande.code_type] += totalDemande;
-
-      for (const service of demande.services ?? []) {
-        const label = (service?.libelle || 'Service').trim();
-        serviceCounts.set(label, (serviceCounts.get(label) ?? 0) + 1);
-        const unit = Number(service.prix_unitaire ?? 0);
-        const qty = Number(service.quantite ?? 1);
-        if (isFinite(unit) && isFinite(qty)) {
-          serviceRevenue.set(label, (serviceRevenue.get(label) ?? 0) + unit * qty);
-        }
-      }
-
-      const clientId = demande.client?.id_client;
-      if (clientId != null) {
-        clientSpend.set(clientId, (clientSpend.get(clientId) ?? 0) + totalDemande);
-      }
+  readonly stats = computed<DashboardStats | null>(() => {
+    const analytics = this.analytics();
+    if (!analytics) {
+      return null;
     }
-
-    const typeStats: TypeStats[] = typeOrder.map(type => {
-      const count = typeTotals[type] ?? 0;
-      return {
-        type,
-        label: labels[type],
-        count,
-        percentage: total ? Math.round((count / total) * 100) : 0,
-        averageValue: count ? typeAmounts[type] / count : 0
-      };
-    });
-
-    const totalServices = Array.from(serviceCounts.values()).reduce((sum, value) => sum + value, 0);
-    const serviceStats: ServiceStats[] = Array.from(serviceCounts.entries())
-      .map(([label, count]) => ({
-        label,
-        count,
-        percentage: totalServices ? Math.round((count / totalServices) * 100) : 0
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-
-    const totalRevenue = Array.from(serviceRevenue.values()).reduce((sum, value) => sum + value, 0);
-    const revenueStats: ServiceRevenueStats[] = Array.from(serviceRevenue.entries())
-      .map(([label, amount]) => ({
-        label,
-        amount,
-        percentage: totalRevenue ? Math.round((amount / totalRevenue) * 100) : 0
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 6);
-
-    const budget: BudgetStats = {
-      total: totalAmount,
-      averagePerDemande: total ? totalAmount / total : 0,
-      averagePerClient: clientSpend.size ? totalAmount / clientSpend.size : 0
-    };
-
+    const totalAmount = analytics.revenueTotal ?? 0;
+    const totalDemandes = analytics.totalDemandes ?? 0;
+    const averagePerDemande = totalDemandes ? totalAmount / totalDemandes : 0;
+    const clientCount = new Set(
+      this.demandes()
+        .map(demande => demande.client?.id_client)
+        .filter((id): id is number => Number.isFinite(id))
+    ).size;
+    const averagePerClient = clientCount ? totalAmount / clientCount : 0;
     return {
-      totalDemandes: total,
-      pending,
-      traitees,
-      annulees,
-      typeStats,
-      serviceStats,
-      revenueStats,
-      revenueTotal: totalRevenue,
-      budget
+      ...analytics,
+      budget: {
+        total: totalAmount,
+        averagePerDemande,
+        averagePerClient
+      }
     };
   });
 
@@ -189,11 +87,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadDemandes();
     this.loadYearlyStats();
+    this.loadAnalytics();
+    this.loadServicesCatalog();
     this.navSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
         this.loadDemandes(true);
         this.loadYearlyStats(true);
+        this.loadAnalytics(true);
       });
   }
 
@@ -204,6 +105,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   refresh(): void {
     this.loadDemandes(true);
     this.loadYearlyStats(true);
+    this.loadAnalytics(true);
   }
 
   private loadDemandes(silent = false): void {
@@ -237,6 +139,77 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  private loadAnalytics(silent = false): void {
+    const filters = this.filters();
+    const params = {
+      from: filters.from ? new Date(filters.from).toISOString() : undefined,
+      to: filters.to ? new Date(filters.to).toISOString() : undefined,
+      types: filters.types.length ? filters.types : undefined,
+      statuts: filters.statuts.length ? filters.statuts : undefined,
+      serviceIds: filters.serviceIds.length ? filters.serviceIds : undefined,
+      includeForecast: true
+    };
+    this.adminStatsApi.getAnalytics(params).subscribe({
+      next: data => {
+        this.analytics.set(data);
+        if (data?.yearly) {
+          this.yearlyStats.set(data.yearly);
+        }
+      },
+      error: err => {
+        if (!silent) {
+          const fallback = 'Impossible de charger les statistiques analytiques.';
+          this.error.set(err?.error?.message || err?.message || fallback);
+        }
+      }
+    });
+  }
+
+  private loadServicesCatalog(): void {
+    this.servicesApi.getAll().subscribe({
+      next: rows => this.servicesCatalog.set(Array.isArray(rows) ? rows : []),
+      error: () => this.servicesCatalog.set([])
+    });
+  }
+
+  updateFilterDate(field: 'from' | 'to', value: string) {
+    this.filters.update(current => ({ ...current, [field]: value }));
+  }
+
+  updateFilterMultiSelect(field: 'types' | 'statuts' | 'serviceIds', value: string[]) {
+    if (field === 'serviceIds') {
+      this.filters.update(current => ({
+        ...current,
+        serviceIds: value.map(item => Number(item)).filter(id => Number.isFinite(id))
+      }));
+      return;
+    }
+    this.filters.update(current => ({ ...current, [field]: value }));
+  }
+
+  applyFilters(): void {
+    this.loadAnalytics(true);
+  }
+
+  resetFilters(): void {
+    this.filters.set({
+      from: '',
+      to: '',
+      types: [],
+      statuts: [],
+      serviceIds: []
+    });
+    this.loadAnalytics(true);
+  }
+
+  getSelectedValues(event: Event): string[] {
+    const target = event.target as HTMLSelectElement;
+    if (!target?.selectedOptions) {
+      return [];
+    }
+    return Array.from(target.selectedOptions).map(option => option.value).filter(Boolean);
   }
 
   private computeDemandeAmount(demande: DemandeWithServices): number {

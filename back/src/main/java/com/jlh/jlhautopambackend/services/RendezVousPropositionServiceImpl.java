@@ -34,6 +34,8 @@ public class RendezVousPropositionServiceImpl implements RendezVousPropositionSe
     private static final String STATUT_REFUSE = "REFUSE";
     private static final String STATUT_EXPIRE = "EXPIRE";
     private static final String STATUT_RDV_CONFIRME = "Confirme";
+    private static final String STATUT_DEMANDE_TRAITEE = "Traitee";
+    private static final String STATUT_DEMANDE_ANNULEE = "Annulee";
 
     private final DemandeRepository demandeRepository;
     private final DemandeServiceRepository demandeServiceRepository;
@@ -81,6 +83,7 @@ public class RendezVousPropositionServiceImpl implements RendezVousPropositionSe
             Integer adminId
     ) {
         Demande demande = loadDemande(demandeId, null);
+        assertDemandeCanReceivePropositions(demande);
         Administrateur administrateur = resolveAdmin(adminId);
         List<RendezVousPropositionSlotRequest> slots = request.getPropositions();
         if (slots == null || slots.isEmpty()) {
@@ -108,6 +111,7 @@ public class RendezVousPropositionServiceImpl implements RendezVousPropositionSe
     @Override
     public RendezVousPropositionResponse accept(Integer demandeId, Integer propositionId, Integer clientIdOrNull, Integer adminIdOrNull) {
         Demande demande = loadDemande(demandeId, clientIdOrNull);
+        assertDemandeCanReceivePropositions(demande);
         RendezVousProposition proposition = loadProposition(demandeId, propositionId);
         if (!STATUT_PROPOSE.equals(proposition.getStatut())) {
             throw new IllegalStateException("Ce créneau ne peut plus être validé.");
@@ -222,6 +226,19 @@ public class RendezVousPropositionServiceImpl implements RendezVousPropositionSe
         }
         return demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new IllegalArgumentException("Demande introuvable."));
+    }
+
+    private void assertDemandeCanReceivePropositions(Demande demande) {
+        if (demande == null) {
+            return;
+        }
+        if (demande.getRendezVous() != null) {
+            throw new IllegalStateException("Un rendez-vous existe déjà pour cette demande.");
+        }
+        String statut = demande.getStatutDemande() != null ? demande.getStatutDemande().getCodeStatut() : null;
+        if (STATUT_DEMANDE_TRAITEE.equals(statut) || STATUT_DEMANDE_ANNULEE.equals(statut)) {
+            throw new IllegalStateException("La demande est déjà clôturée.");
+        }
     }
 
     private RendezVousProposition loadProposition(Integer demandeId, Integer propositionId) {
