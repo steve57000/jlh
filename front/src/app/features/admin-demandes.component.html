@@ -158,7 +158,7 @@
           <p class="muted">Suivez ce cheminement pour traiter la demande sans ambiguïté.</p>
           <ol class="steps">
             <li [class.step--done]="draft.services.length">{{ stepLabels(draft).step1 }}</li>
-            <li [class.step--done]="draft.rendezVous?.dateDebut">{{ stepLabels(draft).step2 }}</li>
+            <li [class.step--done]="isStep2Done(draft)">{{ stepLabels(draft).step2 }}</li>
             <li [class.step--done]="draft.code_statut === 'Traitee'">{{ stepLabels(draft).step3 }}</li>
           </ol>
           <div class="steps-guide">
@@ -437,7 +437,50 @@
               <p class="doc-upload__error">{{ documentError() }}</p>
             }
           </div>
-      </section>
+        </section>
+
+        @if (draft.code_type === 'Devis') {
+          <section class="details-block details-block--editable" [class.details-block--locked]="isLockedForEdit()">
+            <h4>Validation du devis</h4>
+            <p class="muted">
+              Validez le devis après avoir ajusté les services. Le client pourra ensuite demander un rendez-vous,
+              ou vous pourrez l'initier pour lui.
+            </p>
+            <div class="details-grid">
+              <div class="readonly-field">
+                <span>Total du devis</span>
+                <strong>{{ devisTotal(draft) | number:'1.0-0' }} €</strong>
+              </div>
+              <label>
+                <span>Commentaire interne</span>
+                <input
+                  type="text"
+                  [ngModel]="devisValidationComment()"
+                  (ngModelChange)="devisValidationComment.set($event)"
+                  [disabled]="isLockedForEdit() || hasPriceValidation(draft)"
+                />
+              </label>
+            </div>
+            <div class="detail-actions">
+              <button
+                type="button"
+                class="btn"
+                (click)="validateDevis()"
+                [disabled]="isLockedForEdit() || devisValidationSaving() || hasPriceValidation(draft)"
+              >
+                @if (devisValidationSaving()) { Validation… } @else { Valider le devis }
+              </button>
+              @if (hasPriceValidation(draft)) {
+                <p class="muted">Devis déjà validé.</p>
+              }
+              @if (devisValidationFeedback()) {
+                <p class="feedback" [class.feedback--error]="devisValidationFeedbackType()==='error'">
+                  {{ devisValidationFeedback() }}
+                </p>
+              }
+            </div>
+          </section>
+        }
 
         @if ((draft.code_type === 'RendezVous' || draft.code_type === 'Service') && rdvForm(); as rdv) {
           <section class="details-block details-block--editable" [class.details-block--locked]="isLockedForEdit()">

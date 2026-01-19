@@ -112,6 +112,11 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   documentUploading = signal(false);
   documentError = signal<string | null>(null);
 
+  devisValidationComment = signal('');
+  devisValidationFeedback = signal<string | null>(null);
+  devisValidationFeedbackType = signal<'success' | 'error' | null>(null);
+  devisValidationSaving = signal(false);
+
   rdvForm = signal<RendezVousFormState | null>(null);
   rdvSaving = signal(false);
   rdvFeedback = signal<string | null>(null);
@@ -190,6 +195,28 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       guide2: '2. Fixer le rendez-vous : appelez le client ou proposez 1 à 3 créneaux via le site.',
       guide3: '3. Confirmer : le statut passe automatiquement en confirmé dès que le rendez-vous est validé.'
     };
+  }
+
+  isStep2Done(draft: DemandeWithServices): boolean {
+    if (draft.code_type === 'Devis') {
+      return this.hasPriceValidation(draft);
+    }
+    return Boolean(draft.rendezVous?.dateDebut);
+  }
+
+  hasPriceValidation(draft: DemandeWithServices): boolean {
+    return (draft.timeline ?? []).some(entry => entry?.type === 'MONTANT' && entry.montantValide != null);
+  }
+
+  devisTotal(draft: DemandeWithServices): number {
+    return (draft.services ?? []).reduce((sum, service) => {
+      const unit = Number(service?.prix_unitaire ?? 0);
+      const qty = Number(service?.quantite ?? 0);
+      if (!Number.isFinite(unit) || !Number.isFinite(qty)) {
+        return sum;
+      }
+      return sum + unit * qty;
+    }, 0);
   }
 
   readonly editDraft = computed(() => this.draft());
@@ -676,6 +703,9 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.feedback.set(null);
     this.feedbackType.set(null);
     this.documentError.set(null);
+    this.devisValidationComment.set('');
+    this.devisValidationFeedback.set(null);
+    this.devisValidationFeedbackType.set(null);
     this.syncRendezVousForm(original.rendezVous ?? null);
   }
 
@@ -728,6 +758,62 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
         this.feedback.set('Échec de la mise à jour de la demande.');
         this.feedbackType.set('error');
         this.toast.error('Échec de la mise à jour de la demande.');
+      }
+    });
+  }
+
+  validateDevis() {
+    const draft = this.draft();
+    const demandeId = this.selectedId();
+    if (!draft || demandeId == null) {
+      return;
+    }
+    if (this.devisValidationSaving()) {
+      return;
+    }
+    const montant = this.devisTotal(draft);
+    if (!Number.isFinite(montant) || montant <= 0) {
+      this.devisValidationFeedback.set('Renseignez des prix valides pour valider le devis.');
+      this.devisValidationFeedbackType.set('error');
+      return;
+    }
+
+    this.devisValidationSaving.set(true);
+    this.devisValidationFeedback.set(null);
+    this.devisValidationFeedbackType.set(null);
+
+    const commentaire = this.devisValidationComment().trim();
+    this.api.validatePrice(demandeId, montant, commentaire.length ? commentaire : null).subscribe({
+      next: () => {
+        const entry = {
+          type: 'MONTANT',
+          montantValide: montant,
+          commentaire: commentaire.length ? commentaire : null,
+          createdAt: new Date().toISOString(),
+          createdByRole: 'ADMIN'
+        };
+        this.updateDraft(d => {
+          const timeline = Array.isArray(d.timeline) ? d.timeline : [];
+          d.timeline = [entry as any, ...timeline];
+        });
+        this.demandes.update(list =>
+          list.map(item => this.getDemandeId(item) === demandeId
+            ? {
+              ...item,
+              timeline: [entry as any, ...(item.timeline ?? [])]
+            }
+            : item
+          )
+        );
+        this.devisValidationFeedback.set('Devis validé et transmis au client.');
+        this.devisValidationFeedbackType.set('success');
+        this.devisValidationSaving.set(false);
+      },
+      error: err => {
+        const msg = err?.error?.message || 'Impossible de valider le devis.';
+        this.devisValidationFeedback.set(msg);
+        this.devisValidationFeedbackType.set('error');
+        this.devisValidationSaving.set(false);
       }
     });
   }

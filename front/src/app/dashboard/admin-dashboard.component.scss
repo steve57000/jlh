@@ -138,6 +138,10 @@ $card-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
   }
 }
 
+.card--full {
+  grid-column: 1 / -1;
+}
+
 .summary-card__metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

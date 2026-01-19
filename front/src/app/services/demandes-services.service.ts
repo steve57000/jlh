@@ -236,6 +236,18 @@ export class DemandesServiceService {
     });
   }
 
+  validatePrice(demandeId: number, montantValide: number, commentaire?: string | null) {
+    return this.http.post<void>(
+      `${this.apiBase}/demandes/${demandeId}/timeline/validation-prix`,
+      {
+        type: 'MONTANT',
+        montantValide,
+        commentaire: commentaire ?? null
+      },
+      { headers: new HttpHeaders({ 'X-Skip-Error-Toast': '1' }) }
+    );
+  }
+
   // ---------- PAGE SERVICES : nouveau flux ----------
   /** POST simple : un seul service par demande (409 si déjà présent) */
   addUnique(req: DemandeServiceRequest): Observable<DemandeServiceResponse> {
