@@ -643,7 +643,14 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   isArchived(d?: DemandeResponse): boolean {
     const status = d?.statutDemande?.codeStatut;
-    return status === 'Traitee' || status === 'Annulee';
+    if (status === 'Traitee' || status === 'Annulee') {
+      return true;
+    }
+    const rdvDate = d?.rendezVous?.dateDebut ? new Date(d.rendezVous.dateDebut) : null;
+    if (rdvDate && rdvDate.getTime() <= Date.now()) {
+      return true;
+    }
+    return false;
   }
 
   clientVehicle(d?: DemandeResponse): string | null {
