@@ -31,6 +31,8 @@ public interface DemandeWorkflowService {
     Optional<DemandeResponse> update(Integer id, DemandeRequest request);
     boolean delete(Integer id);
 
+    Optional<DemandeResponse> submitDemande(Integer id, String actorEmail, String actorRole);
+
     java.util.Optional<String> buildProchainRendezVousIcs(Integer clientId);
     java.util.Optional<String> buildRendezVousIcs(Integer rdvId, Integer clientIdOrNullIfAdmin);
 
