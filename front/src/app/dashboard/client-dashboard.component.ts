@@ -96,8 +96,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   prochainRdv: ProchainRdvDto | null = null;
 
   submittingId: number | null = null;
-  showArchived = true;
-  readonly activeSection = signal<'overview' | 'services' | 'account' | 'documents'>('overview');
+  readonly activeSection = signal<'overview' | 'services' | 'account' | 'documents' | 'history'>('overview');
   documents = signal<ClientDocumentDto[]>([]);
   rdvProposals = signal<Record<number, RendezVousProposition[]>>({});
   // safe api base (no trailing slash)
@@ -195,6 +194,28 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   readonly activeDemandes = computed<DemandeResponse[]>(() =>
     this.filteredDemandes().filter(d => !this.isArchived(d))
   );
+
+  readonly latestActiveDemande = computed<DemandeResponse | null>(() => {
+    const list = (this.demandes() ?? []).filter(d => !this.isArchived(d));
+    if (!list.length) {
+      return null;
+    }
+    return list.reduce((latest, current) => {
+      if (!latest) {
+        return current;
+      }
+      return this.demandeTimestamp(current) >= this.demandeTimestamp(latest) ? current : latest;
+    }, list[0]);
+  });
+
+  readonly otherActiveDemandes = computed<DemandeResponse[]>(() => {
+    const latest = this.latestActiveDemande();
+    const list = this.activeDemandes();
+    if (!latest?.idDemande) {
+      return list;
+    }
+    return list.filter(d => d.idDemande !== latest.idDemande);
+  });
 
   readonly archivedDemandes = computed<DemandeResponse[]>(() =>
     this.filteredDemandes().filter(d => this.isArchived(d))
@@ -475,6 +496,11 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     return d.dateDemande || d.dateSoumission || null;
   }
 
+  demandeTimestamp(d?: DemandeResponse): number {
+    const value = this.demandeDate(d);
+    return value ? new Date(value).getTime() : 0;
+  }
+
   totalDemande(d: DemandeResponse): number {
     if (!d?.services?.length) return 0;
     return d.services.reduce((sum, s) => sum + (s.prixUnitaire || 0) * (s.quantite || 0), 0);
@@ -734,17 +760,12 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     this.activeSection.set('account');
   }
 
-  toggleArchivesSection() {
-    if (this.activeSection() !== 'overview') {
-      this.activeSection.set('overview');
-      this.showArchived = true;
-      return;
-    }
-    this.showArchived = !this.showArchived;
-  }
-
   showDocuments() {
     this.activeSection.set('documents');
+  }
+
+  showHistory() {
+    this.activeSection.set('history');
   }
 
 }
