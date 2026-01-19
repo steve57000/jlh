@@ -160,6 +160,38 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     return this.demandes().find(d => this.getDemandeId(d) === id) ?? null;
   });
 
+  stepLabels(draft: DemandeWithServices) {
+    const type = draft.code_type;
+    if (type === 'Devis') {
+      return {
+        step1: 'Demande devis',
+        step2: 'Validation du devis',
+        step3: 'Prise de rendez-vous',
+        guide1: '1. Vérifier la demande : services, quantités, prix et pièces jointes.',
+        guide2: '2. Valider le devis : ajustez les services et confirmez le montant.',
+        guide3: '3. Fixer le rendez-vous : appelez le client ou proposez 1 à 3 créneaux via le site.'
+      };
+    }
+    if (type === 'RendezVous') {
+      return {
+        step1: 'Demande rendez-vous',
+        step2: 'Prise de rendez-vous',
+        step3: 'Confirmation',
+        guide1: '1. Vérifier la demande : coordonnées et commentaire du client.',
+        guide2: '2. Fixer le rendez-vous : choisissez un créneau disponible.',
+        guide3: '3. Confirmer : le statut passe automatiquement en confirmé dès que le rendez-vous est validé.'
+      };
+    }
+    return {
+      step1: 'Demande service',
+      step2: 'Prise de rendez-vous',
+      step3: 'Confirmation',
+      guide1: '1. Vérifier la demande : services, quantités, prix et pièces jointes.',
+      guide2: '2. Fixer le rendez-vous : appelez le client ou proposez 1 à 3 créneaux via le site.',
+      guide3: '3. Confirmer : le statut passe automatiquement en confirmé dès que le rendez-vous est validé.'
+    };
+  }
+
   readonly editDraft = computed(() => this.draft());
 
   readonly hasChanges = computed(() => {
@@ -175,19 +207,6 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return false;
     }
     return draft.code_statut === 'Traitee' || draft.code_statut === 'Annulee';
-  });
-
-  readonly isRdvConfirmed = computed(() => {
-    const draft = this.draft();
-    return draft?.rendezVous?.codeStatut === 'Confirme';
-  });
-
-  readonly autoConfirmOnSave = computed(() => {
-    const draft = this.draft();
-    if (!draft) {
-      return false;
-    }
-    return this.hasChanges() && this.isRdvConfirmed() && draft.code_statut !== 'Traitee' && draft.code_statut !== 'Annulee';
   });
 
   ngOnInit() {
@@ -497,10 +516,6 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.updateDraft(d => { d.code_type = value; });
   }
 
-  setDraftStatut(value: DemandeWithServices['code_statut']) {
-    this.updateDraft(d => { d.code_statut = value; });
-  }
-
   updateClientField(
     field: 'telephone'
       | 'immatriculation'
@@ -674,14 +689,10 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.feedbackType.set(null);
 
     const client = this.buildClientPayload(draft.client);
-    const shouldAutoConfirm = this.autoConfirmOnSave();
-    const nextStatut = (shouldAutoConfirm ? 'Traitee' : draft.code_statut) as DemandeWithServices['code_statut'];
-    const effectiveDraft = shouldAutoConfirm ? { ...draft, code_statut: nextStatut } : draft;
 
     const payload: Parameters<DemandesServiceService['updateDemande']>[1] = {
-      codeType: effectiveDraft.code_type,
-      codeStatut: nextStatut,
-      immatriculation: effectiveDraft.client?.immatriculation ?? null,
+      codeType: draft.code_type,
+      immatriculation: draft.client?.immatriculation ?? null,
       vehiculeMarque: client?.vehiculeMarque ?? null,
       vehiculeModele: client?.vehiculeModele ?? null,
       vehiculeEnergie: client?.vehiculeEnergie ?? null,
@@ -690,7 +701,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       adresseLigne2: this.trimOrEmpty(client?.adresseLigne2),
       adresseCodePostal: this.trimOrEmpty(client?.adresseCodePostal),
       adresseVille: this.trimOrEmpty(client?.adresseVille),
-      services: effectiveDraft.services.map(s => ({
+      services: draft.services.map(s => ({
         libelle: s.libelle,
         idService: s.id_service,
         quantite: s.quantite,
@@ -701,22 +712,16 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
 
     this.api.updateDemande(id, payload).subscribe({
       next: updated => {
-        const merged = this.mergeDraftWithResponse(effectiveDraft, updated);
+        const merged = this.mergeDraftWithResponse(draft, updated);
         this.demandes.update(list =>
           list.map(item => this.getDemandeId(item) === id ? merged : item)
         );
         this.original.set(this.clone(merged));
         this.draft.set(this.clone(merged));
         this.saving.set(false);
-        this.feedback.set(shouldAutoConfirm
-          ? 'Demande confirmée et mise à jour avec succès.'
-          : 'Demande mise à jour avec succès.'
-        );
+        this.feedback.set('Demande mise à jour avec succès.');
         this.feedbackType.set('success');
-        this.toast.success(shouldAutoConfirm
-          ? 'Demande confirmée et mise à jour.'
-          : 'Demande mise à jour avec succès.'
-        );
+        this.toast.success('Demande mise à jour avec succès.');
       },
       error: () => {
         this.saving.set(false);
@@ -725,47 +730,6 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
         this.toast.error('Échec de la mise à jour de la demande.');
       }
     });
-  }
-
-  marquerTraitee(d: any) {
-    if (d.code_statut === 'Traitee') return;
-    const id = this.getDemandeId(d);
-    if (id == null) {
-      this.toast.error('Demande introuvable.', 'Identifiant manquant.');
-      return;
-    }
-
-    this.api.setStatut(id, 'Traitee').subscribe({
-      next: () => {
-        this.demandes.update(list =>
-          list.map(x => this.getDemandeId(x) === id ? { ...x, code_statut: 'Traitee' } : x)
-        );
-        if (this.selectedId() === id) {
-          this.updateDraft(draft => { draft.code_statut = 'Traitee'; });
-          const original = this.original();
-          if (original) {
-            this.original.set({ ...original, code_statut: 'Traitee' });
-          }
-        }
-        this.toast.success('Demande confirmée.');
-      },
-      error: () => {
-        this.toast.error('Échec de la mise à jour du statut.');
-      }
-    });
-  }
-
-  confirmerSelection() {
-    const draft = this.draft();
-    if (!draft || this.isLockedForEdit()) return;
-    this.marquerTraitee(draft);
-  }
-
-  statutLabel(demande: DemandeWithServices): string {
-    if (demande.code_statut === 'Traitee') {
-      return 'Confirmée';
-    }
-    return demande.statut_libelle || demande.code_statut;
   }
 
   supprimer(d: any) {
@@ -1048,7 +1012,12 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
 
     const request = form.idRdv
       ? this.rendezVousApi.update(form.idRdv, payload)
-      : this.createRendezVousFromDraft(payload, draft?.code_type, draft?.services?.[0]?.id_service ?? null);
+      : this.createRendezVousFromDraft(
+        payload,
+        draft?.code_type,
+        draft?.services?.[0]?.id_service ?? null,
+        draft?.devis?.id_devis ?? null
+      );
 
     request.subscribe({
       next: rdv => {
@@ -1062,6 +1031,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
             : item
           )
         );
+        this.applyAutoStatutFromRdv(rendezVous);
         this.rdvFeedback.set('Rendez-vous mis à jour et client informé.');
         this.rdvFeedbackType.set('success');
         this.toast.success('Rendez-vous confirmé.');
@@ -1082,12 +1052,46 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   private createRendezVousFromDraft(
     payload: RendezVousUpsertPayload,
     type: DemandeWithServices['code_type'] | null | undefined,
-    serviceId: number | null
+    serviceId: number | null,
+    devisId: number | null
   ) {
+    if (type === 'Devis' && devisId) {
+      return this.rendezVousApi.createForDevis(devisId, payload);
+    }
     if (type === 'Service' && serviceId) {
       return this.rendezVousApi.createForService(serviceId, payload);
     }
     return this.rendezVousApi.create(payload);
+  }
+
+  private applyAutoStatutFromRdv(rdv: RendezVousSummary | null) {
+    const draft = this.draft();
+    if (!draft || !rdv) {
+      return;
+    }
+    if (draft.code_statut === 'Annulee') {
+      return;
+    }
+    const nextStatut: DemandeWithServices['code_statut'] =
+      rdv.codeStatut === 'Confirme' ? 'Traitee' : 'En_attente';
+    if (draft.code_statut === nextStatut) {
+      return;
+    }
+    this.updateDraft(d => { d.code_statut = nextStatut; });
+    const demandeId = this.selectedId();
+    if (demandeId == null) {
+      return;
+    }
+    this.demandes.update(list =>
+      list.map(item => this.getDemandeId(item) === demandeId
+        ? { ...item, code_statut: nextStatut }
+        : item
+      )
+    );
+    const original = this.original();
+    if (original) {
+      this.original.set({ ...original, code_statut: nextStatut });
+    }
   }
 
   private formatDateInput(value: string | null): string {
