@@ -138,7 +138,8 @@ public class SecurityConfig {
         cfg.setAllowedOrigins(List.of(
                 "http://localhost:4200",
                 "http://localhost:63342",
-                "https://jlh-autopam.netlify.app"
+                "https://jlh-autopam.netlify.app",
+                "https://jlh-autopam-frontend.onrender.com"
         ));
         // Alternative souple si besoin : cfg.setAllowedOriginPatterns(List.of("http://localhost:*"));
 
