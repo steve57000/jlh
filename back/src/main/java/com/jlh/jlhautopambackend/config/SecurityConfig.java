@@ -137,7 +137,8 @@ public class SecurityConfig {
         // IMPORTANT : origins explicites quand allowCredentials=true
         cfg.setAllowedOrigins(List.of(
                 "http://localhost:4200",
-                "http://localhost:63342"
+                "http://localhost:63342",
+                "https://jlh-autopam.netlify.app"
         ));
         // Alternative souple si besoin : cfg.setAllowedOriginPatterns(List.of("http://localhost:*"));
 
