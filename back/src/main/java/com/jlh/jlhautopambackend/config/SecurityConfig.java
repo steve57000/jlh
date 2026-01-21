@@ -135,9 +135,8 @@ public class SecurityConfig {
         CorsConfiguration cfg = new CorsConfiguration();
 
         // IMPORTANT : origins explicites quand allowCredentials=true
-        cfg.setAllowedOrigins(List.of(
-                "http://localhost:4200",
-                "http://localhost:63342",
+        cfg.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
                 "https://jlh-autopam.netlify.app",
                 "https://jlh-autopam-frontend.onrender.com"
         ));
@@ -148,7 +147,7 @@ public class SecurityConfig {
                 "Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"
         ));
         cfg.setExposedHeaders(List.of("*"));
-        cfg.setAllowCredentials(true);
+        cfg.setAllowCredentials(false);
         cfg.setMaxAge(3600L); // 1h de cache pour la preflight
 
         UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
