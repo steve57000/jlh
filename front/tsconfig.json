@@ -12,7 +12,7 @@
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "baseUrl": "./src",
+    "baseUrl": "src",
     "paths": {
       "@environments/*": [
         "environments/*"
@@ -20,7 +20,7 @@
     },
     "target": "ES2022",
     "module": "preserve",
-    "moduleResolution": "node16"
+    "moduleResolution": "Bundler"
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
