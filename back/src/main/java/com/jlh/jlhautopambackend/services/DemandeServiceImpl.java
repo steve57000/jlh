@@ -106,6 +106,15 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     }
 
     @Override
+    public List<ProchainRdvDto> findProchainsRdvByClientId(Integer clientId) {
+        return rendezVousRepository.findUpcomingByClientId(clientId, Instant.now())
+                .stream()
+                .map(this::toProchainRdvDto)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    @Override
     public DemandeResponse create(DemandeRequest request) {
         Demande entity = mapper.toEntity(request);
         entity.setDateDemande(resolveDate(request.getDateDemande()));

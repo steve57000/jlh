@@ -13,6 +13,8 @@ public interface DemandeService {
     ClientStatsDto findStatsByClientId(Integer clientId);
     java.util.Optional<ProchainRdvDto> findProchainRdvByClientId(Integer clientId);
 
+    java.util.List<ProchainRdvDto> findProchainsRdvByClientId(Integer clientId);
+
     /** Création “classique”, utilisée par l’admin */
     DemandeResponse create(DemandeRequest request);
 

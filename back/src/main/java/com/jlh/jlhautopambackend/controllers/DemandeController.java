@@ -133,6 +133,13 @@ public class DemandeController {
                 .orElse(ResponseEntity.noContent().build());
     }
 
+    @GetMapping("/mes-demandes/prochains-rdv")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<List<ProchainRdvDto>> prochainsRdvs(Authentication auth) {
+        Client client = requireClient(auth);
+        return ResponseEntity.ok(service.findProchainsRdvByClientId(client.getIdClient()));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<DemandeResponse> update(@PathVariable Integer id, @Valid @RequestBody DemandeRequest req) {

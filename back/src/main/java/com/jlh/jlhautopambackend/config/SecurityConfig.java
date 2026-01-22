@@ -72,6 +72,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes/stats").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes/prochain-rdv").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes/prochains-rdv").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes/prochain-rdv.ics").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-documents").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/demandes").hasRole("CLIENT")
