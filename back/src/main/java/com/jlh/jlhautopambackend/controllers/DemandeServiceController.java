@@ -9,6 +9,7 @@ import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.*;
@@ -58,12 +59,7 @@ public class DemandeServiceController {
             @Valid @RequestBody DemandeServiceRequest req) {
 
         if (!isAdmin(auth)) {
-            Integer clientId = getClientIdFromAuth(auth);
-            // ownership: la demande doit appartenir au client
-            boolean ok = demandeRepo.findById(req.getDemandeId())
-                    .map(d -> d.getClient() != null && Objects.equals(d.getClient().getIdClient(), clientId))
-                    .orElse(false);
-            if (!ok) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            assertEditableDemandeForClient(auth, req.getDemandeId());
         }
 
         DemandeServiceResponse resp = service.create(req);
@@ -82,11 +78,7 @@ public class DemandeServiceController {
             @Valid @RequestBody DemandeServiceRequest req) {
 
         if (!isAdmin(auth)) {
-            Integer clientId = getClientIdFromAuth(auth);
-            boolean ok = demandeRepo.findById(demandeId)
-                    .map(d -> d.getClient() != null && Objects.equals(d.getClient().getIdClient(), clientId))
-                    .orElse(false);
-            if (!ok) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            assertEditableDemandeForClient(auth, demandeId);
         }
 
         return service.update(demandeId, serviceId, req)
@@ -102,11 +94,7 @@ public class DemandeServiceController {
             @PathVariable Integer serviceId) {
 
         if (!isAdmin(auth)) {
-            Integer clientId = getClientIdFromAuth(auth);
-            boolean ok = demandeRepo.findById(demandeId)
-                    .map(d -> d.getClient() != null && Objects.equals(d.getClient().getIdClient(), clientId))
-                    .orElse(false);
-            if (!ok) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            assertEditableDemandeForClient(auth, demandeId);
         }
 
         return service.delete(demandeId, serviceId)
@@ -118,6 +106,20 @@ public class DemandeServiceController {
 
     private Integer getClientIdFromAuth(Authentication auth) {
         return clientResolver.requireCurrentClient(auth).getIdClient();
+    }
+
+    private void assertEditableDemandeForClient(Authentication auth, Integer demandeId) {
+        Integer clientId = getClientIdFromAuth(auth);
+        var demande = demandeRepo.findById(demandeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Demande introuvable."));
+        if (demande.getClient() == null || !Objects.equals(demande.getClient().getIdClient(), clientId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Action non autorisée.");
+        }
+        String statut = demande.getStatutDemande() != null ? demande.getStatutDemande().getCodeStatut() : null;
+        if (statut != null && !"Brouillon".equals(statut)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La demande n'est plus modifiable tant qu'elle est en attente de traitement.");
+        }
     }
 
     private boolean isAdmin(Authentication auth) {
