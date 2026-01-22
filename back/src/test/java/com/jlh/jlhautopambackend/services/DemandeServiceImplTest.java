@@ -3,9 +3,13 @@ package com.jlh.jlhautopambackend.services;
 import com.jlh.jlhautopambackend.config.GarageProperties;
 import com.jlh.jlhautopambackend.dto.DemandeRequest;
 import com.jlh.jlhautopambackend.dto.DemandeResponse;
+import com.jlh.jlhautopambackend.dto.ClientStatsDto;
+import com.jlh.jlhautopambackend.dto.ProchainRdvDto;
 import com.jlh.jlhautopambackend.dto.StatutDemandeDto;
 import com.jlh.jlhautopambackend.dto.TypeDemandeDto;
+import com.jlh.jlhautopambackend.mapper.DevisMapper;
 import com.jlh.jlhautopambackend.mapper.DemandeMapper;
+import com.jlh.jlhautopambackend.mapper.RendezVousMapper;
 import com.jlh.jlhautopambackend.modeles.*;
 import com.jlh.jlhautopambackend.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +44,12 @@ class DemandeServiceImplTest {
     private RendezVousRepository rendezVousRepository;
     @Mock
     private DemandeServiceRepository demandeServiceRepository;
+    @Mock
+    private DevisRepository devisRepository;
+    @Mock
+    private DevisMapper devisMapper;
+    @Mock
+    private RendezVousMapper rendezVousMapper;
     @Mock
     private DemandeMapper mapper;
     @Mock
@@ -115,6 +125,80 @@ class DemandeServiceImplTest {
                 .services(Collections.emptyList())
                 .documents(Collections.emptyList())
                 .build();
+
+        when(devisRepository.findByDemande_IdDemande(anyInt())).thenReturn(Optional.empty());
+    }
+
+    @Test
+    void testFindStatsByClientId_ShouldReturnAggregatedCounts() {
+        when(repository.countByClient_IdClientAndStatutDemande_CodeStatut(100, "En_attente")).thenReturn(2L);
+        when(repository.countByClient_IdClientAndStatutDemande_CodeStatut(100, "Traitee")).thenReturn(4L);
+        when(repository.countByClient_IdClientAndStatutDemande_CodeStatut(100, "Annulee")).thenReturn(1L);
+        when(rendezVousRepository.countUpcomingByClientId(eq(100), any())).thenReturn(3L);
+        when(repository.countByClient_IdClientAndTypeDemande_CodeType(100, "RendezVous")).thenReturn(5L);
+        when(repository.countByClient_IdClientAndTypeDemande_CodeType(100, "Service")).thenReturn(6L);
+        when(repository.countByClient_IdClientAndTypeDemande_CodeType(100, "Devis")).thenReturn(7L);
+        when(rendezVousRepository.countByDemande_Client_IdClientAndDemandeServiceIsNullAndDevisIsNull(100))
+                .thenReturn(8L);
+        when(rendezVousRepository.countLinkedByClientId(100)).thenReturn(9L);
+
+        ClientStatsDto result = service.findStatsByClientId(100);
+
+        assertEquals(2L, result.getEnAttente());
+        assertEquals(4L, result.getTraitees());
+        assertEquals(1L, result.getAnnulees());
+        assertEquals(3L, result.getRdvAvenir());
+        assertEquals(5L, result.getDemandesLibres());
+        assertEquals(6L, result.getDemandesService());
+        assertEquals(7L, result.getDemandesDevis());
+        assertEquals(9L, result.getRdvLies());
+        assertEquals(8L, result.getRdvNonLies());
+    }
+
+    @Test
+    void testFindProchainRdvByClientId_ShouldReturnFirstUpcoming() {
+        Instant start = Instant.parse("2025-08-01T08:00:00Z");
+        Instant end = Instant.parse("2025-08-01T09:00:00Z");
+        Creneau creneau = Creneau.builder().dateDebut(start).dateFin(end).build();
+        StatutRendezVous statutRdv = StatutRendezVous.builder()
+                .codeStatut("CONFIRME")
+                .libelle("Confirmé")
+                .build();
+        RendezVous rendezVous = RendezVous.builder()
+                .idRdv(12)
+                .creneau(creneau)
+                .statut(statutRdv)
+                .build();
+        when(rendezVousRepository.findUpcomingByClientId(eq(100), any())).thenReturn(List.of(rendezVous));
+
+        Optional<ProchainRdvDto> result = service.findProchainRdvByClientId(100);
+
+        assertTrue(result.isPresent());
+        assertEquals(12, result.get().getIdRdv());
+        assertEquals("CONFIRME", result.get().getCodeStatut());
+        assertEquals("Confirmé", result.get().getLibelleStatut());
+        assertEquals(start, result.get().getDateDebut());
+        assertEquals(end, result.get().getDateFin());
+    }
+
+    @Test
+    void testBuildProchainRendezVousIcs_ShouldReturnCalendar() {
+        Instant start = Instant.parse("2025-08-01T08:00:00Z");
+        Instant end = Instant.parse("2025-08-01T09:00:00Z");
+        Creneau creneau = Creneau.builder().dateDebut(start).dateFin(end).build();
+        RendezVous rendezVous = RendezVous.builder()
+                .idRdv(12)
+                .creneau(creneau)
+                .build();
+        when(rendezVousRepository.findUpcomingByClientId(eq(100), any())).thenReturn(List.of(rendezVous));
+        when(garageProperties.getName()).thenReturn("Garage Test");
+
+        Optional<String> icsOpt = service.buildProchainRendezVousIcs(100);
+
+        assertTrue(icsOpt.isPresent());
+        String ics = icsOpt.get();
+        assertTrue(ics.contains("BEGIN:VCALENDAR"));
+        assertTrue(ics.contains("SUMMARY:Rendez-vous Garage Test"));
     }
 
     @Test

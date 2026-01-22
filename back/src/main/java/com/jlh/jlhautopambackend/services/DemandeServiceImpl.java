@@ -83,11 +83,13 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ClientStatsDto findStatsByClientId(Integer clientId) {
+        Instant now = now();
         long enAttente = repository.countByClient_IdClientAndStatutDemande_CodeStatut(clientId, STATUT_EN_ATTENTE);
         long traitees = repository.countByClient_IdClientAndStatutDemande_CodeStatut(clientId, STATUT_TRAITEE);
         long annulees = repository.countByClient_IdClientAndStatutDemande_CodeStatut(clientId, STATUT_ANNULEE);
-        long rdvAvenir = rendezVousRepository.countUpcomingByClientId(clientId, Instant.now());
+        long rdvAvenir = rendezVousRepository.countUpcomingByClientId(clientId, now);
         long demandesLibres = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_RENDEZ_VOUS);
         long demandesService = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_SERVICE);
         long demandesDevis = repository.countByClient_IdClientAndTypeDemande_CodeType(clientId, TYPE_DEVIS);
@@ -98,16 +100,18 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<ProchainRdvDto> findProchainRdvByClientId(Integer clientId) {
-        return rendezVousRepository.findUpcomingByClientId(clientId, Instant.now())
+        return rendezVousRepository.findUpcomingByClientId(clientId, now())
                 .stream()
                 .findFirst()
                 .map(this::toProchainRdvDto);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProchainRdvDto> findProchainsRdvByClientId(Integer clientId) {
-        return rendezVousRepository.findUpcomingByClientId(clientId, Instant.now())
+        return rendezVousRepository.findUpcomingByClientId(clientId, now())
                 .stream()
                 .map(this::toProchainRdvDto)
                 .filter(java.util.Objects::nonNull)
@@ -257,14 +261,16 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<String> buildProchainRendezVousIcs(Integer clientId) {
-        return rendezVousRepository.findUpcomingByClientId(clientId, Instant.now())
+        return rendezVousRepository.findUpcomingByClientId(clientId, now())
                 .stream()
                 .findFirst()
                 .map(this::buildIcs);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<String> buildRendezVousIcs(Integer rdvId, Integer clientIdOrNullIfAdmin) {
         Optional<RendezVous> rdvOpt = (clientIdOrNullIfAdmin == null)
                 ? rendezVousRepository.findById(rdvId)
@@ -305,6 +311,10 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
 
     private Instant resolveDate(Instant provided) {
         return provided != null ? provided : Instant.now();
+    }
+
+    private Instant now() {
+        return Instant.now();
     }
 
     private void applyClientUpdates(Client client, DemandeRequest request) {
