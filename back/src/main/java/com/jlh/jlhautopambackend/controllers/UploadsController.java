@@ -1,9 +1,9 @@
 package com.jlh.jlhautopambackend.controllers;
 
 import com.jlh.jlhautopambackend.services.storage.FileStorageService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +20,10 @@ public class UploadsController {
 
     public UploadsController(
             FileStorageService storageService,
-            @Value("${app.uploads.static-fallback:false}") boolean staticFallbackEnabled
+            Environment environment
     ) {
         this.storageService = storageService;
-        this.staticFallbackEnabled = staticFallbackEnabled;
+        this.staticFallbackEnabled = resolveStaticFallback(environment);
     }
 
     @GetMapping("/uploads/{*path}")
@@ -55,5 +55,21 @@ public class UploadsController {
 
         Resource classpathResource = new ClassPathResource("static/uploads/" + path);
         return classpathResource.exists() ? classpathResource : null;
+    }
+
+    private static boolean resolveStaticFallback(Environment environment) {
+        if (environment == null) {
+            return false;
+        }
+        String flag = environment.getProperty("app.uploads.static-fallback", "false");
+        if (Boolean.parseBoolean(flag)) {
+            return true;
+        }
+        for (String profile : environment.getActiveProfiles()) {
+            if ("demo".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
