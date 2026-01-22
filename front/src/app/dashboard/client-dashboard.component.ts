@@ -93,7 +93,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   demandes = signal<DemandeResponse[]>([]);
   stats: ClientStatsDto | null = null;
-  prochainRdv: ProchainRdvDto | null = null;
+  prochainsRdvs = signal<ProchainRdvDto[]>([]);
 
   submittingId: number | null = null;
   readonly activeSection = signal<'overview' | 'services' | 'account' | 'documents' | 'history'>('overview');
@@ -219,6 +219,10 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   readonly archivedDemandes = computed<DemandeResponse[]>(() =>
     this.filteredDemandes().filter(d => this.isArchived(d))
+  );
+
+  readonly prochainsRdvsAVenir = computed<ProchainRdvDto[]>(() =>
+    (this.prochainsRdvs() ?? []).filter(rdv => this.isUpcomingRdv(rdv))
   );
 
   constructor(
@@ -353,18 +357,17 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.srv.getProchainRdv(httpOptions).subscribe({
-      next: rdv => {
-        this.prochainRdv = rdv || null;
+    this.srv.getProchainsRdv(httpOptions).subscribe({
+      next: rdvs => {
+        this.prochainsRdvs.set(rdvs ?? []);
         finalize();
       },
       error: err => {
-        if (err.status !== 204 && err.status !== 404 && !silent) {
-          this.error ||= err?.error?.message || err.message || 'Erreur de chargement du prochain RDV';
+        if (!silent) {
+          this.error ||= err?.error?.message || err.message || 'Erreur de chargement des prochains RDV';
         }
         finalize();
-      },
-      complete: () => { }
+      }
     });
 
     this.srv.getMyDocuments(httpOptions).subscribe({
@@ -548,29 +551,18 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  shouldShowProchainRdv(rdv?: ProchainRdvDto | null): boolean {
+  canDownloadIcs(rdv?: ProchainRdvDto | RendezVousSummary | null): boolean {
     if (!rdv) {
       return false;
     }
-    if (this.isCancelledRdv(rdv)) {
-      return false;
-    }
-    return this.isUpcomingRdv(rdv);
+    return !this.isCancelledRdv(rdv.codeStatut) && this.isUpcomingRdv(rdv);
   }
 
-  canDownloadIcs(rdv?: ProchainRdvDto | null): boolean {
-    if (!rdv) {
-      return false;
-    }
-    return !this.isCancelledRdv(rdv) && this.isUpcomingRdv(rdv);
-  }
-
-  private isCancelledRdv(rdv: ProchainRdvDto): boolean {
-    const statut = rdv.codeStatut;
+  private isCancelledRdv(statut?: string | null): boolean {
     return statut === 'Annulee' || statut === 'Annule';
   }
 
-  private isUpcomingRdv(rdv: ProchainRdvDto): boolean {
+  private isUpcomingRdv(rdv: { dateDebut?: string; dateFin?: string }): boolean {
     const dateFin = rdv.dateFin ? new Date(rdv.dateFin).getTime() : NaN;
     const dateDebut = rdv.dateDebut ? new Date(rdv.dateDebut).getTime() : NaN;
     const compareDate = Number.isFinite(dateFin) ? dateFin : dateDebut;
