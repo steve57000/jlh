@@ -299,7 +299,11 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                             .codeType(TYPE_DEFAULT)
                             .codeStatut(STATUT_BROUILLON)
                             .build();
-                    return createForClient(clientId, draft);
+                    try {
+                        return createForClient(clientId, draft);
+                    } catch (IllegalStateException ex) {
+                        return findCurrentForClient(clientId).orElseThrow(() -> ex);
+                    }
                 });
     }
 
