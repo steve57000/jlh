@@ -222,7 +222,9 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   );
 
   readonly prochainsRdvsAVenir = computed<ProchainRdvDto[]>(() =>
-    (this.prochainsRdvs() ?? []).filter(rdv => this.isUpcomingRdv(rdv))
+    (this.prochainsRdvs() ?? []).filter(rdv =>
+      this.isUpcomingRdv(rdv) && !this.isCancelledRdv(rdv.codeStatut, rdv.libelleStatut)
+    )
   );
 
   constructor(
@@ -555,11 +557,18 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     if (!rdv) {
       return false;
     }
-    return !this.isCancelledRdv(rdv.codeStatut) && this.isUpcomingRdv(rdv);
+    return !this.isCancelledRdv(rdv.codeStatut, rdv.libelleStatut) && this.isUpcomingRdv(rdv);
   }
 
-  private isCancelledRdv(statut?: string | null): boolean {
-    return statut === 'Annulee' || statut === 'Annule';
+  private isCancelledRdv(statut?: string | null, libelle?: string | null): boolean {
+    const merged = `${statut ?? ''} ${libelle ?? ''}`.toLowerCase();
+    return merged.includes('annul');
+  }
+
+  isCancelledDemande(d?: DemandeResponse | null): boolean {
+    const statut = d?.statutDemande?.codeStatut;
+    const libelle = d?.statutDemande?.libelle;
+    return this.isCancelledRdv(statut, libelle);
   }
 
   private isUpcomingRdv(rdv: { dateDebut?: string; dateFin?: string }): boolean {
@@ -690,7 +699,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   isArchived(d?: DemandeResponse): boolean {
     const status = d?.statutDemande?.codeStatut;
-    if (status === 'Traitee' || status === 'Annulee') {
+    if (status === 'Traitee' || this.isCancelledDemande(d)) {
       return true;
     }
     const rdvDate = d?.rendezVous?.dateDebut ? new Date(d.rendezVous.dateDebut) : null;
