@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.config;
 
 import com.jlh.jlhautopambackend.services.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,7 +19,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.*;
 
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
@@ -27,6 +30,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserService userService;
+    @Value("${app.cors.allowed-origin-patterns:http://localhost:*}")
+    private String allowedOriginPatterns;
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
@@ -141,11 +146,11 @@ public class SecurityConfig {
         CorsConfiguration cfg = new CorsConfiguration();
 
         // IMPORTANT : origins explicites quand allowCredentials=true
-        cfg.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "https://jlh-autopam.netlify.app",
-                "https://jlh-autopam-frontend.onrender.com"
-        ));
+        List<String> originPatterns = Arrays.stream(allowedOriginPatterns.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .collect(Collectors.toList());
+        cfg.setAllowedOriginPatterns(originPatterns);
         // Alternative souple si besoin : cfg.setAllowedOriginPatterns(List.of("http://localhost:*"));
 
         cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
