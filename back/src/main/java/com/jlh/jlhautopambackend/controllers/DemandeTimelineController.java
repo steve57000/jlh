@@ -4,9 +4,11 @@ import com.jlh.jlhautopambackend.dto.DemandeTimelineEntryDto;
 import com.jlh.jlhautopambackend.dto.DemandeTimelineRequest;
 import com.jlh.jlhautopambackend.modeles.Client;
 import com.jlh.jlhautopambackend.modeles.Demande;
+import com.jlh.jlhautopambackend.modeles.Devis;
 import com.jlh.jlhautopambackend.services.DemandeTimelineService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.repository.DemandeRepository;
+import com.jlh.jlhautopambackend.repository.DevisRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,13 +24,16 @@ public class DemandeTimelineController {
     private final DemandeTimelineService timelineService;
     private final DemandeRepository demandeRepository;
     private final AuthenticatedClientResolver clientResolver;
+    private final DevisRepository devisRepository;
 
     public DemandeTimelineController(DemandeTimelineService timelineService,
                                      DemandeRepository demandeRepository,
-                                     AuthenticatedClientResolver clientResolver) {
+                                     AuthenticatedClientResolver clientResolver,
+                                     DevisRepository devisRepository) {
         this.timelineService = timelineService;
         this.demandeRepository = demandeRepository;
         this.clientResolver = clientResolver;
+        this.devisRepository = devisRepository;
     }
 
     @GetMapping
@@ -91,6 +96,21 @@ public class DemandeTimelineController {
                 actorEmail,
                 actorRole
         );
+        if (isAdmin && demande.getTypeDemande() != null
+                && "Devis".equals(demande.getTypeDemande().getCodeType())) {
+            Devis devis = devisRepository.findByDemande_IdDemande(demandeId)
+                    .orElseGet(() -> {
+                        Devis created = new Devis();
+                        created.setDemande(demande);
+                        created.setDateDevis(java.time.Instant.now());
+                        return created;
+                    });
+            devis.setMontantTotal(request.getMontantValide());
+            if (devis.getDateDevis() == null) {
+                devis.setDateDevis(java.time.Instant.now());
+            }
+            devisRepository.save(devis);
+        }
         return ResponseEntity.status(201).build();
     }
 

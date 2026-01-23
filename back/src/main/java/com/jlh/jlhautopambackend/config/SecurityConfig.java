@@ -77,6 +77,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-documents").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/demandes").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/demandes/current").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.POST, "/api/demandes/*/rendezvous-request").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/demandes/*/archive").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/services/*/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/devis/*/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")

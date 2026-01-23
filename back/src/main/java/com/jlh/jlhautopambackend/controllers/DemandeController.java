@@ -206,6 +206,44 @@ public class DemandeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/{id}/rendezvous-request")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<DemandeResponse> requestRendezVous(
+            Authentication auth,
+            @PathVariable Integer id,
+            @RequestBody Map<String, String> body
+    ) {
+        Client client = requireClient(auth);
+        String commentaire = body != null ? body.get("commentaire") : null;
+        try {
+            return service.requestRendezVous(id, client.getIdClient(), commentaire, client.getEmail())
+                    .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage());
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/archive")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<DemandeResponse> archive(
+            Authentication auth,
+            @PathVariable Integer id
+    ) {
+        Client client = requireClient(auth);
+        try {
+            return service.archiveDemande(id, client.getIdClient(), client.getEmail())
+                    .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage());
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
+        }
+    }
+
     @PatchMapping("/{id}/type")
     @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<DemandeResponse> changeType(

@@ -254,6 +254,57 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     }
 
     @Override
+    public Optional<DemandeResponse> requestRendezVous(Integer id, Integer clientId, String commentaire, String actorEmail) {
+        return repository.findById(id)
+                .map(existing -> {
+                    assertClientOwnership(existing, clientId);
+                    assertDemandeOpenForClient(existing);
+                    if (existing.getRendezVous() != null) {
+                        throw new IllegalStateException("Un rendez-vous existe déjà pour cette demande.");
+                    }
+                    String currentStatut = existing.getStatutDemande() != null
+                            ? existing.getStatutDemande().getCodeStatut()
+                            : null;
+                    if (currentStatut == null || STATUT_BROUILLON.equals(currentStatut)) {
+                        StatutDemande enAttente = statutRepo.findById(STATUT_EN_ATTENTE)
+                                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + STATUT_EN_ATTENTE));
+                        existing.setStatutDemande(enAttente);
+                        Demande saved = repository.save(existing);
+                        timelineService.logStatusChange(saved, enAttente, currentStatut, actorEmail, "CLIENT");
+                    }
+                    String note = (commentaire == null || commentaire.isBlank())
+                            ? "Demande de rendez-vous liée au devis."
+                            : commentaire.trim();
+                    timelineService.logClientComment(existing, note, actorEmail);
+                    return enrichDemandeResponse(existing, mapper.toResponse(existing, userService));
+                });
+    }
+
+    @Override
+    public Optional<DemandeResponse> archiveDemande(Integer id, Integer clientId, String actorEmail) {
+        return repository.findById(id)
+                .map(existing -> {
+                    assertClientOwnership(existing, clientId);
+                    assertDemandeOpenForClient(existing);
+                    if (existing.getRendezVous() != null) {
+                        throw new IllegalStateException("La demande est déjà liée à un rendez-vous.");
+                    }
+                    String currentStatut = existing.getStatutDemande() != null
+                            ? existing.getStatutDemande().getCodeStatut()
+                            : null;
+                    if (STATUT_ANNULEE.equals(currentStatut)) {
+                        return enrichDemandeResponse(existing, mapper.toResponse(existing, userService));
+                    }
+                    StatutDemande annulee = statutRepo.findById(STATUT_ANNULEE)
+                            .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + STATUT_ANNULEE));
+                    existing.setStatutDemande(annulee);
+                    Demande saved = repository.save(existing);
+                    timelineService.logStatusChange(saved, annulee, currentStatut, actorEmail, "CLIENT");
+                    return enrichDemandeResponse(saved, mapper.toResponse(saved, userService));
+                });
+    }
+
+    @Override
     public boolean delete(Integer id) {
         if (!repository.existsById(id)) return false;
         repository.deleteById(id);
@@ -495,5 +546,27 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                 demandeServiceRepository.save(entity);
             });
         });
+    }
+
+    private void assertClientOwnership(Demande demande, Integer clientId) {
+        if (demande == null) {
+            throw new IllegalArgumentException("Demande introuvable.");
+        }
+        if (clientId == null) {
+            throw new IllegalArgumentException("Client introuvable.");
+        }
+        if (demande.getClient() == null || !clientId.equals(demande.getClient().getIdClient())) {
+            throw new IllegalArgumentException("Action non autorisée.");
+        }
+    }
+
+    private void assertDemandeOpenForClient(Demande demande) {
+        if (demande == null) {
+            throw new IllegalArgumentException("Demande introuvable.");
+        }
+        String statut = demande.getStatutDemande() != null ? demande.getStatutDemande().getCodeStatut() : null;
+        if (STATUT_TRAITEE.equals(statut) || STATUT_ANNULEE.equals(statut)) {
+            throw new IllegalStateException("La demande est déjà clôturée.");
+        }
     }
 }
