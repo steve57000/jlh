@@ -35,6 +35,10 @@ public interface DemandeWorkflowService {
 
     Optional<DemandeResponse> submitDemande(Integer id, String actorEmail, String actorRole);
 
+    Optional<DemandeResponse> requestRendezVous(Integer id, Integer clientId, String commentaire, String actorEmail);
+
+    Optional<DemandeResponse> archiveDemande(Integer id, Integer clientId, String actorEmail);
+
     java.util.Optional<String> buildProchainRendezVousIcs(Integer clientId);
     java.util.Optional<String> buildRendezVousIcs(Integer rdvId, Integer clientIdOrNullIfAdmin);
 
