@@ -115,7 +115,39 @@ Ce build reprend exactement le `Dockerfile` multi-étapes utilisé par Compose (
 
 ---
 
-## 6. Dépannage rapide
+## 6. Stack Hostinger / Traefik (`docker-compose.hostinger.yml`)
+
+Cette pile est utilisée pour l'hébergement public (Traefik + Nginx + backend + PostgreSQL) et suppose un **reverse-proxy Traefik** qui route le domaine d'API vers Nginx.
+
+### Variables obligatoires
+- `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` (PostgreSQL + backend).【F:docker-compose.hostinger.yml†L6-L27】
+- `API_HOSTNAME` : domaine exact de l'API (ex. `api.jlh-autopam.fr`). Il est injecté dans la règle Traefik (`Host(...)`).【F:docker-compose.hostinger.yml†L34-L50】
+- `LETSENCRYPT_EMAIL` : requis pour le certificat TLS géré par Traefik.【F:docker-compose.hostinger.yml†L53-L64】
+
+### Variables optionnelles
+- `BACKEND_IMAGE` : image Docker du backend (par défaut `steve57/jlh-autopam-backend:latest`).【F:docker-compose.hostinger.yml†L20-L27】
+- `APP_IMAGES_BASE_URL` / `APP_FILES_BASE_URL` : utile si vous voulez forcer les URLs publiques des fichiers (sinon elles dérivent de `app.baseUrl`).【F:src/main/resources/application-prod.properties†L11-L13】
+
+### Flux réseau
+- Traefik écoute sur `80/443`, termine TLS et route **uniquement** le domaine défini par `API_HOSTNAME` vers le service Nginx.【F:docker-compose.hostinger.yml†L34-L64】
+- Nginx sert les médias depuis `/var/www/promo` (volume `promo-images`) via `/uploads/`, `/promotions/images/` et `/icons/`, puis reverse-proxy le backend (`backend:8080`).【F:deploy/nginx/conf.d/hostinger.conf†L1-L33】
+
+### Points de vigilance (accès impossible au domaine)
+- Si `API_HOSTNAME` n'est pas défini ou ne correspond pas au DNS public, Traefik ne crée pas de route HTTP/HTTPS (le conteneur tourne mais aucune requête n'arrive).【F:docker-compose.hostinger.yml†L34-L50】
+- L'URL **racine** `jlh-autopam.fr` doit être routée par **un autre** stack (front-end). Cette pile ne publie que le domaine d'API défini dans `API_HOSTNAME`.【F:docker-compose.hostinger.yml†L34-L50】
+- Le backend dépend d'une base **healthy** : un mauvais mot de passe Postgres provoque un redémarrage en boucle (voir `depends_on` + healthcheck).【F:docker-compose.hostinger.yml†L6-L33】
+
+### Commandes utiles (diagnostic)
+```bash
+docker compose -f docker-compose.hostinger.yml ps
+docker compose -f docker-compose.hostinger.yml logs -f backend
+docker compose -f docker-compose.hostinger.yml logs -f nginx
+docker compose -f docker-compose.hostinger.yml logs -f traefik
+```
+
+---
+
+## 7. Dépannage rapide
 - Vérifiez que les variables `DB_*` sont cohérentes entre le service `db` et `backend`, sinon PostgreSQL montera mais Spring Boot échouera à se connecter.
 - Si les uploads ne sont pas visibles via Nginx, assurez-vous que le dossier hôte `./uploads` existe (Compose le crée automatiquement) et qu'il contient les fichiers générés dans `/var/www/promo` côté backend.
 - Les mails sortants en dev n'apparaissent que dans MailHog (`http://localhost:8025`). Si vous devez tester un SMTP réel, surcharger `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` dans `.env`.

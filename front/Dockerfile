@@ -1,37 +1,31 @@
 # ---------- BUILDER STAGE ----------
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
-# Créer et positionner le workspace
 WORKDIR /app
-
-# Copier juste package.json + lockfile pour installer deps sans tout recopier à chaque build
-COPY package.json package-lock.json ./
 
 # Installer les dépendances
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
 
-# Copier le reste du code et builder l’app Angular (SSR)
+# Copier le reste du code et builder l'app Angular SSR
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # ---------- PRODUCTION STAGE ----------
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Définir NODE_ENV pour l'app SSR
 ENV NODE_ENV=production
-ENV PORT=4000
+ENV PORT=3000
 
-# Installer uniquement les dépendances de production
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Installer uniquement les dépendances de prod
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile --prod
 
-# Copier le build Angular SSR
+# Copier le build SSR Angular
 COPY --from=builder /app/dist ./dist
 
-# Exposer le port SSR
-EXPOSE 4000
+EXPOSE 3000
 
-# Démarrer le serveur Angular SSR
-CMD ["node", "dist/jlh-autopam-frontend/server/server.mjs"]
+CMD ["pnpm", "run", "start:ssr"]
