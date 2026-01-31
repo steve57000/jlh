@@ -1,6 +1,19 @@
 <section class="page page--values">
   <div class="container-max page__container">
     <header class="page__intro">
+      <nav class="info-tabs" aria-label="Navigation À propos">
+        <a class="info-tabs__tab" routerLink="/about" routerLinkActive="is-active">Qui sommes-nous&nbsp;?</a>
+        <a class="info-tabs__tab" routerLink="/team" routerLinkActive="is-active">Notre équipe</a>
+        <a class="info-tabs__tab" routerLink="/history" routerLinkActive="is-active">Historique du garage</a>
+        <a
+          class="info-tabs__tab"
+          routerLink="/values"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          aria-current="page">
+          Valeurs &amp; engagements
+        </a>
+      </nav>
       <span class="page__eyebrow">Valeurs &amp; engagements</span>
       <h1>Nos engagements pour une mobilité sereine</h1>
       <p class="page__lead">

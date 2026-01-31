@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import com.jlh.jlhautopambackend.modeles.Demande;
 import com.jlh.jlhautopambackend.modeles.DemandeServiceKey;
+import com.jlh.jlhautopambackend.modeles.ServicePrixMode;
+import com.jlh.jlhautopambackend.modeles.ServiceQuantiteMode;
 import com.jlh.jlhautopambackend.repository.DemandeRepository;
 import com.jlh.jlhautopambackend.repository.DemandeServiceRepository;
 import com.jlh.jlhautopambackend.repository.ServiceRepository;
@@ -62,20 +64,18 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
         var existing = dsRepo.findById(key).orElse(null);
 
         int requestedQty = req.getQuantite() == null ? 1 : Math.max(1, req.getQuantite());
-        Integer maxQty = serviceEntity.getQuantiteMax();
-        if (maxQty != null && maxQty > 0 && requestedQty > maxQty) {
-            throw new IllegalArgumentException("Quantité demandée supérieure au maximum autorisé pour ce service.");
-        }
+        validateRequestedQuantity(serviceEntity, requestedQty, existing);
 
         if (existing != null) {
             int base = existing.getQuantite() == null ? 0 : existing.getQuantite();
             int q = base + requestedQty;
-            if (maxQty != null && maxQty > 0 && q > maxQty) {
-                throw new IllegalArgumentException("La quantité totale dépasse la limite pour ce service.");
-            }
+            validateRequestedQuantity(serviceEntity, q, null);
             existing.setQuantite(q);
             existing.setLibelleService(serviceEntity.getLibelle());
             existing.setDescriptionService(serviceEntity.getDescription());
+            existing.setQuantiteModeService(serviceEntity.getQuantiteMode());
+            existing.setPrixModeService(serviceEntity.getPrixMode());
+            existing.setTailleLotService(serviceEntity.getTailleLot());
             if (req.getRendezVousId() != null) {
                 existing.setRendezVousId(req.getRendezVousId());
             }
@@ -107,14 +107,16 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
         return dsRepo.findById(key)
                 .map(entity -> {
                     int requested = req.getQuantite() == null ? 1 : Math.max(1, req.getQuantite());
-                    Integer maxQty = entity.getService() != null ? entity.getService().getQuantiteMax() : null;
-                    if (maxQty != null && maxQty > 0 && requested > maxQty) {
-                        throw new IllegalArgumentException("Quantité demandée supérieure au maximum autorisé pour ce service.");
+                    if (entity.getService() != null) {
+                        validateRequestedQuantity(entity.getService(), requested, null);
                     }
                     entity.setQuantite(requested);
                     if (entity.getService() != null) {
                         entity.setLibelleService(entity.getService().getLibelle());
                         entity.setDescriptionService(entity.getService().getDescription());
+                        entity.setQuantiteModeService(entity.getService().getQuantiteMode());
+                        entity.setPrixModeService(entity.getService().getPrixMode());
+                        entity.setTailleLotService(entity.getService().getTailleLot());
                         if (req.getPrixUnitaire() != null) {
                             entity.setPrixUnitaireService(req.getPrixUnitaire());
                         }
@@ -146,5 +148,42 @@ public class DemandeServiceServiceImpl implements DemandeServiceService {
             });
         }
         return true;
+    }
+
+    private void validateRequestedQuantity(
+            com.jlh.jlhautopambackend.modeles.Service service,
+            int requestedQty,
+            com.jlh.jlhautopambackend.modeles.DemandeService existing) {
+        if (service == null) {
+            return;
+        }
+        ServiceQuantiteMode mode = service.getQuantiteMode() != null
+                ? service.getQuantiteMode()
+                : ServiceQuantiteMode.UNIQUE;
+        Integer maxQty = service.getQuantiteMax();
+        Integer lotSize = service.getTailleLot();
+
+        if (mode == ServiceQuantiteMode.UNIQUE) {
+            if (existing != null) {
+                throw new IllegalArgumentException("Ce service est unique et déjà présent sur la demande.");
+            }
+            if (requestedQty != 1) {
+                throw new IllegalArgumentException("Ce service est unique : la quantité doit être 1.");
+            }
+            return;
+        }
+
+        if (lotSize == null || lotSize < 1) {
+            throw new IllegalArgumentException("Taille de lot invalide pour ce service.");
+        }
+        if (requestedQty % lotSize != 0) {
+            throw new IllegalArgumentException("La quantité doit être un multiple de la taille du lot.");
+        }
+        if (maxQty != null && maxQty > 0 && requestedQty > maxQty) {
+            throw new IllegalArgumentException("Quantité demandée supérieure au maximum autorisé pour ce service.");
+        }
+        if (service.getPrixMode() == ServicePrixMode.LOT && lotSize < 1) {
+            throw new IllegalArgumentException("Taille de lot requise pour un prix par lot.");
+        }
     }
 }

@@ -1,21 +1,26 @@
-<div class="intro-bg" appInViewport>
+<div class="intro-bg">
   <div class="intro-wrapper container-max">
-    <h1 class="main-title" appInViewport>
+    <h1 class="main-title">
       <span class="txt-color-primary">JLH AUTO PAM</span><br>
       Pneumatiques, entretien & réparation automobile<br>
       <span>Votre garage à PONT-A-MOUSSON</span>
     </h1>
-    <p class="main-subtitle" appInViewport>
+    <p class="main-subtitle">
       Expertise locale, accueil chaleureux et solutions rapides pour garder votre véhicule en sécurité.
     </p>
 
     <div class="intro-content">
-      <div class="intro-banner" appInViewport>
+      <div class="intro-banner">
         <img
-          ngSrc="assets/img/garage-jlh-autopam.JPG"
+          ngSrc="assets/img/garage-jlh-autopam.webp"
+          srcset="assets/img/garage-jlh-autopam-800.webp 800w, assets/img/garage-jlh-autopam-1200.webp 1200w, assets/img/garage-jlh-autopam.webp 1599w"
+          sizes="(max-width: 900px) 100vw, 759px"
           alt="Garage JLH Auto Pam"
-          height="900"
+          height="851"
           width="1599"
+          loading="eager"
+          fetchpriority="high"
+          decoding="sync"
           priority
         />
         <div class="intro-banner-cta">
@@ -24,23 +29,64 @@
         </div>
       </div>
 
-      <div class="intro-info" appInViewport>
-        <div class="intro-bloc intro-bloc-right">
-          <div class="horaires-title">HORAIRES ET ADRESSE</div>
-          <div class="horaires-info">
-            <div><span class="material-icons">location_on</span>27 Avenue du Général de Gaulle, 54700 PONT-A-MOUSSON</div>
-            <div><span class="material-icons">call</span>03 83 82 35 40</div>
+      <div class="intro-details">
+        <div class="intro-info">
+          <div class="intro-bloc intro-bloc-right">
+            <div class="horaires-title">HORAIRES ET ADRESSE</div>
+            <div class="horaires-info">
+              <div><span class="material-icons">location_on</span>27 Avenue du Général de Gaulle, 54700 PONT-A-MOUSSON</div>
+              <div><span class="material-icons">call</span>03 83 82 35 40</div>
+            </div>
+            <hr>
+            <div class="horaires-table">
+              @if (loadingHours) {
+                <p class="horaires-state">Chargement des horaires…</p>
+              } @else if (hoursError) {
+                <p class="horaires-state horaires-state--error">{{ hoursError }}</p>
+              } @else if (!annualHours.length && !exceptionalHours.length) {
+                <p class="horaires-state">Horaires indisponibles pour le moment.</p>
+              } @else {
+                @for (hour of annualHours; track hour.dayLabel) {
+                  <div><span>{{ hour.dayLabel }}</span><span>{{ hour.schedule }}</span></div>
+                }
+                @if (exceptionalHours.length) {
+                  <div class="horaires-exceptions__title">Exceptions</div>
+                  @for (hour of exceptionalHours; track hour.label) {
+                    <div class="horaires-exceptions">
+                      <div class="horaires-exceptions__main">
+                        <span>{{ hour.label }}</span><span>{{ hour.schedule }}</span>
+                      </div>
+                      @if (hour.description) {
+                        <div class="horaires-exceptions__description">{{ hour.description }}</div>
+                      }
+                    </div>
+                  }
+                }
+              }
+            </div>
           </div>
-          <hr>
-          <div class="horaires-table">
-            <div><span>Lundi</span><span>08h30-12h00 et 13h30-18h00</span></div>
-            <div><span>Mardi</span><span>08h30-12h00 et 13h30-18h00</span></div>
-            <div><span>Mercredi</span><span>08h30-12h00 et 13h30-18h00</span></div>
-            <div><span>Jeudi</span><span>08h30-12h00 et 13h30-18h00</span></div>
-            <div><span>Vendredi</span><span>08h30-12h00 et 13h30-18h00</span></div>
-            <div><span>Samedi</span><span>Fermé</span></div>
-            <div><span>Dimanche</span><span>Fermé</span></div>
+        </div>
+
+        <div class="intro-map">
+          <div class="intro-map__title">Nous trouver</div>
+          <div class="intro-map__frame" #mapContainer>
+            @if (showMap) {
+              <iframe
+                title="Carte JLH Auto Pam"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=6.036512%2C48.903114%2C6.045614%2C48.907488&layer=mapnik&marker=48.9053012%2C6.0410627"
+              ></iframe>
+            }
           </div>
+          <a
+            class="intro-map__link"
+            href="https://www.openstreetmap.org/?mlat=48.9053012&mlon=6.0410627#map=18/48.9053012/6.0410627"
+            target="_blank"
+            rel="noopener"
+          >
+            Ouvrir la carte
+          </a>
         </div>
       </div>
     </div>

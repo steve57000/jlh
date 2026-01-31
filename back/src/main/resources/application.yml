@@ -5,8 +5,10 @@ garage:
   timezone: "Europe/Paris"
 
 app:
-  baseUrl: http://localhost:8080
-  frontendUrl: http://localhost:4200
+  baseUrl: "https://api.jlh-autopam.fr"
+  frontendUrl: "https://jlh-autopam.fr"
+  cors:
+    allowed-origin-patterns: "https://*.jlh-autopam.fr,https://jlh-autopam.fr"
   email:
     from: "JLH Auto Pam <contact@jlh-autopam.fr>"
     verificationExpiryHours: 24

@@ -119,7 +119,7 @@ class DemandeControllerTest {
 
         when(service.createForClient(eq(1), any(DemandeRequest.class))).thenReturn(created);
 
-        ResponseEntity<?> result = controller.createForClient(auth, req);
+        ResponseEntity<?> result = controller.create(auth, req);
 
         assertEquals(HttpStatus.CREATED, result.getStatusCode());
         assertEquals("/api/demandes/10", result.getHeaders().getLocation().toString());

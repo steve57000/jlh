@@ -46,6 +46,17 @@ public class DemandeService {
     @Column(name = "prix_unitaire_service", nullable = false, precision = 10, scale = 2)
     private BigDecimal prixUnitaireService;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "quantite_mode_service", length = 20)
+    private ServiceQuantiteMode quantiteModeService;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "prix_mode_service", length = 20)
+    private ServicePrixMode prixModeService;
+
+    @Column(name = "taille_lot_service")
+    private Integer tailleLotService;
+
     @Column(name = "id_rdv")
     private Integer rendezVousId;
 
@@ -56,5 +67,8 @@ public class DemandeService {
         this.libelleService = source.getLibelle();
         this.descriptionService = source.getDescription();
         this.prixUnitaireService = source.getPrixUnitaire();
+        this.quantiteModeService = source.getQuantiteMode();
+        this.prixModeService = source.getPrixMode();
+        this.tailleLotService = source.getTailleLot();
     }
 }

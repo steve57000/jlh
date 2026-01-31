@@ -21,6 +21,9 @@ public interface DemandeServiceMapper {
     @Mapping(source = "entity.libelleService", target = "libelle")
     @Mapping(source = "entity.descriptionService", target = "description")
     @Mapping(source = "entity.prixUnitaireService", target = "prixUnitaire")
+    @Mapping(source = "entity.quantiteModeService", target = "quantiteMode")
+    @Mapping(source = "entity.prixModeService", target = "prixMode")
+    @Mapping(source = "entity.tailleLotService", target = "tailleLot")
     @Mapping(source = "entity.rendezVousId", target = "rendezVousId")
     DemandeServiceResponse toDto(DemandeService entity);
 
@@ -37,6 +40,15 @@ public interface DemandeServiceMapper {
         }
         if (target.getPrixUnitaire() == null && source.getService() != null) {
             target.setPrixUnitaire(source.getService().getPrixUnitaire());
+        }
+        if (target.getQuantiteMode() == null && source.getService() != null) {
+            target.setQuantiteMode(source.getService().getQuantiteMode());
+        }
+        if (target.getPrixMode() == null && source.getService() != null) {
+            target.setPrixMode(source.getService().getPrixMode());
+        }
+        if (target.getTailleLot() == null && source.getService() != null) {
+            target.setTailleLot(source.getService().getTailleLot());
         }
     }
 }

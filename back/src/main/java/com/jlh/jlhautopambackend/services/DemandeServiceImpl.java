@@ -120,14 +120,18 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
 
     @Override
     public DemandeResponse create(DemandeRequest request) {
-        Demande entity = mapper.toEntity(request);
-        entity.setDateDemande(resolveDate(request.getDateDemande()));
-        Client client = clientRepo.findById(request.getClientId())
-                .orElseThrow(() -> new IllegalArgumentException("Client introuvable : " + request.getClientId()));
-        applyClientUpdates(client, request);
-        applyDemandeImmatriculation(entity, request, client, true);
-        TypeDemande type = typeRepo.findById(request.getCodeType())
-                .orElseThrow(() -> new IllegalArgumentException("TypeDemande introuvable: " + request.getCodeType()));
+        DemandeRequest payload = request != null ? request : new DemandeRequest();
+        Demande entity = mapper.toEntity(payload);
+        entity.setDateDemande(resolveDate(payload.getDateDemande()));
+        Client client = clientRepo.findById(payload.getClientId())
+                .orElseThrow(() -> new IllegalArgumentException("Client introuvable : " + payload.getClientId()));
+        applyClientUpdates(client, payload);
+        applyDemandeImmatriculation(entity, payload, client, true);
+        String typeCode = (payload.getCodeType() == null || payload.getCodeType().isBlank())
+                ? TYPE_DEFAULT
+                : payload.getCodeType();
+        TypeDemande type = typeRepo.findById(typeCode)
+                .orElseThrow(() -> new IllegalArgumentException("TypeDemande introuvable: " + typeCode));
         StatutDemande statut = statutRepo.findById(STATUT_EN_ATTENTE)
                 .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + STATUT_EN_ATTENTE));
         entity.setClient(client);
@@ -223,6 +227,11 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
                         TypeDemande type = typeRepo.findById(request.getCodeType())
                                 .orElseThrow(() -> new IllegalArgumentException("TypeDemande introuvable: " + request.getCodeType()));
                         existing.setTypeDemande(type);
+                    }
+                    if (request.getCodeStatut() != null && !request.getCodeStatut().isBlank()) {
+                        StatutDemande statut = statutRepo.findById(request.getCodeStatut())
+                                .orElseThrow(() -> new IllegalArgumentException("StatutDemande introuvable: " + request.getCodeStatut()));
+                        existing.setStatutDemande(statut);
                     }
 
                     if (request.getServices() != null && !request.getServices().isEmpty()) {

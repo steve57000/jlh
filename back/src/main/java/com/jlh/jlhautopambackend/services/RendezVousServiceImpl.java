@@ -57,7 +57,9 @@ public class RendezVousServiceImpl implements RendezVousService {
     private static final String STATUT_ANNULEE = "Annulee";
     private static final String TYPE_RENDEZ_VOUS  = "RendezVous";
     private static final String STATUT_CRENEAU_RESERVE = "Reserve";
+    private static final String STATUT_CRENEAU_LIBRE = "Libre";
     private static final String STATUT_RDV_CONFIRME = "Confirme";
+    private static final String STATUT_RDV_ANNULE = "Annule";
 
     public RendezVousServiceImpl(RendezVousRepository repo,
                                  DemandeRepository demandeRepo,
@@ -112,7 +114,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         if (demande == null) {
             throw new IllegalArgumentException("Demande libre requise pour créer un rendez-vous.");
         }
-        Creneau creneau = resolveCreneau(req);
+        Creneau creneau = resolveCreneau(req, null);
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
         validateClient(req.getClientId(), clientId, demande);
@@ -135,6 +137,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         ent.setStatut(statutRdv);
 
         RendezVous saved = repo.save(ent);
+        syncCreneauStatusFromRendezVous(saved);
         syncDemandeStatutFromRendezVous(saved, admin != null ? admin.getEmail() : null);
         timelineService.logRendezVousEvent(demande, saved, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
         return mapper.toResponse(saved);
@@ -152,7 +155,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         assertPriceValidated(demande);
         assertNoExistingRendezVous(demande);
 
-        Creneau creneau = resolveCreneau(req);
+        Creneau creneau = resolveCreneau(req, null);
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
         validateClient(req.getClientId(), clientId, demande);
@@ -165,6 +168,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         ent.setStatut(statutRdv);
 
         RendezVous saved = repo.save(ent);
+        syncCreneauStatusFromRendezVous(saved);
         syncDemandeStatutFromRendezVous(saved, admin != null ? admin.getEmail() : null);
         timelineService.logRendezVousEvent(demande, saved, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
         return mapper.toResponse(saved);
@@ -177,7 +181,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         Demande demande = devis.getDemande();
         assertPriceValidated(demande);
 
-        Creneau creneau = resolveCreneau(req);
+        Creneau creneau = resolveCreneau(req, null);
         Administrateur admin = resolveAdmin(req.getAdministrateurId());
         StatutRendezVous statutRdv = resolveStatut(req.getCodeStatut());
         validateClient(req.getClientId(), clientId, demande);
@@ -191,6 +195,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         ent.setStatut(statutRdv);
 
         RendezVous saved = repo.save(ent);
+        syncCreneauStatusFromRendezVous(saved);
         syncDemandeStatutFromRendezVous(saved, admin != null ? admin.getEmail() : null);
         timelineService.logRendezVousEvent(demande, saved, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
         return mapper.toResponse(saved);
@@ -199,12 +204,13 @@ public class RendezVousServiceImpl implements RendezVousService {
     @Override
     public Optional<RendezVousResponse> update(Integer id, RendezVousRequest req) {
         return repo.findById(id).map(existing -> {
+            Creneau previousCreneau = existing.getCreneau();
             if (req.getDemandeId() != null) {
                 existing.setDemande(demandeRepo.findById(req.getDemandeId())
                         .orElseThrow(() -> new IllegalArgumentException("Demande introuvable: " + req.getDemandeId())));
             }
             if (req.getCreneauId() != null || (req.getDateDebut() != null && req.getDateFin() != null)) {
-                existing.setCreneau(resolveCreneau(req));
+                existing.setCreneau(resolveCreneau(req, existing));
             }
             if (req.getAdministrateurId() != null) {
                 existing.setAdministrateur(resolveAdmin(req.getAdministrateurId()));
@@ -214,6 +220,11 @@ public class RendezVousServiceImpl implements RendezVousService {
                 existing.setCommentaire(req.getCommentaire());
             }
             RendezVous updated = repo.save(existing);
+            if (previousCreneau != null && updated.getCreneau() != null
+                    && !previousCreneau.getIdCreneau().equals(updated.getCreneau().getIdCreneau())) {
+                markCreneauLibre(previousCreneau);
+            }
+            syncCreneauStatusFromRendezVous(updated);
             if (updated.getDemande() != null) {
                 syncDemandeStatutFromRendezVous(updated,
                         updated.getAdministrateur() != null ? updated.getAdministrateur().getEmail() : null);
@@ -250,8 +261,11 @@ public class RendezVousServiceImpl implements RendezVousService {
 
     @Override
     public boolean delete(Integer id) {
-        if (!repo.existsById(id)) return false;
+        Optional<RendezVous> existing = repo.findById(id);
+        if (existing.isEmpty()) return false;
+        Creneau creneau = existing.get().getCreneau();
         repo.deleteById(id);
+        markCreneauLibre(creneau);
         return true;
     }
 
@@ -285,11 +299,16 @@ public class RendezVousServiceImpl implements RendezVousService {
         return saved;
     }
 
-    private Creneau resolveCreneau(RendezVousRequest request) {
+    private Creneau resolveCreneau(RendezVousRequest request, RendezVous existing) {
         Integer creneauId = request.getCreneauId();
         if (creneauId != null) {
-            return creneauRepo.findById(creneauId)
+            Creneau creneau = creneauRepo.findById(creneauId)
                     .orElseThrow(() -> new IllegalArgumentException("Creneau introuvable: " + creneauId));
+            if (existing == null || existing.getCreneau() == null
+                    || !creneauId.equals(existing.getCreneau().getIdCreneau())) {
+                assertCreneauDisponible(creneau);
+            }
+            return creneau;
         }
         if (request.getDateDebut() == null || request.getDateFin() == null) {
             throw new IllegalArgumentException("Creneau requis pour le rendez-vous.");
@@ -302,6 +321,16 @@ public class RendezVousServiceImpl implements RendezVousService {
                 .statut(statut)
                 .build();
         return creneauRepo.save(creneau);
+    }
+
+    private void assertCreneauDisponible(Creneau creneau) {
+        if (creneau == null || creneau.getStatut() == null) {
+            return;
+        }
+        String code = creneau.getStatut().getCodeStatut();
+        if (STATUT_CRENEAU_RESERVE.equals(code) || "Indisponible".equals(code)) {
+            throw new IllegalStateException("Le créneau sélectionné est indisponible.");
+        }
     }
 
     private Administrateur resolveAdmin(Integer adminId) {
@@ -353,7 +382,14 @@ public class RendezVousServiceImpl implements RendezVousService {
             return;
         }
         String rdvStatut = rendezVous.getStatut() != null ? rendezVous.getStatut().getCodeStatut() : null;
-        String target = STATUT_RDV_CONFIRME.equals(rdvStatut) ? STATUT_TRAITEE : STATUT_EN_ATTENTE;
+        String target;
+        if (STATUT_RDV_CONFIRME.equals(rdvStatut)) {
+            target = STATUT_TRAITEE;
+        } else if (STATUT_RDV_ANNULE.equals(rdvStatut)) {
+            target = STATUT_ANNULEE;
+        } else {
+            target = STATUT_EN_ATTENTE;
+        }
         if (target.equals(current)) {
             return;
         }
@@ -362,6 +398,40 @@ public class RendezVousServiceImpl implements RendezVousService {
         demande.setStatutDemande(statut);
         Demande saved = demandeRepo.save(demande);
         timelineService.logStatusChange(saved, statut, current, actorEmail, "ADMIN");
+    }
+
+    private void syncCreneauStatusFromRendezVous(RendezVous rendezVous) {
+        if (rendezVous == null || rendezVous.getCreneau() == null) {
+            return;
+        }
+        String rdvStatut = rendezVous.getStatut() != null ? rendezVous.getStatut().getCodeStatut() : null;
+        if (STATUT_RDV_ANNULE.equals(rdvStatut)) {
+            markCreneauLibre(rendezVous.getCreneau());
+        } else {
+            markCreneauReserve(rendezVous.getCreneau());
+        }
+    }
+
+    private void markCreneauReserve(Creneau creneau) {
+        markCreneauWithStatus(creneau, STATUT_CRENEAU_RESERVE);
+    }
+
+    private void markCreneauLibre(Creneau creneau) {
+        markCreneauWithStatus(creneau, STATUT_CRENEAU_LIBRE);
+    }
+
+    private void markCreneauWithStatus(Creneau creneau, String statutCode) {
+        if (creneau == null) {
+            return;
+        }
+        String current = creneau.getStatut() != null ? creneau.getStatut().getCodeStatut() : null;
+        if (statutCode.equals(current)) {
+            return;
+        }
+        StatutCreneau statut = statutCreneauRepo.findById(statutCode)
+                .orElseThrow(() -> new IllegalStateException("Statut creneau introuvable: " + statutCode));
+        creneau.setStatut(statut);
+        creneauRepo.save(creneau);
     }
 
     private void assertPriceValidated(Demande demande) {

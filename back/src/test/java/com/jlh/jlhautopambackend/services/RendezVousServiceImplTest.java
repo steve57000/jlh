@@ -210,6 +210,9 @@ class RendezVousServiceImplTest {
         when(typeDemandeRepo.findById("RendezVous")).thenReturn(Optional.of(TypeDemande.builder().codeType("RendezVous").build()));
         when(demandeRepo.save(demande)).thenReturn(demande);
         when(creneauRepo.findById(2)).thenReturn(Optional.of(creneau));
+        when(statutCreneauRepo.findById("Reserve"))
+                .thenReturn(Optional.of(StatutCreneau.builder().codeStatut("Reserve").build()));
+        when(creneauRepo.save(creneau)).thenReturn(creneau);
         when(adminRepo.findById(3)).thenReturn(Optional.of(admin));
         when(statutRepo.findById("ST1")).thenReturn(Optional.of(statut));
         when(statutDemandeRepo.findById("En_attente"))
@@ -228,6 +231,8 @@ class RendezVousServiceImplTest {
         assertEquals(creneau, passed.getCreneau());
         assertEquals(admin, passed.getAdministrateur());
         assertEquals(statut, passed.getStatut());
+        verify(statutCreneauRepo).findById("Reserve");
+        verify(creneauRepo).save(creneau);
         verify(timelineService).logRendezVousEvent(demande, savedEntity, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
     }
 
@@ -275,6 +280,9 @@ class RendezVousServiceImplTest {
         when(creneauRepo.findById(2)).thenReturn(Optional.of(creneau));
         when(adminRepo.findById(3)).thenReturn(Optional.of(admin));
         when(statutRepo.findById("ST1")).thenReturn(Optional.of(statut));
+        when(statutCreneauRepo.findById("Reserve"))
+                .thenReturn(Optional.of(StatutCreneau.builder().codeStatut("Reserve").build()));
+        when(creneauRepo.save(creneau)).thenReturn(creneau);
         when(repo.save(savedEntity)).thenReturn(updated);
         when(statutDemandeRepo.findById("En_attente"))
                 .thenReturn(Optional.of(StatutDemande.builder().codeStatut("En_attente").build()));
@@ -286,28 +294,35 @@ class RendezVousServiceImplTest {
         assertTrue(result.isPresent());
         assertEquals(updatedResp, result.get());
         verify(repo).save(savedEntity);
+        verify(statutCreneauRepo).findById("Reserve");
+        verify(creneauRepo).save(creneau);
         verify(timelineService).logRendezVousEvent(demande, updated, "Rendez-vous mis à jour", admin.getEmail(), "ADMIN");
     }
 
     @Test
     void testDelete_WhenExists() {
-        when(repo.existsById(10)).thenReturn(true);
+        when(repo.findById(10)).thenReturn(Optional.of(savedEntity));
+        when(statutCreneauRepo.findById("Libre"))
+                .thenReturn(Optional.of(StatutCreneau.builder().codeStatut("Libre").build()));
+        when(creneauRepo.save(creneau)).thenReturn(creneau);
 
         boolean result = service.delete(10);
 
         assertTrue(result);
-        verify(repo).existsById(10);
+        verify(repo).findById(10);
         verify(repo).deleteById(10);
+        verify(statutCreneauRepo).findById("Libre");
+        verify(creneauRepo).save(creneau);
     }
 
     @Test
     void testDelete_WhenNotExists() {
-        when(repo.existsById(11)).thenReturn(false);
+        when(repo.findById(11)).thenReturn(Optional.empty());
 
         boolean result = service.delete(11);
 
         assertFalse(result);
-        verify(repo).existsById(11);
+        verify(repo).findById(11);
         verify(repo, never()).deleteById(anyInt());
     }
 }

@@ -61,8 +61,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
   tabs: ServicesTab[] = [
     {
       id: 'services',
-      label: 'Nos services',
-      title: 'Nos services',
+      label: 'Catalogue des prestations',
+      title: 'Catalogue des prestations',
       description:
         'Découvrez l’ensemble de nos prestations et trouvez rapidement la solution adaptée à votre véhicule.',
       cta: 'Découvrir nos services',
@@ -183,13 +183,8 @@ export class ServicesComponent implements OnInit, OnDestroy {
   async refreshDraft() {
     try {
       const q = await this.state.loadDraft({ silent: true });
-      if (this.isDraftEditable(q)) {
-        this.draft = q ?? null;
-        this.syncRendezVousForm(this.draft);
-      } else {
-        this.draft = null;
-        this.state.resetCache();
-      }
+      this.draft = q ?? null;
+      this.syncRendezVousForm(this.draft);
     } catch {
       this.draft = null;
     }
@@ -242,10 +237,7 @@ export class ServicesComponent implements OnInit, OnDestroy {
     const telephone = (payload.telephone || '').trim();
     const commentaire = payload.rendezVousCommentaire?.trim() || null;
     try {
-      const clientPatch: { immatriculation?: string | null; telephone?: string | null } = {};
-      if (payload.immatriculation !== undefined) {
-        clientPatch.immatriculation = immat.length > 0 ? immat : null;
-      }
+      const clientPatch: { telephone?: string | null } = {};
       if (payload.telephone !== undefined) {
         clientPatch.telephone = telephone.length > 0 ? telephone : null;
       }
@@ -259,12 +251,23 @@ export class ServicesComponent implements OnInit, OnDestroy {
             )
           );
         } catch {
-          if (payload.immatriculation !== undefined) {
-            fallback.immatriculation = immat.length > 0 ? immat : null;
-          }
           if (payload.telephone !== undefined) {
             fallback.telephone = telephone.length > 0 ? telephone : null;
           }
+        }
+      }
+
+      if (payload.immatriculation !== undefined) {
+        try {
+          await firstValueFrom(
+            this.http.patch<void>(
+              `${api}/demandes/${id}/immatriculation`,
+              { immatriculation: immat.length > 0 ? immat : null },
+              skipErrorOptions
+            )
+          );
+        } catch {
+          fallback.immatriculation = immat.length > 0 ? immat : null;
         }
       }
 
@@ -389,14 +392,6 @@ export class ServicesComponent implements OnInit, OnDestroy {
       return true;
     }
     return rdvPasse;
-  }
-
-  private isDraftEditable(demande?: DemandeResponse | null): boolean {
-    if (!demande) {
-      return false;
-    }
-    const statut = demande.statutDemande?.codeStatut;
-    return !statut || statut === 'Brouillon';
   }
 
   private syncRendezVousForm(demande?: DemandeResponse | null) {

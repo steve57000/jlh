@@ -30,7 +30,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserService userService;
-    @Value("${app.cors.allowed-origin-patterns:http://localhost:*}")
+    @Value("${app.cors.allowed-origin-patterns:https://jlh-autopam.fr}")
     private String allowedOriginPatterns;
 
     @Bean
@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/services/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/service-icons/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/garage-hours/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/icons/**").permitAll()
 
@@ -80,10 +81,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes/prochains-rdv").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-demandes/prochain-rdv.ics").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET,  "/api/demandes/mes-documents").hasRole("CLIENT")
-                        .requestMatchers(HttpMethod.POST, "/api/demandes").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.POST, "/api/demandes").hasAnyRole("CLIENT","ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/demandes/current").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/demandes/*/rendezvous-request").hasRole("CLIENT")
-                        .requestMatchers(HttpMethod.PATCH, "/api/demandes/*/archive").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/demandes/*/archive").hasAnyRole("CLIENT","ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/services/*/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/devis/*/rendezvous").hasAnyRole("CLIENT","ADMIN","MANAGER")
@@ -117,6 +118,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/services/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/api/service-icons/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/service-icons/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/api/garage-hours/**").hasRole("ADMIN_PRINCIPAL")
+                        .requestMatchers(HttpMethod.PUT,    "/api/garage-hours/**").hasRole("ADMIN_PRINCIPAL")
+                        .requestMatchers(HttpMethod.DELETE, "/api/garage-hours/**").hasRole("ADMIN_PRINCIPAL")
 
                         // le reste doit être authentifié
                         .anyRequest().authenticated()

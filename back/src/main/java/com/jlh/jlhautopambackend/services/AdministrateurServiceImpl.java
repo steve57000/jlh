@@ -65,7 +65,9 @@ public class AdministrateurServiceImpl implements AdministrateurService {
                     existing.setUsername(resolveUsername(request, existing.getUsername()));
                     existing.setNom(request.getNom());
                     existing.setPrenom(request.getPrenom());
-                    if (request.getNiveauAcces() != null && !request.getNiveauAcces().isBlank()) {
+                    if (existing.getNiveauAcces() != com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur.PRINCIPAL
+                            && request.getNiveauAcces() != null
+                            && !request.getNiveauAcces().isBlank()) {
                         try {
                             existing.setNiveauAcces(com.jlh.jlhautopambackend.modeles.NiveauAccesAdministrateur
                                     .valueOf(request.getNiveauAcces().trim().toUpperCase()));

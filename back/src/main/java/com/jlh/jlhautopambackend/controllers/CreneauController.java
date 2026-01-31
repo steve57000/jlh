@@ -2,12 +2,14 @@ package com.jlh.jlhautopambackend.controllers;
 
 import com.jlh.jlhautopambackend.dto.CreneauRequest;
 import com.jlh.jlhautopambackend.dto.CreneauResponse;
+import com.jlh.jlhautopambackend.dto.CreneauCalendarEntryDto;
 import com.jlh.jlhautopambackend.services.CreneauService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -30,6 +32,15 @@ public class CreneauController {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/calendrier")
+    public List<CreneauCalendarEntryDto> getCalendar(
+            @RequestParam("start") Instant start,
+            @RequestParam("end") Instant end,
+            @RequestParam(value = "slotMinutes", required = false) Integer slotMinutes
+    ) {
+        return service.buildCalendar(start, end, slotMinutes);
     }
 
     @PostMapping

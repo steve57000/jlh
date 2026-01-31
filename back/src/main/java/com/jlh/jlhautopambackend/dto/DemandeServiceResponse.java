@@ -12,5 +12,8 @@ public class DemandeServiceResponse {
     private String libelle;
     private String description;
     private java.math.BigDecimal prixUnitaire;
+    private com.jlh.jlhautopambackend.modeles.ServiceQuantiteMode quantiteMode;
+    private com.jlh.jlhautopambackend.modeles.ServicePrixMode prixMode;
+    private Integer tailleLot;
     private Integer rendezVousId;
 }

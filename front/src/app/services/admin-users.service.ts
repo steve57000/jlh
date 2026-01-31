@@ -11,6 +11,27 @@ export interface AdminUserPayload {
   niveauAcces: 'ADMIN' | 'GESTIONNAIRE';
 }
 
+export interface AdminUserSummary {
+  id?: number;
+  idAdministrateur?: number;
+  idAdmin?: number;
+  id_admin?: number;
+  email: string;
+  username?: string | null;
+  nom?: string | null;
+  prenom?: string | null;
+  niveauAcces: 'ADMIN' | 'GESTIONNAIRE' | 'PRINCIPAL';
+  niveau_acces?: string | null;
+}
+
+export interface AdminUserUpdatePayload {
+  email: string;
+  username?: string | null;
+  nom?: string | null;
+  prenom?: string | null;
+  niveauAcces: 'ADMIN' | 'GESTIONNAIRE' | 'PRINCIPAL';
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminUsersService {
   private http = inject(HttpClient);
@@ -22,5 +43,17 @@ export class AdminUsersService {
 
   createAdmin(payload: AdminUserPayload) {
     return this.http.post(this.api, payload, this.skipToastOptions());
+  }
+
+  listAdmins() {
+    return this.http.get<AdminUserSummary[]>(this.api, this.skipToastOptions());
+  }
+
+  updateAdmin(id: number, payload: AdminUserUpdatePayload) {
+    return this.http.put(`${this.api}/${id}`, payload, this.skipToastOptions());
+  }
+
+  deleteAdmin(id: number) {
+    return this.http.delete(`${this.api}/${id}`, this.skipToastOptions());
   }
 }

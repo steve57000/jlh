@@ -11,10 +11,22 @@
   </span>
 
   <h3 class="service-title">{{ service.libelle }}</h3>
-  <details class="service-description">
-    <summary>Voir la description</summary>
-    <p>{{ service.descriptionLongue || service.description }}</p>
-  </details>
+  <div class="service-rating">
+    @if ((avisStats?.totalAvis ?? 0) > 0) {
+      <app-rating-stars [rating]="avisStats?.moyenneNote ?? 0" [showValue]="true"></app-rating-stars>
+      <span class="service-rating__count">({{ avisStats?.totalAvis ?? 0 }} avis)</span>
+    } @else {
+      <span class="service-rating__empty">Pas encore d'avis</span>
+    }
+  </div>
+  @if ((avisStats?.totalAvis ?? 0) > 0) {
+    <button class="service-rating__link" type="button" (click)="openAvis()">
+      Voir tous les avis
+    </button>
+  }
+  <p class="service-description">
+    {{ service.descriptionLongue || service.description }}
+  </p>
   <ng-container *appHasRole="'CLIENT'">
     <button class="cta-btn" type="button" (click)="openConfirm()">
       Ajouter à ma demande
@@ -22,14 +34,92 @@
   </ng-container>
 </article>
 
-<dialog #confirmDialog>
-  <form method="dialog" class="modal">
-    <h3>Ajouter ce service ?</h3>
-    <p><strong>{{ service.libelle }}</strong> — {{ service.prixUnitaire | frCurrency }}</p>
+<dialog #confirmDialog class="service-dialog">
+  <form method="dialog" class="service-dialog__card">
+    <header class="service-dialog__header">
+      <div>
+        <p class="service-dialog__eyebrow">Ajout à la demande</p>
+        <h3>Ajouter ce service ?</h3>
+      </div>
+      <button class="service-dialog__close" type="button" (click)="closeConfirm()" aria-label="Fermer">
+        ×
+      </button>
+    </header>
+    <p class="service-dialog__summary">
+      <strong>{{ service.libelle }}</strong> — {{ service.prixUnitaire | frCurrency }}
+      @if (isLotMode) {
+        <span class="service-dialog__qty">• {{ quantityLabel }}</span>
+      }
+    </p>
 
-    <div class="actions">
+    @if (isLotMode) {
+      <div class="service-dialog__field">
+        <label for="lot-count">Nombre de lots</label>
+        <div class="service-dialog__input">
+          <input
+            id="lot-count"
+            type="number"
+            min="1"
+            [attr.max]="maxLots ?? null"
+            [value]="lotCount"
+            (input)="setLotCount(($any($event.target)).value)"
+          />
+          <span class="service-dialog__hint">Lot de {{ lotSize }} unités</span>
+        </div>
+        <p class="service-dialog__total">
+          Quantité totale : <strong>{{ requestedQuantity }}</strong>
+        </p>
+      </div>
+    }
+
+    <div class="service-dialog__actions">
       <button value="cancel" class="btn">Annuler</button>
       <button value="ok" class="btn primary" (click)="confirmAdd()">Confirmer</button>
     </div>
   </form>
+</dialog>
+
+<dialog #avisDialog class="service-dialog service-dialog--avis">
+  <div class="service-dialog__card">
+    <header class="service-dialog__header">
+      <div>
+        <p class="service-dialog__eyebrow">Avis clients</p>
+        <h3>Avis sur {{ service.libelle }}</h3>
+        @if ((avisStats?.totalAvis ?? 0) > 0) {
+          <p class="service-avis__summary">
+            <app-rating-stars [rating]="avisStats?.moyenneNote ?? 0" [showValue]="true"></app-rating-stars>
+            <span>{{ avisStats?.totalAvis ?? 0 }} avis</span>
+          </p>
+        }
+      </div>
+      <button class="service-dialog__close" type="button" (click)="closeAvis()" aria-label="Fermer">
+        ×
+      </button>
+    </header>
+    @if (avisLoading) {
+      <p class="service-avis__state">Chargement des avis…</p>
+    } @else if (avisError) {
+      <p class="service-avis__state service-avis__state--error">
+        Impossible de charger les avis pour le moment.
+      </p>
+    } @else if (avisList.length) {
+      <div class="service-avis__list">
+        @for (avis of avisList; track avis.idAvis) {
+          <article class="service-avis__entry">
+            <header class="service-avis__header">
+              <app-rating-stars [rating]="avis.note" [showValue]="false"></app-rating-stars>
+              <span class="service-avis__date">{{ avis.creeLe | date:'dd/MM/yyyy' }}</span>
+            </header>
+            <p class="service-avis__comment">{{ avis.commentaire || 'Avis sans commentaire.' }}</p>
+            <p class="service-avis__client">{{ avis.clientNomPrenom || 'Client' }}</p>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="service-avis__state">Aucun avis disponible pour le moment.</p>
+    }
+    <div class="service-dialog__actions">
+      <button class="btn" type="button" (click)="closeAvis()">Fermer</button>
+    </div>
+  </div>
 </dialog>

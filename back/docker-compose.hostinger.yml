@@ -18,8 +18,7 @@ services:
       - jlh
 
   backend:
-    build:
-      context: .
+    image: steve57/jlh-autopam-backend:latest
     restart: unless-stopped
     depends_on:
       db:
@@ -53,23 +52,45 @@ services:
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
     labels:
       - traefik.enable=true
-      - traefik.http.routers.jlh-autopam-api.rule=Host(`${API_HOSTNAME}`)
-      - traefik.http.routers.jlh-autopam-api.entrypoints=websecure
-      - traefik.http.routers.jlh-autopam-api.tls.certresolver=letsencrypt
-      - traefik.http.services.jlh-autopam-api.loadbalancer.server.port=80
+      - traefik.docker.network=jlh
+
+      # HTTP redirect
+      - traefik.http.routers.jlh-api-http.rule=Host(`api.jlh-autopam.fr`)
+      - traefik.http.routers.jlh-api-http.entrypoints=web
+      - traefik.http.routers.jlh-api-http.middlewares=redirect-to-https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.routers.jlh-root-http.rule=Host(`jlh-autopam.fr`) || Host(`www.jlh-autopam.fr`)
+      - traefik.http.routers.jlh-root-http.entrypoints=web
+      - traefik.http.routers.jlh-root-http.middlewares=redirect-to-https
+
+      # HTTPS
+      - traefik.http.routers.jlh-api-https.rule=Host(`api.jlh-autopam.fr`)
+      - traefik.http.routers.jlh-api-https.entrypoints=websecure
+      - traefik.http.routers.jlh-api-https.tls=true
+      - traefik.http.routers.jlh-api-https.tls.certresolver=letsencrypt
+      - traefik.http.services.jlh-api.loadbalancer.server.port=80
+      - traefik.http.routers.jlh-root-https.rule=Host(`jlh-autopam.fr`) || Host(`www.jlh-autopam.fr`)
+      - traefik.http.routers.jlh-root-https.entrypoints=websecure
+      - traefik.http.routers.jlh-root-https.tls=true
+      - traefik.http.routers.jlh-root-https.tls.certresolver=letsencrypt
+      - traefik.http.services.jlh-root.loadbalancer.server.port=80
     networks:
       - jlh
 
   traefik:
-    image: traefik:v3.0
+    image: traefik:latest
     restart: unless-stopped
     environment:
       DOCKER_API_VERSION: "1.44"
+      DOCKER_HOST: "unix:///var/run/docker.sock"
     command:
       - --providers.docker=true
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
       - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
       - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
@@ -79,6 +100,17 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-data:/letsencrypt
+    networks:
+      - jlh
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    restart: unless-stopped
+    command:
+      - --cleanup
+      - --interval=300
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - jlh
 

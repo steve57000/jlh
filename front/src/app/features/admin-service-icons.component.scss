@@ -277,6 +277,8 @@
   backdrop-filter: blur(4px);
   z-index: 1001;
   padding: 1.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-card {
@@ -288,6 +290,9 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 
   &__header {
     display: flex;
@@ -303,6 +308,11 @@
     line-height: 1;
     cursor: pointer;
     color: v.$color-secondary;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover,
     &:focus-visible {

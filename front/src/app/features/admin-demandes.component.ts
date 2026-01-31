@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { DemandesServiceService } from '../services/demandes-services.service';
 import { DemandeWithServices, ServiceItem, DemandeDocumentDto, RendezVousSummary } from '../modeles/demande.model';
@@ -9,12 +9,16 @@ import { ServicesService } from '../services/services.service';
 import { ServiceDto } from '../modeles/service.model';
 import { RendezVousService, RendezVousUpsertPayload } from '../services/rendezvous.service';
 import { RendezVousPropositionsService } from '../services/rendezvous-propositions.service';
+import { CreneauxCalendarService, CreneauCalendarEntryDto } from '../services/creneaux-calendar.service';
 import {
   RendezVousProposition,
   RendezVousPropositionBatchPayload
 } from '../modeles/rendezvous-proposition.model';
 import { AuthService } from '../services/auth.service';
 import { VEHICLE_ENERGY_OPTIONS } from '../shared/vehicle-energy-options';
+import { forkJoin } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 type TypeFilterValue = 'Tous' | DemandeWithServices['code_type'] | string;
 type StatutFilterValue = 'Tous' | DemandeWithServices['code_statut'] | string;
@@ -39,6 +43,12 @@ interface RendezVousFormState {
   commentaire: string | null;
 }
 
+interface RdvStatusOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
 @Component({
   selector: 'admin-demandes',
   templateUrl: './admin-demandes.component.html',
@@ -53,7 +63,10 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   private readonly servicesApi = inject(ServicesService);
   private readonly rendezVousApi = inject(RendezVousService);
   private readonly rdvPropositionsApi = inject(RendezVousPropositionsService);
+  private readonly calendarApi = inject(CreneauxCalendarService);
   private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Données
   loading = signal(true);
@@ -128,6 +141,14 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   rdvProposalFeedback = signal<string | null>(null);
   rdvProposalFeedbackType = signal<'success' | 'error' | null>(null);
   vehicleEnergyOptions = VEHICLE_ENERGY_OPTIONS;
+
+  calendarStart = signal(this.formatDateOnly(new Date()));
+  calendarEnd = signal(this.formatDateOnly(this.addDays(new Date(), 7)));
+  calendarSlotMinutes = signal(30);
+  calendarLoading = signal(false);
+  calendarError = signal<string | null>(null);
+  calendarSlots = signal<CreneauCalendarEntryDto[]>([]);
+  private focusDemandeId = signal<number | null>(null);
 
   filtered = computed(() => {
     const t = this.type();
@@ -240,6 +261,15 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.loadLookups();
     this.loadServicesCatalog();
     this.reload();
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const focus = Number(params.get('focus'));
+        if (Number.isFinite(focus)) {
+          this.focusDemandeId.set(focus);
+          this.openFocusDemande();
+        }
+      });
   }
 
   get canDeleteDemandes(): boolean {
@@ -324,6 +354,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       next: (rows: DemandeWithServices[]) => {
         this.demandes.set(rows);
         this.loading.set(false);
+        this.openFocusDemande();
       },
       error: (e: unknown) => {
         this.error.set('Impossible de charger les demandes');
@@ -344,6 +375,17 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     return `${did}-${sid}`;
   }
 
+  formatServiceQuantity(service: { quantite: number; quantiteMode?: 'UNIQUE' | 'LOT'; tailleLot?: number | null }): string {
+    const qty = service.quantite ?? 0;
+    if (service.quantiteMode === 'LOT' && service.tailleLot) {
+      if (qty === service.tailleLot) {
+        return `Lot de ${service.tailleLot}`;
+      }
+      return `${qty} (lot de ${service.tailleLot})`;
+    }
+    return `x${qty}`;
+  }
+
   openDetails(d: DemandeWithServices) {
     const id = this.getDemandeId(d);
     if (id == null) return;
@@ -360,7 +402,17 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.syncRendezVousForm(clone.rendezVous ?? null);
     this.loadRendezVousProposals(id);
     this.resetProposalDraft();
+    this.refreshCalendar();
     this.setBodyScrollLock(true);
+  }
+
+  private openFocusDemande() {
+    const focusId = this.focusDemandeId();
+    if (!focusId) return;
+    const selected = this.demandes().find(item => this.getDemandeId(item) === focusId);
+    if (!selected) return;
+    this.focusDemandeId.set(null);
+    this.openDetails(selected);
   }
 
   closeDetails() {
@@ -379,6 +431,8 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.rdvProposalDraft.set([{ dateDebut: '', dateFin: '' }]);
     this.rdvProposalFeedback.set(null);
     this.rdvProposalFeedbackType.set(null);
+    this.calendarSlots.set([]);
+    this.calendarError.set(null);
     this.setBodyScrollLock(false);
   }
 
@@ -393,6 +447,66 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.rdvProposalDraft.set([{ dateDebut: '', dateFin: '' }]);
     this.rdvProposalFeedback.set(null);
     this.rdvProposalFeedbackType.set(null);
+  }
+
+  refreshCalendar() {
+    const start = this.calendarStart();
+    const end = this.calendarEnd();
+    if (!start || !end) return;
+    this.calendarLoading.set(true);
+    this.calendarError.set(null);
+    this.calendarApi.getCalendar({
+      start: this.toIsoStart(start),
+      end: this.toIsoEnd(end),
+      slotMinutes: this.calendarSlotMinutes()
+    }).subscribe({
+      next: slots => {
+        this.calendarSlots.set(slots ?? []);
+        this.calendarLoading.set(false);
+      },
+      error: () => {
+        this.calendarSlots.set([]);
+        this.calendarLoading.set(false);
+        this.calendarError.set('Impossible de charger les disponibilités.');
+      }
+    });
+  }
+
+  updateCalendarRange(field: 'start' | 'end', value: string) {
+    if (field === 'start') {
+      this.calendarStart.set(value);
+    } else {
+      this.calendarEnd.set(value);
+    }
+    this.refreshCalendar();
+  }
+
+  updateCalendarSlotMinutes(value: string) {
+    this.calendarSlotMinutes.set(Number(value));
+    this.refreshCalendar();
+  }
+
+  applyCalendarSlot(slot: CreneauCalendarEntryDto) {
+    if (slot.codeStatut !== 'Libre') return;
+    const draft = this.rdvProposalDraft();
+    const targetIndex = draft.findIndex(item => !item.dateDebut && !item.dateFin);
+    const index = targetIndex === -1 ? draft.length : targetIndex;
+    if (index >= 3) {
+      this.rdvProposalFeedback.set('Vous avez atteint le maximum de créneaux.');
+      this.rdvProposalFeedbackType.set('error');
+      return;
+    }
+    const nextDraft = [...draft];
+    if (index === draft.length) {
+      nextDraft.push({ dateDebut: '', dateFin: '' });
+    }
+    nextDraft[index] = {
+      dateDebut: this.formatDateInput(slot.dateDebut),
+      dateFin: this.formatDateInput(slot.dateFin)
+    };
+    this.rdvProposalDraft.set(nextDraft);
+    this.rdvProposalFeedback.set('Créneau ajouté à la proposition.');
+    this.rdvProposalFeedbackType.set('success');
   }
 
   addProposalSlot() {
@@ -543,6 +657,10 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.updateDraft(d => { d.code_type = value; });
   }
 
+  setDraftStatut(value: DemandeWithServices['code_statut']) {
+    this.updateDraft(d => { d.code_statut = value; });
+  }
+
   updateClientField(
     field: 'telephone'
       | 'immatriculation'
@@ -562,13 +680,11 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     });
   }
 
-  updateServiceField(index: number, field: 'quantite'|'prix_unitaire'|'libelle', value: string | number | null) {
+  updateServiceField(index: number, field: 'quantite'|'prix_unitaire', value: string | number | null) {
     this.updateDraft(d => {
       const svc = d.services[index];
       if (!svc) return;
-      if (field === 'libelle') {
-        svc.libelle = String(value ?? '');
-      } else if (field === 'quantite') {
+      if (field === 'quantite') {
         const num = Number(value);
         let qty = Number.isFinite(num) && num > 0 ? Math.round(num) : 1;
         if (svc.quantite_max && qty > svc.quantite_max) {
@@ -712,46 +828,97 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   saveChanges() {
     const id = this.selectedId();
     const draft = this.draft();
+    const original = this.original();
     if (id == null || !draft || this.saving()) return;
 
     this.saving.set(true);
     this.feedback.set(null);
     this.feedbackType.set(null);
 
+    if (!original) {
+      this.saving.set(false);
+      this.toast.error('Impossible de comparer les modifications.');
+      return;
+    }
+
     const client = this.buildClientPayload(draft.client);
 
-    const payload: Parameters<DemandesServiceService['updateDemande']>[1] = {
-      codeType: draft.code_type,
-      immatriculation: draft.client?.immatriculation ?? null,
-      vehiculeMarque: client?.vehiculeMarque ?? null,
-      vehiculeModele: client?.vehiculeModele ?? null,
-      vehiculeEnergie: client?.vehiculeEnergie ?? null,
-      telephone: this.trimOrEmpty(client?.telephone),
-      adresseLigne1: this.trimOrEmpty(client?.adresseLigne1),
-      adresseLigne2: this.trimOrEmpty(client?.adresseLigne2),
-      adresseCodePostal: this.trimOrEmpty(client?.adresseCodePostal),
-      adresseVille: this.trimOrEmpty(client?.adresseVille),
-      services: draft.services.map(s => ({
-        libelle: s.libelle,
-        idService: s.id_service,
-        quantite: s.quantite,
-        prixUnitaire: s.prix_unitaire ?? null
-      })),
-      ...(client ? { client } : {})
-    };
+    const originalClient = this.buildClientPayload(original.client);
+    const clientChanged = JSON.stringify(client ?? {}) !== JSON.stringify(originalClient ?? {});
+    const immatriculationChanged =
+      (draft.client?.immatriculation ?? null) !== (original.client?.immatriculation ?? null);
+    const typeChanged = draft.code_type !== original.code_type;
+    const statutChanged = draft.code_statut !== original.code_statut;
+    const unsupportedStatut =
+      statutChanged && !['En_attente', 'Annulee'].includes(draft.code_statut);
+    if (unsupportedStatut) {
+      this.toast.info('Changement de statut non pris en charge via l’API.');
+      this.updateDraft(d => { d.code_statut = original.code_statut; });
+    }
 
-    this.api.updateDemande(id, payload).subscribe({
-      next: updated => {
-        const merged = this.mergeDraftWithResponse(draft, updated);
-        this.demandes.update(list =>
-          list.map(item => this.getDemandeId(item) === id ? merged : item)
-        );
-        this.original.set(this.clone(merged));
-        this.draft.set(this.clone(merged));
-        this.saving.set(false);
-        this.feedback.set('Demande mise à jour avec succès.');
-        this.feedbackType.set('success');
-        this.toast.success('Demande mise à jour avec succès.');
+    const serviceDiff = this.computeServiceChanges(original.services, draft.services);
+
+    const ops = [
+      typeChanged ? this.api.updateType(id, draft.code_type) : null,
+      immatriculationChanged ? this.api.updateImmatriculation(id, draft.client?.immatriculation ?? null) : null,
+      clientChanged && client ? this.api.updateClient(id, client) : null,
+      ...(statutChanged && !unsupportedStatut && draft.code_statut === 'En_attente'
+        ? [this.api.submitDemande(id)]
+        : []),
+      ...(statutChanged && !unsupportedStatut && draft.code_statut === 'Annulee'
+        ? [this.api.archiveDemande(id)]
+        : []),
+      ...serviceDiff.toAdd.map(service => this.api.addUnique({
+        demandeId: id,
+        serviceId: service.id_service,
+        quantite: service.quantite,
+        prixUnitaire: service.prix_unitaire ?? null
+      })),
+      ...serviceDiff.toUpdate.map(service => this.api.updateServiceLine({
+        demandeId: id,
+        serviceId: service.id_service,
+        quantite: service.quantite,
+        prixUnitaire: service.prix_unitaire ?? null
+      })),
+      ...serviceDiff.toRemove.map(service => this.api.deleteLine(id, service.id_service))
+    ].filter(Boolean);
+
+    if (!ops.length) {
+      this.saving.set(false);
+      this.feedback.set('Aucune modification détectée.');
+      this.feedbackType.set('success');
+      this.toast.info('Aucune modification détectée.');
+      return;
+    }
+
+    forkJoin(ops).subscribe({
+      next: () => {
+        this.api.getById(id, { silentError: true }).subscribe({
+          next: updated => {
+            if (!updated) {
+              this.saving.set(false);
+              this.feedback.set('Mise à jour terminée.');
+              this.feedbackType.set('success');
+              return;
+            }
+            const merged = this.mergeDraftWithResponse(draft, updated);
+            this.demandes.update(list =>
+              list.map(item => this.getDemandeId(item) === id ? merged : item)
+            );
+            this.original.set(this.clone(merged));
+            this.draft.set(this.clone(merged));
+            this.saving.set(false);
+            this.feedback.set('Demande mise à jour avec succès.');
+            this.feedbackType.set('success');
+            this.toast.success('Demande mise à jour avec succès.');
+          },
+          error: () => {
+            this.saving.set(false);
+            this.feedback.set('Demande mise à jour avec succès.');
+            this.feedbackType.set('success');
+            this.toast.success('Demande mise à jour avec succès.');
+          }
+        });
       },
       error: () => {
         this.saving.set(false);
@@ -943,6 +1110,36 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     });
   }
 
+  private computeServiceChanges(
+    original: ServiceItem[],
+    draft: ServiceItem[]
+  ): { toAdd: ServiceItem[]; toUpdate: ServiceItem[]; toRemove: ServiceItem[] } {
+    const originalMap = new Map<number, ServiceItem>();
+    original.forEach(service => {
+      originalMap.set(service.id_service, service);
+    });
+
+    const draftMap = new Map<number, ServiceItem>();
+    draft.forEach(service => {
+      draftMap.set(service.id_service, service);
+    });
+
+    const toAdd = draft.filter(service => !originalMap.has(service.id_service));
+    const toRemove = original.filter(service => !draftMap.has(service.id_service));
+    const toUpdate = draft.filter(service => {
+      const base = originalMap.get(service.id_service);
+      if (!base) {
+        return false;
+      }
+      const quantityChanged = service.quantite !== base.quantite;
+      const priceChanged =
+        Number(service.prix_unitaire ?? 0) !== Number(base.prix_unitaire ?? 0);
+      return quantityChanged || priceChanged;
+    });
+
+    return { toAdd, toUpdate, toRemove };
+  }
+
   private trimClientStrings(
     client: DemandeWithServices['client'] | undefined
   ): NonNullable<DemandeWithServices['client']> | undefined {
@@ -1035,6 +1232,15 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.rdvForm.set(template);
   }
 
+  rdvStatusOptionsFor(rdv: RendezVousFormState): RdvStatusOption[] {
+    const options = this.rdvStatusOptions();
+    const existing = this.draft()?.rendezVous;
+    if (!existing?.idRdv || existing.codeStatut !== 'Confirme') {
+      return options;
+    }
+    return options.map(opt => opt.value === 'Confirme' ? { ...opt, disabled: true } : opt);
+  }
+
   setRdvField(field: keyof RendezVousFormState, value: string) {
     const current = this.rdvForm();
     if (!current) return;
@@ -1079,6 +1285,14 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     const existingStart = existingRdv?.dateDebut ? this.parseDateInput(this.formatDateInput(existingRdv.dateDebut)) : null;
     const existingEnd = existingRdv?.dateFin ? this.parseDateInput(this.formatDateInput(existingRdv.dateFin)) : null;
 
+    if (existingRdv?.idRdv && existingRdv.codeStatut === 'Confirme' && form.codeStatut === 'Confirme') {
+      const msg = 'Un rendez-vous déjà confirmé doit être annulé ou reporté pour être modifié.';
+      this.rdvFeedback.set(msg);
+      this.rdvFeedbackType.set('error');
+      this.toast.error('Erreur', msg);
+      return;
+    }
+
     if (
       form.codeStatut === 'Reporte' &&
       existingRdv?.idRdv &&
@@ -1092,13 +1306,16 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const payload: RendezVousUpsertPayload = {
-      demandeId,
+    const payloadBase = {
       dateDebut: dateDebutIso,
       dateFin: dateFinIso,
       codeStatut: form.codeStatut || 'Confirme',
       commentaire: form.commentaire,
       creneauId: form.creneauId
+    };
+    const createPayload: RendezVousUpsertPayload = {
+      demandeId,
+      ...payloadBase
     };
 
     if (!form.idRdv && draft?.code_type === 'Service' && !draft?.services?.[0]?.id_service) {
@@ -1113,9 +1330,9 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.rdvFeedbackType.set(null);
 
     const request = form.idRdv
-      ? this.rendezVousApi.update(form.idRdv, payload)
+      ? this.rendezVousApi.update(form.idRdv, payloadBase)
       : this.createRendezVousFromDraft(
-        payload,
+        createPayload,
         draft?.code_type,
         draft?.services?.[0]?.id_service ?? null,
         draft?.devis?.id_devis ?? null
@@ -1175,7 +1392,9 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return;
     }
     const nextStatut: DemandeWithServices['code_statut'] =
-      rdv.codeStatut === 'Confirme' ? 'Traitee' : 'En_attente';
+      rdv.codeStatut === 'Annule' ? 'Annulee'
+        : rdv.codeStatut === 'Confirme' ? 'Traitee'
+          : 'En_attente';
     if (draft.code_statut === nextStatut) {
       return;
     }
@@ -1212,6 +1431,25 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     if (!value) return null;
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+
+  private formatDateOnly(date: Date): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+
+  private toIsoStart(value: string): string {
+    return new Date(`${value}T00:00:00`).toISOString();
+  }
+
+  private toIsoEnd(value: string): string {
+    return new Date(`${value}T23:59:59`).toISOString();
+  }
+
+  private addDays(date: Date, days: number): Date {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
   }
 
   // ⚠️ ADAPTÉ : utilise maintenant tailleOctets (backend) pour déduire la taille en Ko / Mo

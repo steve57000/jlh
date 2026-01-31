@@ -29,7 +29,15 @@ public interface DemandeServiceRepository extends JpaRepository<DemandeService, 
     @Query("""
         select function('date_part', 'year', ds.demande.dateDemande) as year,
                count(ds) as count,
-               sum(ds.prixUnitaireService * ds.quantite) as amount
+               sum(
+                   case
+                       when ds.prixModeService = com.jlh.jlhautopambackend.modeles.ServicePrixMode.LOT
+                            and ds.tailleLotService is not null
+                            and ds.tailleLotService > 0
+                       then ds.prixUnitaireService * (ds.quantite / ds.tailleLotService)
+                       else ds.prixUnitaireService * ds.quantite
+                   end
+               ) as amount
         from DemandeService ds
         group by function('date_part', 'year', ds.demande.dateDemande)
     """)

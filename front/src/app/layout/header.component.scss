@@ -26,24 +26,14 @@
       align-items: center;
       // Correction espace dans le SVG (décale vers la gauche)
       transform: translateX(-12px); // Ajuste ici selon le "blanc" du SVG !
-      transition: all 0.2s;
       cursor: pointer;
-
-      &:hover {
-        transform: translateX(-16px) scale(1.05); // le même translateX pour garder l’alignement
-      }
 
       img {
         max-width: 100%;
         height: auto;
         width: clamp(180px, 18vw, 245px);
-        transition: width 0.2s, filter 0.2s;
         filter: brightness(1.1);
         display: block;
-
-        &:hover {
-          filter: brightness(1.30) drop-shadow(1px 2px 1px rgba(64, 64, 64, 0.25));
-        }
       }
     }
 
@@ -52,8 +42,8 @@
       flex-direction: column;
       justify-content: center;
       gap: 5px;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       padding: 0; // Enlève le padding pour que ce soit plus compact en mobile
       margin-left: 1rem;
       background: none;
@@ -92,7 +82,7 @@
 
     nav {
       display: flex;
-      gap: clamp(0.75rem, 2vw, 1.5rem);
+      gap: clamp(0.50rem, 2vw, 1rem);
       align-items: center;
       justify-content: flex-end;
 
@@ -102,9 +92,11 @@
         color: variables.$color-primary;
         font-weight: 600;
         transition: color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         margin: 0;
-        padding: 0.35rem 0.6rem;
+        padding: 0.45rem 0.75rem;
         border-radius: 999px;
         position: relative;
 
@@ -141,13 +133,112 @@
           border-radius: variables.$border-radius-small;
         }
       }
+
+      .nav-group {
+        position: relative;
+        margin: 0;
+        padding: 0.35rem 0.6rem;
+
+        summary {
+          list-style: none;
+          cursor: pointer;
+          font-family: variables.$font-subtitle;
+          color: variables.$color-primary;
+          font-weight: 600;
+          transition: color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          min-height: 44px;
+          padding: 0.45rem 0.75rem;
+          border-radius: 999px;
+          position: relative;
+
+          &::-webkit-details-marker {
+            display: none;
+          }
+
+          &::after {
+            content: "";
+            position: absolute;
+            left: 14%;
+            right: 14%;
+            bottom: -6px;
+            height: 3px;
+            border-radius: 999px;
+            background: variables.$color-secondary;
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: transform 0.2s ease;
+          }
+
+          .nav-group__chevron {
+            display: inline-block;
+            width: 0.55rem;
+            height: 0.55rem;
+            border-right: 2px solid variables.$color-primary;
+            border-bottom: 2px solid variables.$color-primary;
+            transform: rotate(45deg);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+          }
+        }
+
+        &[open] summary,
+        summary:hover,
+        summary:focus-visible {
+          color: variables.$color-secondary;
+          background: rgba(variables.$color-secondary, 0.12);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px rgba(variables.$color-secondary, 0.2);
+        }
+
+        &[open] summary::after,
+        summary:hover::after,
+        summary:focus-visible::after {
+          transform: scaleX(1);
+        }
+
+        &[open] summary .nav-group__chevron {
+          transform: rotate(-135deg);
+          border-color: variables.$color-secondary;
+        }
+
+        summary:hover .nav-group__chevron,
+        summary:focus-visible .nav-group__chevron {
+          border-color: variables.$color-secondary;
+        }
+
+        summary:focus-visible {
+          outline: 2px solid variables.$color-secondary;
+          outline-offset: 4px;
+          border-radius: variables.$border-radius-small;
+        }
+      }
+
+      .nav-group__menu {
+        position: absolute;
+        top: calc(100% + 0.6rem);
+        right: 0;
+        min-width: 220px;
+        padding: 0.75rem;
+        border-radius: 16px;
+        background: variables.$color-quaternary;
+        box-shadow: 0 18px 30px rgba(variables.$color-primary, 0.2);
+        border: 1px solid rgba(variables.$color-primary, 0.2);
+        display: grid;
+        gap: 0.35rem;
+        z-index: 10;
+
+        a {
+          padding: 0.45rem 0.75rem;
+          border-radius: 12px;
+        }
+      }
     }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .header .container-max .logo,
-  .header .container-max .logo img,
   .header .container-max nav a {
     transition: none;
   }
@@ -199,13 +290,6 @@
 
       .logo {
         transform: translateX(-12px); // Décale moins sur mobile si besoin
-        &:hover {
-          transform: translateX(-12px) scale(1.02);
-        }
-
-        img:hover {
-          filter: brightness(1.20) drop-shadow(1px 2px 1px rgba(64, 64, 64, 0.25));
-        }
       }
 
       .burger {
@@ -215,18 +299,18 @@
         padding: 0.4rem;
       }
 
-      nav {
-        display: flex;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100dvh;
-        background: variables.$color-quaternary;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: clamp(4.5rem, 10vh, 6rem) clamp(1.5rem, 6vw, 3rem) clamp(2.5rem, 8vh, 4rem);
+        nav {
+          display: flex;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100dvh;
+          background: variables.$color-quaternary;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          padding: clamp(6rem, 12vh, 7.5rem) clamp(1.5rem, 6vw, 3rem) clamp(2rem, 6vh, 3.5rem);
 
         /* état fermé */
         transform: translateY(-12px);
@@ -260,6 +344,30 @@
             bottom: -10px;
             left: 22%;
             right: 22%;
+          }
+        }
+
+        .nav-group {
+          width: 100%;
+          text-align: center;
+
+          summary {
+            justify-content: center;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            width: 100%;
+          }
+        }
+
+        .nav-group__menu {
+          position: static;
+          box-shadow: none;
+          border: none;
+          background: transparent;
+          padding: 0.5rem 0 0;
+
+          a {
+            font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+            margin: 0.4rem 0;
           }
         }
 

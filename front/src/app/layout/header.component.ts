@@ -1,8 +1,9 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { DOCUMENT, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
-import { Component, DestroyRef, HostBinding, Inject, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostBinding, HostListener, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -21,9 +22,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
   loggedIn = false;
   role: string | null = null;
   isMobileMenu = false;
+  catalogueOpen = false;
+  aboutOpen = false;
   private mediaQueryList: MediaQueryList | null = null;
   private mediaQueryListener?: (event: MediaQueryListEvent) => void;
   private readonly destroyRef = inject(DestroyRef);
+  @ViewChild('catalogueGroup') catalogueGroup?: ElementRef<HTMLElement>;
+  @ViewChild('aboutGroup') aboutGroup?: ElementRef<HTMLElement>;
 
   private readonly mobileQuery = '(max-width: 719px)';
   private readonly isBrowser: boolean;
@@ -64,6 +69,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
         }
       });
 
+    this.router.events
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(event => {
+        this.updateGroupsForRoute((event as NavigationEnd).urlAfterRedirects);
+      });
+
+    this.updateGroupsForRoute(this.router.url);
+
     if (this.mediaQueryList) {
       this.mediaQueryListener = (event: MediaQueryListEvent) => {
         this.isMobileMenu = event.matches;
@@ -79,6 +95,22 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.setMenuState(!this.menuOpen);
   }
 
+  toggleGroup(group: 'catalogue' | 'about', event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (group === 'catalogue') {
+      this.catalogueOpen = !this.catalogueOpen;
+      if (this.catalogueOpen) {
+        this.aboutOpen = false;
+      }
+    } else {
+      this.aboutOpen = !this.aboutOpen;
+      if (this.aboutOpen) {
+        this.catalogueOpen = false;
+      }
+    }
+  }
+
   ngOnDestroy() {
     if (this.mediaQueryList && this.mediaQueryListener) {
       this.mediaQueryList.removeEventListener('change', this.mediaQueryListener);
@@ -89,6 +121,27 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.setMenuState(false);
   }
 
+  closeGroups() {
+    this.catalogueOpen = false;
+    this.aboutOpen = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    if (!this.isBrowser) {
+      return;
+    }
+    const target = event.target as Node | null;
+    if (!target) {
+      return;
+    }
+    const insideCatalogue = this.catalogueGroup?.nativeElement.contains(target) ?? false;
+    const insideAbout = this.aboutGroup?.nativeElement.contains(target) ?? false;
+    if (!insideCatalogue && !insideAbout) {
+      this.closeGroups();
+    }
+  }
+
   logout() {
     this.auth.logout();
     this.router.navigate(['/']);
@@ -97,10 +150,34 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   private setMenuState(open: boolean) {
     this.menuOpen = open;
+    if (!open) {
+      this.closeGroups();
+    } else {
+      this.updateGroupsForRoute(this.router.url);
+    }
 
     if (this.isBrowser) {
       this.document.body.classList.toggle('menu-open', open);
       this.document.documentElement.classList.toggle('menu-open', open);
     }
+  }
+
+  private updateGroupsForRoute(url: string) {
+    if (!this.isMobileMenu) {
+      return;
+    }
+    const path = url.split('?')[0].split('#')[0];
+    if (path.startsWith('/services')) {
+      this.catalogueOpen = true;
+      this.aboutOpen = false;
+      return;
+    }
+    const aboutRoutes = ['/about', '/team', '/history', '/values'];
+    if (aboutRoutes.some(route => path.startsWith(route))) {
+      this.aboutOpen = true;
+      this.catalogueOpen = false;
+      return;
+    }
+    this.closeGroups();
   }
 }

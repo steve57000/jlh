@@ -2,6 +2,8 @@ package com.jlh.jlhautopambackend.dto;
 
 import lombok.*;
 
+import com.jlh.jlhautopambackend.modeles.ServicePrixMode;
+import com.jlh.jlhautopambackend.modeles.ServiceQuantiteMode;
 import java.math.BigDecimal;
 
 @Data
@@ -16,6 +18,9 @@ public class ServiceResponse {
     private Integer iconId;
     private String iconUrl;
     private BigDecimal prixUnitaire;
+    private ServiceQuantiteMode quantiteMode;
+    private ServicePrixMode prixMode;
+    private Integer tailleLot;
     private boolean archived;
     private Integer quantiteMax;
 }

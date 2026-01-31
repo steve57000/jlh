@@ -1,8 +1,10 @@
 package com.jlh.jlhautopambackend.services;
 
+import com.jlh.jlhautopambackend.dto.CreneauCalendarEntryDto;
 import com.jlh.jlhautopambackend.dto.CreneauRequest;
 import com.jlh.jlhautopambackend.dto.CreneauResponse;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,4 +14,5 @@ public interface CreneauService {
     List<CreneauResponse> findAll();
     Optional<CreneauResponse> update(Integer id, CreneauRequest request);
     boolean delete(Integer id);
+    List<CreneauCalendarEntryDto> buildCalendar(Instant start, Instant end, Integer slotMinutes);
 }

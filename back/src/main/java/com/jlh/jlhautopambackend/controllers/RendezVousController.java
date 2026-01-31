@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rendezvous")
-@PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+@PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
 public class RendezVousController {
 
     private final RendezVousService service;
@@ -32,13 +32,13 @@ public class RendezVousController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN')") // ajuste si besoin
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')") // ajuste si besoin
     public List<RendezVousResponse> getAll() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<RendezVousResponse> getById(@PathVariable Integer id) {
         return service.findById(id)
                 .map(ResponseEntity::ok)
@@ -46,7 +46,7 @@ public class RendezVousController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<RendezVousResponse> create(@Valid @RequestBody RendezVousRequest req,
                                                      Authentication auth) {
         Integer clientId = null;
@@ -65,7 +65,7 @@ public class RendezVousController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<RendezVousResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody RendezVousRequest req,
@@ -87,7 +87,7 @@ public class RendezVousController {
      * - ADMIN  : peut soumettre n'importe quelle demande.
      */
     @PatchMapping("/{id}/submit")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<RendezVousResponse> submit(@PathVariable Integer id, Authentication auth) {
         Integer clientIdOrNullIfAdmin = null;
 
@@ -103,7 +103,7 @@ public class RendezVousController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         return service.delete(id)
                 ? ResponseEntity.noContent().build()

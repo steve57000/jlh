@@ -6,15 +6,23 @@
   padding: 8px 0 18px;
   margin: 0 auto;
   background: vars.$linear-bg;
+  overflow-x: hidden;
 
   .container-max {
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .container-max:has(.aside) .aside {
     z-index: 1;
+  }
+
+  .content {
+    min-width: 0;
+    max-width: 100%;
   }
 
   h2 {
@@ -26,7 +34,7 @@
 
   .services-intro {
     margin: 0 0 16px;
-    color: color.scale(vars.$color-quaternary, $alpha: -35%);
+    color: color.scale(vars.$color-quaternary, $alpha: -20%);
     max-width: 760px;
   }
 
@@ -36,11 +44,9 @@
   }
 
   .services-tabs {
-    border-radius: vars.$border-radius-high;
     box-shadow: none;
-    padding: 16px;
     margin-bottom: 24px;
-    border: 1px solid rgba(vars.$color-quaternary, 0.15);
+    max-width: 100%;
 
     &__list {
       display: flex;
@@ -49,6 +55,59 @@
       border-bottom: 1px solid color.scale(vars.$color-primary, $alpha: -80%);
       padding-bottom: 12px;
       margin-bottom: 16px;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+    }
+
+    &__selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    &__label {
+      font-weight: 600;
+      color: vars.$color-primary;
+    }
+
+    &__select {
+      border-radius: 12px;
+      border: 1px solid color.scale(vars.$color-primary, $alpha: -60%);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #ffffff 0%, color.scale(vars.$color-tertiary, $lightness: 2%) 100%);
+      color: vars.$color-primary;
+      width: 100%;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, vars.$color-primary 50%),
+        linear-gradient(135deg, vars.$color-primary 50%, transparent 50%);
+      background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      box-shadow: 0 8px 18px rgba(vars.$color-primary, 0.12);
+      transition: border-color vars.$transition-fast, box-shadow vars.$transition-fast,
+        transform vars.$transition-fast, background vars.$transition-fast;
+
+      &:hover {
+        border-color: color.scale(vars.$color-primary, $alpha: -40%);
+        box-shadow: 0 12px 22px rgba(vars.$color-primary, 0.18);
+        transform: translateY(-1px);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: vars.$color-primary;
+        box-shadow: 0 0 0 3px color.scale(vars.$color-primary, $alpha: -70%);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 8px 18px rgba(vars.$color-primary, 0.14);
+      }
     }
 
     &__tab {
@@ -62,7 +121,7 @@
       transition: all vars.$transition-fast;
 
       &:hover {
-        background: color.scale(vars.$color-primary, $alpha: -70%);
+        background: color.scale(vars.$color-primary, $alpha: -50%);
       }
 
       &.is-active {
@@ -71,15 +130,17 @@
         box-shadow: vars.$shadow-btn;
       }
 
-    &__panels {
-      display: grid;
+      &__panels {
+        display: grid;
+      }
     }
-  }
 
     &__panel {
       display: none;
       gap: 8px;
       align-content: start;
+      min-width: 0;
+      width: 100%;
 
       &.is-active {
         display: grid;
@@ -93,13 +154,12 @@
 
       p {
         margin: 0;
-        color: color.scale(vars.$color-quaternary, $lightness: 18%);
+        color: color.scale(vars.$color-quaternary, $alpha: -25%);
       }
-
       .services-tabs__highlights {
         margin: 0;
         padding-left: 1rem;
-        color: color.scale(vars.$color-quaternary, $lightness: 10%);
+        color: color.scale(vars.$color-quaternary, $lightness: 25%);
         display: grid;
         gap: 6px;
       }
@@ -148,23 +208,58 @@
 
   .services-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
     gap: 14px;
     align-items: stretch;
     grid-auto-rows: 1fr;
+    min-width: 0;
 
-    > app-service-card { display: block; height: 100%; }
+
+    > app-service-card {
+      display: block;
+      height: 100%;
+      min-width: 0;
+    }
     @include anim.staggered-list('> app-service-card', .1s, 20);
   }
 
   @media (min-width: 1280px) {
     .services-list {
       gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
     }
     .container-max:has(.aside) {
       grid-template-columns: 360px 1fr; // l’encart n’occupe la place qu’en présence d’un brouillon non vide
       align-items: start;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .services-tabs {
+      &__list {
+        display: none;
+      }
+
+      &__selector {
+        display: flex;
+      }
+    }
+
+    .services-list {
+      grid-template-columns: 1fr;
+      min-width: 0;
+    }
+
+    .rdv-request {
+      min-width: 0;
+    }
+  }
+
+  @media (min-width: 641px) {
+    .services-tabs {
+      &__selector {
+        display: none;
+      }
     }
   }
 }

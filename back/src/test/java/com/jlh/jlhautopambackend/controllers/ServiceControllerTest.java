@@ -1,9 +1,12 @@
 package com.jlh.jlhautopambackend.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jlh.jlhautopambackend.dto.AvisServiceResponse;
+import com.jlh.jlhautopambackend.dto.ServiceAvisStatsResponse;
 import com.jlh.jlhautopambackend.dto.ServiceRequest;
 import com.jlh.jlhautopambackend.dto.ServiceResponse;
 import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
+import com.jlh.jlhautopambackend.services.AvisServiceService;
 import com.jlh.jlhautopambackend.services.RendezVousService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.services.ServiceService;
@@ -16,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -42,6 +47,7 @@ class ServiceControllerTest {
 
     @MockitoBean
     private ServiceService service;
+    @MockitoBean private AvisServiceService avisService;
     @MockitoBean private RendezVousService rendezVousService;
     @MockitoBean private AuthenticatedClientResolver clientResolver;
     @MockitoBean private AdministrateurRepository adminRepository;
@@ -110,6 +116,51 @@ class ServiceControllerTest {
         mvc.perform(get("/api/services/99")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/services/{id}/avis ➔ 200")
+    void testGetAvisByService() throws Exception {
+        AvisServiceResponse avis = AvisServiceResponse.builder()
+                .idAvis(1L)
+                .serviceId(2)
+                .serviceLibelle("Freinage")
+                .clientId(5)
+                .clientNomPrenom("Alice Durand")
+                .note(5)
+                .commentaire("Top service")
+                .statut("APPROVED")
+                .build();
+
+        Mockito.when(avisService.findApprovedByService(Mockito.eq(2), Mockito.any()))
+                .thenReturn(new PageImpl<>(Arrays.asList(avis), PageRequest.of(0, 20), 1));
+
+        mvc.perform(get("/api/services/2/avis")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].idAvis").value(1))
+                .andExpect(jsonPath("$.content[0].serviceLibelle").value("Freinage"))
+                .andExpect(jsonPath("$.content[0].clientNomPrenom").value("Alice Durand"))
+                .andExpect(jsonPath("$.content[0].note").value(5));
+    }
+
+    @Test
+    @DisplayName("GET /api/services/{id}/avis/stats ➔ 200")
+    void testGetAvisStats() throws Exception {
+        ServiceAvisStatsResponse stats = ServiceAvisStatsResponse.builder()
+                .serviceId(2)
+                .moyenneNote(4.5)
+                .totalAvis(2L)
+                .build();
+
+        Mockito.when(avisService.getServiceStats(2)).thenReturn(stats);
+
+        mvc.perform(get("/api/services/2/avis/stats")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.serviceId").value(2))
+                .andExpect(jsonPath("$.moyenneNote").value(4.5))
+                .andExpect(jsonPath("$.totalAvis").value(2));
     }
 
     @Test

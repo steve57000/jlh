@@ -82,7 +82,7 @@ docker compose -f docker-compose.dev.yml exec backend /bin/bash
 
 ### Services
 - **db** : PostgreSQL 16 persistant (`db-data`) avec healthcheck (intervalle 30 s / timeout 10 s).【F:docker-compose.prod.yml†L1-L23】
-- **backend** : image `steve57/jlh-autopam-backend:latest`, profil `prod`, variables `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, port 8080 publié. Monte le volume `promo-images` pour partager les médias avec Nginx.【F:docker-compose.prod.yml†L25-L45】
+- **backend** : image `steve57/jlh-autopam-backend:prod`, profil `prod`, variables `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, port 8080 publié. Monte le volume `promo-images` pour partager les médias avec Nginx.【F:docker-compose.prod.yml†L25-L45】
 - **nginx** : frontal `nginx:alpine` qui expose le port 80 et partage `promo-images` + les fichiers de configuration `nginx/*.conf`.【F:docker-compose.prod.yml†L47-L60】
 - **Volumes & réseau** : `db-data`, `promo-images` et le réseau bridge `backend` sont déclarés en bas du fichier.【F:docker-compose.prod.yml†L62-L68】
 
@@ -121,15 +121,15 @@ Cette pile est utilisée pour l'hébergement public (Traefik + Nginx + backend +
 
 ### Variables obligatoires
 - `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` (PostgreSQL + backend).【F:docker-compose.hostinger.yml†L6-L27】
-- `API_HOSTNAME` : domaine exact de l'API (ex. `api.jlh-autopam.fr`). Il est injecté dans la règle Traefik (`Host(...)`).【F:docker-compose.hostinger.yml†L34-L50】
+- `API_HOSTNAME` : domaine exact **unique** de l'API (ex. `api.jlh-autopam.fr`). Il est injecté dans la règle Traefik (`Host(...)`). N'utilisez pas une liste séparée par des virgules (Traefik attend un seul paramètre).【F:docker-compose.hostinger.yml†L34-L50】
 - `LETSENCRYPT_EMAIL` : requis pour le certificat TLS géré par Traefik.【F:docker-compose.hostinger.yml†L53-L64】
 
 ### Variables optionnelles
-- `BACKEND_IMAGE` : image Docker du backend (par défaut `steve57/jlh-autopam-backend:latest`).【F:docker-compose.hostinger.yml†L20-L27】
 - `APP_IMAGES_BASE_URL` / `APP_FILES_BASE_URL` : utile si vous voulez forcer les URLs publiques des fichiers (sinon elles dérivent de `app.baseUrl`).【F:src/main/resources/application-prod.properties†L11-L13】
 
 ### Flux réseau
 - Traefik écoute sur `80/443`, termine TLS et route **uniquement** le domaine défini par `API_HOSTNAME` vers le service Nginx.【F:docker-compose.hostinger.yml†L34-L64】
+- Si vous avez besoin de plusieurs domaines, utilisez une règle Traefik explicite (ex. `Host(\`api.jlh-autopam.fr\`) || Host(\`api2.jlh-autopam.fr\`)`) dans un autre stack ou dupliquez le routeur. La pile backend attend un seul `API_HOSTNAME`.【F:docker-compose.hostinger.yml†L34-L64】
 - Nginx sert les médias depuis `/var/www/promo` (volume `promo-images`) via `/uploads/`, `/promotions/images/` et `/icons/`, puis reverse-proxy le backend (`backend:8080`).【F:deploy/nginx/conf.d/hostinger.conf†L1-L33】
 
 ### Points de vigilance (accès impossible au domaine)

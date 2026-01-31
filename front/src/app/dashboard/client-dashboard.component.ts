@@ -1,5 +1,5 @@
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { Component, Inject, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { CommonModule, DatePipe, isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -19,10 +19,14 @@ import {
 } from '../modeles/rendezvous-proposition.model';
 import { RendezVousPropositionsService } from '../services/rendezvous-propositions.service';
 import { ToastService } from '../shared/toast/toast.service';
-import { firstValueFrom, filter, forkJoin, of, Subscription, catchError } from 'rxjs';
+import { firstValueFrom, filter, forkJoin, of, Subscription, catchError, map } from 'rxjs';
 import { LookupsService } from '../services/lookups.service';
 import { ServicesComponent } from '../pages/services.component';
 import { AccountComponent } from '../account/account.component/account.component';
+import { PLATFORM_ID } from '@angular/core';
+import { AvisServicesService } from '../services/avis-services.service';
+import type { AvisServiceCreatePayload, AvisServiceDto } from '../modeles/avis-service.model';
+import { RatingStarsComponent } from '../shared/rating-stars/rating-stars.component';
 
 type CodeStatut =
   | 'Brouillon' | 'En_attente' | 'Traitee' | 'Annulee'
@@ -81,7 +85,8 @@ interface FilterOption<T extends string> {
     DatePipe,
     FormsModule,
     ServicesComponent,
-    AccountComponent
+    AccountComponent,
+    RatingStarsComponent
   ],
   templateUrl: './client-dashboard.component.html',
   styleUrls: ['./client-dashboard.component.scss']
@@ -100,8 +105,13 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   documents = signal<ClientDocumentDto[]>([]);
   rdvProposals = signal<Record<number, RendezVousProposition[]>>({});
   rdvRequestComments = signal<Record<number, string>>({});
+  isMobile = signal(false);
+  avisByDemande = signal<Record<number, AvisServiceDto[]>>({});
+  avisForms = signal<Record<string, { note: number; commentaire: string; submitting: boolean; error?: string }>>({});
   // safe api base (no trailing slash)
   private api = environment.apiBaseUrl ? environment.apiBaseUrl.replace(/\/+$/, '') : '';
+  private mobileQuery?: MediaQueryList;
+  private mobileQueryListener?: (event: MediaQueryListEvent) => void;
 
   private readonly fallbackTypeOptions: Array<FilterOption<AnyTypeOrAll>> = [
     { value: 'Devis', label: 'Devis' },
@@ -152,6 +162,9 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
     return (this.demandes() ?? [])
       .filter(d => {
+        if (this.isEmptyDraft(d)) {
+          return false;
+        }
         // type
         if (f.type !== 'ALL') {
           const t = d?.typeDemande?.codeType as DemandeTypeCode | undefined;
@@ -197,7 +210,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   );
 
   readonly latestActiveDemande = computed<DemandeResponse | null>(() => {
-    const list = (this.demandes() ?? []).filter(d => !this.isArchived(d));
+    const list = this.filteredDemandes().filter(d => !this.isArchived(d));
     if (!list.length) {
       return null;
     }
@@ -222,6 +235,18 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     this.filteredDemandes().filter(d => this.isArchived(d))
   );
 
+  readonly filteredDemandesCount = computed(() => this.filteredDemandes().length);
+
+  readonly activeFiltersCount = computed(() => {
+    const f = this.filters();
+    let count = 0;
+    if (f.type !== 'ALL') count += 1;
+    if (f.statut !== 'ALL') count += 1;
+    if (f.dateFrom) count += 1;
+    if (f.dateTo) count += 1;
+    return count;
+  });
+
   readonly prochainsRdvsAVenir = computed<ProchainRdvDto[]>(() =>
     (this.prochainsRdvs() ?? []).filter(rdv =>
       this.isUpcomingRdv(rdv) && !this.isCancelledRdv(rdv.codeStatut, rdv.libelleStatut)
@@ -234,12 +259,15 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private toast: ToastService,
     private lookups: LookupsService,
-    private rdvPropositionsApi: RendezVousPropositionsService
+    private rdvPropositionsApi: RendezVousPropositionsService,
+    private avisApi: AvisServicesService,
+    @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
   private navSub?: Subscription;
 
   ngOnInit() {
+    this.setupMobileQuery();
     this.refresh({ delayMs: 200, retries: 2 });
     this.bootstrapLookups();
     this.navSub = this.router.events
@@ -249,6 +277,19 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.navSub?.unsubscribe();
+    if (this.mobileQuery && this.mobileQueryListener) {
+      this.mobileQuery.removeEventListener('change', this.mobileQueryListener);
+    }
+  }
+
+  private setupMobileQuery() {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    this.mobileQuery = window.matchMedia('(max-width: 640px)');
+    this.isMobile.set(this.mobileQuery.matches);
+    this.mobileQueryListener = event => this.isMobile.set(event.matches);
+    this.mobileQuery.addEventListener('change', this.mobileQueryListener);
   }
 
   private bootstrapLookups() {
@@ -334,6 +375,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
         const demandes = list ?? [];
         this.demandes.set(demandes);
         this.loadProposalsForDemandes(demandes);
+        this.loadAvisForDemandes(demandes);
         finalize();
       },
       error: err => {
@@ -426,14 +468,67 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private loadAvisForDemandes(demandes: DemandeResponse[]) {
+    const targets = (demandes ?? [])
+      .filter(demande => demande?.idDemande && demande?.statutDemande?.codeStatut === 'Traitee')
+      .map(demande => Number(demande.idDemande))
+      .filter(id => Number.isFinite(id));
+
+    if (!targets.length) {
+      this.avisByDemande.set({});
+      return;
+    }
+
+    const requests = targets.map(demandeId => ({
+      demandeId,
+      request: this.avisApi.getAvisByDemande(demandeId, { page: 0, size: 50, sort: 'creeLe,desc' }).pipe(
+        map(response => response.content ?? []),
+        catchError(() => of([] as AvisServiceDto[]))
+      )
+    }));
+
+    forkJoin(requests.map(item => item.request)).subscribe({
+      next: results => {
+        const map: Record<number, AvisServiceDto[]> = {};
+        requests.forEach((item, index) => {
+          map[item.demandeId] = results[index] ?? [];
+        });
+        this.avisByDemande.set(map);
+      },
+      error: () => {
+        this.avisByDemande.set({});
+      }
+    });
+  }
+
+  private refreshAvisForDemande(demandeId: number) {
+    if (!Number.isFinite(demandeId)) {
+      return;
+    }
+    this.avisApi.getAvisByDemande(demandeId, { page: 0, size: 50, sort: 'creeLe,desc' }).subscribe({
+      next: response => {
+        const map = { ...this.avisByDemande() };
+        map[demandeId] = response.content ?? [];
+        this.avisByDemande.set(map);
+      },
+      error: () => {
+        const map = { ...this.avisByDemande() };
+        map[demandeId] = [];
+        this.avisByDemande.set(map);
+      }
+    });
+  }
+
   /**
    * Ouvre un document dans un nouvel onglet (client & admin)
    */
   async openDocument(doc: DemandeDocumentDto, d?: DemandeResponse) {
+    const popup = window.open('', '_blank');
     try {
       const demandeId = d?.idDemande;
       const documentId = doc.idDocument;
       if (!demandeId || !documentId) {
+        popup?.close();
         this.toast.error('Erreur', 'Identifiants du document manquants.');
         return;
       }
@@ -444,26 +539,34 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
       const blob = res.body as Blob;
       if (!blob) {
+        popup?.close();
         this.toast.error('Erreur', 'Fichier vide.');
         return;
       }
 
       const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
+      if (popup) {
+        popup.location.href = blobUrl;
+      } else {
+        window.open(blobUrl, '_blank');
+      }
 
       // Nettoyage après ouverture
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } catch (err: any) {
+      popup?.close();
       const msg = err?.error?.message || err?.message || 'Téléchargement impossible';
       this.toast.error('Erreur', msg);
     }
   }
 
   async openClientDocument(entry: ClientDocumentDto) {
+    const popup = window.open('', '_blank');
     try {
       const demandeId = entry?.demandeId;
       const documentId = entry?.document?.idDocument;
       if (!demandeId || !documentId) {
+        popup?.close();
         this.toast.error('Erreur', 'Identifiants du document manquants.');
         return;
       }
@@ -474,14 +577,20 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
       const blob = res.body as Blob;
       if (!blob) {
+        popup?.close();
         this.toast.error('Erreur', 'Fichier vide.');
         return;
       }
 
       const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
+      if (popup) {
+        popup.location.href = blobUrl;
+      } else {
+        window.open(blobUrl, '_blank');
+      }
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } catch (err: any) {
+      popup?.close();
       const msg = err?.error?.message || err?.message || 'Téléchargement impossible';
       this.toast.error('Erreur', msg);
     }
@@ -535,6 +644,81 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     return d.services.reduce((sum, s) => sum + (s.prixUnitaire || 0) * (s.quantite || 0), 0);
   }
 
+  isDemandeTraitee(d?: DemandeResponse): boolean {
+    return d?.statutDemande?.codeStatut === 'Traitee';
+  }
+
+  avisForDemande(demandeId: number): AvisServiceDto[] {
+    return this.avisByDemande()[demandeId] ?? [];
+  }
+
+  avisForService(demandeId: number, serviceId: number): AvisServiceDto | undefined {
+    return this.avisForDemande(demandeId).find(avis => avis.serviceId === serviceId);
+  }
+
+  reviewFormKey(demandeId: number, serviceId: number): string {
+    return `${demandeId}-${serviceId}`;
+  }
+
+  reviewForm(demandeId: number, serviceId: number) {
+    const key = this.reviewFormKey(demandeId, serviceId);
+    return this.avisForms()[key] ?? { note: 5, commentaire: '', submitting: false };
+  }
+
+  updateReviewForm(
+    demandeId: number,
+    serviceId: number,
+    patch: Partial<{ note: number; commentaire: string; submitting: boolean; error?: string }>
+  ) {
+    const key = this.reviewFormKey(demandeId, serviceId);
+    const current = this.reviewForm(demandeId, serviceId);
+    this.avisForms.set({
+      ...this.avisForms(),
+      [key]: { ...current, ...patch }
+    });
+  }
+
+  submitAvis(demandeId: number, serviceId: number) {
+    const form = this.reviewForm(demandeId, serviceId);
+    if (form.submitting) {
+      return;
+    }
+
+    const note = Number(form.note);
+    const commentaire = (form.commentaire ?? '').trim();
+
+    if (!Number.isFinite(note) || note < 1 || note > 5) {
+      this.toast.error('Note invalide', 'La note doit être comprise entre 1 et 5.');
+      return;
+    }
+
+    if (commentaire.length > 1000) {
+      this.toast.error('Commentaire trop long', 'Le commentaire est limité à 1000 caractères.');
+      return;
+    }
+
+    const payload: AvisServiceCreatePayload = {
+      demandeId,
+      note,
+      commentaire
+    };
+
+    this.updateReviewForm(demandeId, serviceId, { submitting: true, error: undefined });
+
+    this.avisApi.createAvis(payload).subscribe({
+      next: () => {
+        this.toast.success('Merci pour votre avis !');
+        this.updateReviewForm(demandeId, serviceId, { submitting: false, commentaire: '' });
+        this.refreshAvisForDemande(demandeId);
+      },
+      error: err => {
+        const message = err?.error?.message || 'Impossible de publier votre avis.';
+        this.toast.error('Erreur', message);
+        this.updateReviewForm(demandeId, serviceId, { submitting: false, error: message });
+      }
+    });
+  }
+
   badgeClassForDemande(code?: string): string {
     switch (code) {
       case 'Traitee':   return 'badge success';
@@ -584,6 +768,13 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   visibleDocuments(d?: DemandeResponse): DemandeDocumentDto[] {
     return (d?.documents ?? []).filter(doc => doc.visibleClient !== false && !!doc.urlPrivate);
+  }
+
+  private isEmptyDraft(d?: DemandeResponse): boolean {
+    if (!this.isDraft(d)) {
+      return false;
+    }
+    return !(d?.services?.length);
   }
 
   /**
@@ -780,6 +971,17 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   clientImmatriculation(d?: DemandeResponse): string | null {
     return d?.client?.immatriculation || null;
+  }
+
+  formatServiceQuantity(service: { quantite: number; quantiteMode?: 'UNIQUE' | 'LOT'; tailleLot?: number | null }): string {
+    const qty = service.quantite ?? 0;
+    if (service.quantiteMode === 'LOT' && service.tailleLot) {
+      if (qty === service.tailleLot) {
+        return `Lot de ${service.tailleLot}`;
+      }
+      return `${qty} (lot de ${service.tailleLot})`;
+    }
+    return `x${qty}`;
   }
 
   async downloadRdvIcs(rdvId: number) {

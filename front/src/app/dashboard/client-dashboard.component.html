@@ -4,11 +4,18 @@
       <p class="dashboard__eyebrow">Tableau de bord client</p>
       <h2 class="dashboard__subtitle">Bienvenue dans votre espace personnel</h2>
       <p class="dashboard__hint">
-        Suivez l'état de vos demandes, vos rendez-vous et les documents partagés, exactement comme le dashboard admin.
+        Suivez l'état de vos demandes, vos rendez-vous et les documents partagés.
       </p>
     </div>
     <div class="dashboard__actions">
       <button class="btn" (click)="refresh()">Actualiser</button>
+      <button
+        class="btn"
+        type="button"
+        (click)="showServices()"
+      >
+        Nouvelle demande
+      </button>
       <button
         class="btn btn-outline"
         type="button"
@@ -104,9 +111,12 @@
           <header>
             <p class="card__eyebrow">Filtres</p>
             <h3>Affiner vos demandes</h3>
+            <p class="filters__result">
+              {{ filteredDemandesCount() }} résultat{{ filteredDemandesCount() > 1 ? 's' : '' }}
+            </p>
           </header>
           <div class="filters">
-            <div class="row">
+            <div class="row row--main">
               <div class="field">
                 <label>Recherche</label>
                 <input
@@ -115,39 +125,49 @@
                   (ngModelChange)="setQ($event)"
                   placeholder="Service, type, statut, #id…" />
               </div>
-
-              <div class="field">
-                <label>Type</label>
-                <select [ngModel]="filters().type" (ngModelChange)="setType($event)">
-                  @for (opt of typeOptions(); track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Statut</label>
-                <select [ngModel]="filters().statut" (ngModelChange)="setStatut($event)">
-                  @for (opt of statutOptions(); track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Du</label>
-                <input type="date" [ngModel]="filters().dateFrom" (ngModelChange)="setFrom($event)" />
-              </div>
-
-              <div class="field">
-                <label>Au</label>
-                <input type="date" [ngModel]="filters().dateTo" (ngModelChange)="setTo($event)" />
-              </div>
-
               <div class="actions">
-                <button type="button" class="btn btn-outline btn-small" (click)="clearFilters()">Réinitialiser</button>
+                <button type="button" class="btn btn-outline btn-small" (click)="clearFilters()">
+                  Réinitialiser
+                </button>
               </div>
             </div>
+            <details class="filters__details" [open]="activeFiltersCount() > 0">
+              <summary class="filters__summary">
+                Plus de filtres
+                @if (activeFiltersCount() > 0) {
+                  <span class="filters__count">{{ activeFiltersCount() }}</span>
+                }
+              </summary>
+              <div class="row row--extra">
+                <div class="field">
+                  <label>Type</label>
+                  <select [ngModel]="filters().type" (ngModelChange)="setType($event)">
+                    @for (opt of typeOptions(); track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label>Statut</label>
+                  <select [ngModel]="filters().statut" (ngModelChange)="setStatut($event)">
+                    @for (opt of statutOptions(); track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label>Du</label>
+                  <input type="date" [ngModel]="filters().dateFrom" (ngModelChange)="setFrom($event)" />
+                </div>
+
+                <div class="field">
+                  <label>Au</label>
+                  <input type="date" [ngModel]="filters().dateTo" (ngModelChange)="setTo($event)" />
+                </div>
+              </div>
+            </details>
           </div>
         </article>
 
@@ -237,223 +257,226 @@
                 }
               </header>
 
-              <div class="row">
-                <span>Créée le :</span>
-                <span>{{ demandeDate(current) | date:'dd/MM/yyyy HH:mm' }}</span>
-              </div>
-              @if (latestUpdateDate(current); as updatedAt) {
+              <details class="demande-details" [attr.open]="!isMobile() ? '' : null">
+                <summary>Voir les détails</summary>
                 <div class="row">
-                  <span>Mise à jour :</span>
-                  <span>{{ updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                  <span>Créée le :</span>
+                  <span>{{ demandeDate(current) | date:'dd/MM/yyyy HH:mm' }}</span>
                 </div>
-              }
-
-              @if (clientImmatriculation(current) || clientVehicle(current)) {
-                <div class="client-meta">
-                  @if (clientImmatriculation(current); as immat) {
-                    <div class="client-meta__row">
-                      <span>Immatriculation</span>
-                      <strong>{{ immat }}</strong>
-                    </div>
-                  }
-                  @if (clientVehicle(current); as vehicule) {
-                    <div class="client-meta__row">
-                      <span>Véhicule</span>
-                      <strong>{{ vehicule }}</strong>
-                    </div>
-                  }
-                </div>
-              }
-
-              @if (current.services?.length) {
-                <div class="services">
-                  <div class="services-head">Services demandés</div>
-                  <ul>
-                    @for (s of current.services; track s.idService) {
-                      <li>
-                        <span class="svc-label">{{ s.libelle }}</span>
-                        <span class="svc-prix">
-                          {{ s.quantite }} × {{ s.prixUnitaire | number:'1.2-2' }} €
-                        </span>
-                      </li>
-                    }
-                  </ul>
-                  <div class="total">
-                    Total estimatif : <strong>{{ totalDemande(current) | number:'1.2-2' }} €</strong>
-                  </div>
-                </div>
-              }
-
-              @if (hasDevis(current)) {
-                <div class="rdv-block">
-                  <div class="rdv-block__head">
-                    <strong>Devis proposé</strong>
-                    @if (current.devis?.montantTotal != null) {
-                      <span>{{ current.devis?.montantTotal | number:'1.2-2' }} €</span>
-                    }
-                  </div>
-                  @if (canRequestRendezVous(current)) {
-                    <div class="field">
-                      <label for="rdv-request-{{ current.idDemande }}">Commentaire (optionnel)</label>
-                      <textarea
-                        id="rdv-request-{{ current.idDemande }}"
-                        rows="2"
-                        [ngModel]="rdvRequestComments()[current.idDemande] || ''"
-                        (ngModelChange)="updateRdvRequestComment(current.idDemande, $event)"
-                        placeholder="Ex: Disponibilités, infos complémentaires…"></textarea>
-                    </div>
-                    <div class="actions">
-                      <button
-                        class="btn btn-small"
-                        type="button"
-                        (click)="requestRendezVous(current)">
-                        Accepter le devis & demander un rendez-vous
-                      </button>
-                      <button
-                        class="btn btn-outline btn-small"
-                        type="button"
-                        (click)="archiveDemande(current)">
-                        Archiver ce devis
-                      </button>
-                    </div>
-                  } @else {
-                    <p class="dashboard__state">
-                      Ce devis est déjà traité ou un rendez-vous est en cours.
-                    </p>
-                  }
-                </div>
-              }
-
-              @if (rendezVousInfo(current); as rdv) {
-                <div class="rdv-block">
-                  <div class="rdv-block__head">
-                    <strong>Rendez-vous lié</strong>
-                    <span class="badge" [class]="badgeClassForRdv(rdv.codeStatut)">
-                      {{ rdv.libelleStatut || rdv.codeStatut }}
-                    </span>
-                  </div>
+                @if (latestUpdateDate(current); as updatedAt) {
                   <div class="row">
-                    <span>Début</span>
-                    <span>{{ rdv.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+                    <span>Mise à jour :</span>
+                    <span>{{ updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
                   </div>
-                  <div class="row">
-                    <span>Fin</span>
-                    <span>{{ rdv.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
-                  </div>
-                  @if (canDownloadIcs(rdv) && !isCancelledDemande(current)) {
-                    <div class="actions">
-                      <button class="btn btn-outline btn-small" type="button" (click)="downloadRdvIcs(rdv.idRdv)">
-                        Télécharger l'invitation (.ics)
-                      </button>
-                    </div>
-                  }
-                </div>
-              }
+                }
 
-              @if (proposalsFor(current).length) {
-                <div class="rdv-proposals">
-                  <div class="rdv-proposals__head">
-                    <strong>Créneaux proposés</strong>
-                    <span>Choisissez un créneau dans les 24h ou demandez une nouvelle proposition.</span>
-                  </div>
-                  <ul>
-                    @for (proposal of proposalsFor(current); track proposal.idProposition) {
-                      <li>
-                        <div>
-                          <strong>{{ proposal.dateDebut | date:'dd/MM/yyyy HH:mm' }}</strong>
-                          → {{ proposal.dateFin | date:'dd/MM/yyyy HH:mm' }}
-                          <span class="badge badge--proposal">{{ proposalStatusLabel(proposal.statut) }}</span>
-                          <small>Expire le {{ proposal.expiresAt | date:'dd/MM/yyyy HH:mm' }}</small>
-                        </div>
-                        @if (proposal.statut === 'PROPOSE') {
-                          <div class="actions">
-                            <button
-                              class="btn btn-small"
-                              type="button"
-                              (click)="acceptProposal(current.idDemande, proposal.idProposition)"
-                            >
-                              Valider ce créneau
-                            </button>
-                            <button
-                              class="btn btn-outline btn-small"
-                              type="button"
-                              (click)="declineProposal(current.idDemande, proposal.idProposition)"
-                            >
-                              Demander un autre créneau
-                            </button>
-                          </div>
-                        }
-                      </li>
+                @if (clientImmatriculation(current) || clientVehicle(current)) {
+                  <div class="client-meta">
+                    @if (clientImmatriculation(current); as immat) {
+                      <div class="client-meta__row">
+                        <span>Immatriculation</span>
+                        <strong>{{ immat }}</strong>
+                      </div>
                     }
-                  </ul>
-                </div>
-              }
+                    @if (clientVehicle(current); as vehicule) {
+                      <div class="client-meta__row">
+                        <span>Véhicule</span>
+                        <strong>{{ vehicule }}</strong>
+                      </div>
+                    }
+                  </div>
+                }
 
-              @if (visibleDocuments(current).length) {
-                <div class="documents">
-                  <div class="documents__head">Documents partagés</div>
-                  <ul>
-                    @for (doc of visibleDocuments(current); track doc.idDocument ?? doc.nomFichier) {
-                      <li>
-                        <div>
-                          <strong>{{ doc.nomFichier }}</strong>
-                          @if (documentSize(doc); as size) {
-                            <small>{{ size }}</small>
-                          }
-                        </div>
-                        <button class="btn btn-outline btn-small" type="button" (click)="openDocument(doc, current)">
-                          Voir
+                @if (current.services?.length) {
+                  <div class="services">
+                    <div class="services-head">Services demandés</div>
+                    <ul>
+                      @for (s of current.services; track s.idService) {
+                        <li>
+                          <span class="svc-label">{{ s.libelle }}</span>
+                          <span class="svc-prix">
+                            {{ formatServiceQuantity(s) }} • {{ s.prixUnitaire | number:'1.2-2' }} €
+                          </span>
+                        </li>
+                      }
+                    </ul>
+                    <div class="total">
+                      Total estimatif : <strong>{{ totalDemande(current) | number:'1.2-2' }} €</strong>
+                    </div>
+                  </div>
+                }
+
+                @if (hasDevis(current)) {
+                  <div class="rdv-block">
+                    <div class="rdv-block__head">
+                      <strong>Devis proposé</strong>
+                      @if (current.devis?.montantTotal != null) {
+                        <span>{{ current.devis?.montantTotal | number:'1.2-2' }} €</span>
+                      }
+                    </div>
+                    @if (canRequestRendezVous(current)) {
+                      <div class="field">
+                        <label for="rdv-request-{{ current.idDemande }}">Commentaire (optionnel)</label>
+                        <textarea
+                          id="rdv-request-{{ current.idDemande }}"
+                          rows="2"
+                          [ngModel]="rdvRequestComments()[current.idDemande] || ''"
+                          (ngModelChange)="updateRdvRequestComment(current.idDemande, $event)"
+                          placeholder="Ex: Disponibilités, infos complémentaires…"></textarea>
+                      </div>
+                      <div class="actions">
+                        <button
+                          class="btn btn-small"
+                          type="button"
+                          (click)="requestRendezVous(current)">
+                          Accepter le devis & demander un rendez-vous
                         </button>
-                      </li>
+                        <button
+                          class="btn btn-outline btn-small"
+                          type="button"
+                          (click)="archiveDemande(current)">
+                          Archiver ce devis
+                        </button>
+                      </div>
+                    } @else {
+                      <p class="dashboard__state">
+                        Ce devis est déjà traité ou un rendez-vous est en cours.
+                      </p>
                     }
-                  </ul>
-                </div>
-              }
+                  </div>
+                }
 
-              @if (visibleTimeline(current).length) {
-                <div class="timeline">
-                  <div class="timeline__head">Suivi de la demande</div>
-                  <ul>
-                    @for (entry of visibleTimeline(current); track entry.id ?? entry.createdAt) {
-                      <li class="timeline__item">
-                        <div class="timeline__meta">
-                          <span>{{ entry.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-                          @if (timelineAuthor(entry); as author) {
-                            <small>{{ author }}</small>
+                @if (rendezVousInfo(current); as rdv) {
+                  <div class="rdv-block">
+                    <div class="rdv-block__head">
+                      <strong>Rendez-vous lié</strong>
+                      <span class="badge" [class]="badgeClassForRdv(rdv.codeStatut)">
+                        {{ rdv.libelleStatut || rdv.codeStatut }}
+                      </span>
+                    </div>
+                    <div class="row">
+                      <span>Début</span>
+                      <span>{{ rdv.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+                    </div>
+                    <div class="row">
+                      <span>Fin</span>
+                      <span>{{ rdv.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
+                    </div>
+                    @if (canDownloadIcs(rdv) && !isCancelledDemande(current)) {
+                      <div class="actions">
+                        <button class="btn btn-outline btn-small" type="button" (click)="downloadRdvIcs(rdv.idRdv)">
+                          Télécharger l'invitation (.ics)
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (proposalsFor(current).length) {
+                  <div class="rdv-proposals">
+                    <div class="rdv-proposals__head">
+                      <strong>Créneaux proposés</strong>
+                      <span>Choisissez un créneau dans les 24h ou demandez une nouvelle proposition.</span>
+                    </div>
+                    <ul>
+                      @for (proposal of proposalsFor(current); track proposal.idProposition) {
+                        <li>
+                          <div>
+                            <strong>{{ proposal.dateDebut | date:'dd/MM/yyyy HH:mm' }}</strong>
+                            → {{ proposal.dateFin | date:'dd/MM/yyyy HH:mm' }}
+                            <span class="badge badge--proposal">{{ proposalStatusLabel(proposal.statut) }}</span>
+                            <small>Expire le {{ proposal.expiresAt | date:'dd/MM/yyyy HH:mm' }}</small>
+                          </div>
+                          @if (proposal.statut === 'PROPOSE') {
+                            <div class="actions">
+                              <button
+                                class="btn btn-small"
+                                type="button"
+                                (click)="acceptProposal(current.idDemande, proposal.idProposition)"
+                              >
+                                Valider ce créneau
+                              </button>
+                              <button
+                                class="btn btn-outline btn-small"
+                                type="button"
+                                (click)="declineProposal(current.idDemande, proposal.idProposition)"
+                              >
+                                Demander un autre créneau
+                              </button>
+                            </div>
                           }
-                        </div>
-                        <div class="timeline__body">
-                          <strong>{{ entry.type }}</strong>
-                          <p>{{ timelineLabel(entry) }}</p>
-                        </div>
-                        @if (entry.document) {
-                          <button class="btn btn-outline btn-small" (click)="openDocument(entry.document, current)">Consulter</button>
-                        }
-                      </li>
-                    }
-                  </ul>
-                </div>
-              }
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
 
-              @if (isDraft(current)) {
-                <div class="actions">
-                  <button
-                    class="btn"
-                    type="button"
-                    [disabled]="submittingId === current.idDemande"
-                    (click)="submitDraft(current)">
-                    {{ submittingId === current.idDemande ? 'Validation…' : 'Valider ma demande' }}
-                  </button>
+                @if (visibleDocuments(current).length) {
+                  <div class="documents">
+                    <div class="documents__head">Documents partagés</div>
+                    <ul>
+                      @for (doc of visibleDocuments(current); track doc.idDocument ?? doc.nomFichier) {
+                        <li>
+                          <div>
+                            <strong>{{ doc.nomFichier }}</strong>
+                            @if (documentSize(doc); as size) {
+                              <small>{{ size }}</small>
+                            }
+                          </div>
+                          <button class="btn btn-outline btn-small" type="button" (click)="openDocument(doc, current)">
+                            Voir
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
 
-                  <button
-                    class="btn btn-outline"
-                    type="button"
-                    [disabled]="submittingId === current.idDemande"
-                    (click)="continueDraft()">
-                    Continuer ma demande
-                  </button>
-                </div>
-              }
+                @if (visibleTimeline(current).length) {
+                  <div class="timeline">
+                    <div class="timeline__head">Suivi de la demande</div>
+                    <ul>
+                      @for (entry of visibleTimeline(current); track entry.id ?? entry.createdAt) {
+                        <li class="timeline__item">
+                          <div class="timeline__meta">
+                            <span>{{ entry.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            @if (timelineAuthor(entry); as author) {
+                              <small>{{ author }}</small>
+                            }
+                          </div>
+                          <div class="timeline__body">
+                            <strong>{{ entry.type }}</strong>
+                            <p>{{ timelineLabel(entry) }}</p>
+                          </div>
+                          @if (entry.document) {
+                            <button class="btn btn-outline btn-small" (click)="openDocument(entry.document, current)">Consulter</button>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (isDraft(current)) {
+                  <div class="actions">
+                    <button
+                      class="btn"
+                      type="button"
+                      [disabled]="submittingId === current.idDemande"
+                      (click)="submitDraft(current)">
+                      {{ submittingId === current.idDemande ? 'Validation…' : 'Valider ma demande' }}
+                    </button>
+
+                    <button
+                      class="btn btn-outline"
+                      type="button"
+                      [disabled]="submittingId === current.idDemande"
+                      (click)="continueDraft()">
+                      Continuer ma demande
+                    </button>
+                  </div>
+                }
+              </details>
             </article>
           } @else {
             <p class="dashboard__state">Aucune demande en cours pour le moment.</p>
@@ -483,140 +506,143 @@
                     }
                   </header>
 
-                  <div class="row">
-                    <span>Créée le :</span>
-                    <span>{{ demandeDate(d) | date:'dd/MM/yyyy HH:mm' }}</span>
-                  </div>
-                  @if (latestUpdateDate(d); as updatedAt) {
+                  <details class="demande-details" [attr.open]="!isMobile() ? '' : null">
+                    <summary>Voir les détails</summary>
                     <div class="row">
-                      <span>Mise à jour :</span>
-                      <span>{{ updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                      <span>Créée le :</span>
+                      <span>{{ demandeDate(d) | date:'dd/MM/yyyy HH:mm' }}</span>
                     </div>
-                  }
-
-                  @if (d.services?.length) {
-                    <div class="services">
-                      <div class="services-head">Services demandés</div>
-                      <ul>
-                        @for (s of d.services; track s.idService) {
-                          <li>
-                            <span class="svc-label">{{ s.libelle }}</span>
-                            <span class="svc-prix">
-                              {{ s.quantite }} × {{ s.prixUnitaire | number:'1.2-2' }} €
-                            </span>
-                          </li>
-                        }
-                      </ul>
-                  <div class="total">
-                    Total estimatif : <strong>{{ totalDemande(d) | number:'1.2-2' }} €</strong>
-                  </div>
-                </div>
-              }
-
-              @if (hasDevis(d)) {
-                <div class="rdv-block">
-                  <div class="rdv-block__head">
-                    <strong>Devis proposé</strong>
-                    @if (d.devis?.montantTotal != null) {
-                      <span>{{ d.devis?.montantTotal | number:'1.2-2' }} €</span>
+                    @if (latestUpdateDate(d); as updatedAt) {
+                      <div class="row">
+                        <span>Mise à jour :</span>
+                        <span>{{ updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                      </div>
                     }
-                  </div>
-                  @if (canRequestRendezVous(d)) {
-                    <div class="field">
-                      <label for="rdv-request-{{ d.idDemande }}">Commentaire (optionnel)</label>
-                      <textarea
-                        id="rdv-request-{{ d.idDemande }}"
-                        rows="2"
-                        [ngModel]="rdvRequestComments()[d.idDemande] || ''"
-                        (ngModelChange)="updateRdvRequestComment(d.idDemande, $event)"
-                        placeholder="Ex: Disponibilités, infos complémentaires…"></textarea>
-                    </div>
-                    <div class="actions">
-                      <button
-                        class="btn btn-small"
-                        type="button"
-                        (click)="requestRendezVous(d)">
-                        Accepter le devis & demander un rendez-vous
-                      </button>
-                      <button
-                        class="btn btn-outline btn-small"
-                        type="button"
-                        (click)="archiveDemande(d)">
-                        Archiver ce devis
-                      </button>
-                    </div>
-                  } @else {
-                    <p class="dashboard__state">
-                      Ce devis est déjà traité ou un rendez-vous est en cours.
-                    </p>
-                  }
-                </div>
-              }
 
-              @if (rendezVousInfo(d); as rdv) {
-                <div class="rdv-block">
-                      <div class="rdv-block__head">
-                        <strong>Rendez-vous lié</strong>
-                        <span class="badge" [class]="badgeClassForRdv(rdv.codeStatut)">
-                          {{ rdv.libelleStatut || rdv.codeStatut }}
-                        </span>
+                    @if (d.services?.length) {
+                      <div class="services">
+                        <div class="services-head">Services demandés</div>
+                        <ul>
+                          @for (s of d.services; track s.idService) {
+                            <li>
+                              <span class="svc-label">{{ s.libelle }}</span>
+                              <span class="svc-prix">
+                                {{ formatServiceQuantity(s) }} • {{ s.prixUnitaire | number:'1.2-2' }} €
+                              </span>
+                            </li>
+                          }
+                        </ul>
+                        <div class="total">
+                          Total estimatif : <strong>{{ totalDemande(d) | number:'1.2-2' }} €</strong>
+                        </div>
                       </div>
-                      <div class="row">
-                        <span>Début</span>
-                        <span>{{ rdv.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
-                      </div>
-                      <div class="row">
-                        <span>Fin</span>
-                        <span>{{ rdv.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
-                      </div>
-                      <div class="actions">
-                      @if (canDownloadIcs(rdv) && !isCancelledDemande(d)) {
-                        <button class="btn btn-outline btn-small" type="button" (click)="downloadRdvIcs(rdv.idRdv)">
-                          Télécharger l'invitation (.ics)
-                        </button>
-                      }
-                      </div>
-                    </div>
-                  }
+                    }
 
-                  @if (proposalsFor(d).length) {
-                    <div class="rdv-proposals">
-                      <div class="rdv-proposals__head">
-                        <strong>Créneaux proposés</strong>
-                        <span>Choisissez un créneau dans les 24h ou demandez une nouvelle proposition.</span>
-                      </div>
-                      <ul>
-                        @for (proposal of proposalsFor(d); track proposal.idProposition) {
-                          <li>
-                            <div>
-                              <strong>{{ proposal.dateDebut | date:'dd/MM/yyyy HH:mm' }}</strong>
-                              → {{ proposal.dateFin | date:'dd/MM/yyyy HH:mm' }}
-                              <span class="badge badge--proposal">{{ proposalStatusLabel(proposal.statut) }}</span>
-                              <small>Expire le {{ proposal.expiresAt | date:'dd/MM/yyyy HH:mm' }}</small>
-                            </div>
-                            @if (proposal.statut === 'PROPOSE') {
-                              <div class="actions">
-                                <button
-                                  class="btn btn-small"
-                                  type="button"
-                                  (click)="acceptProposal(d.idDemande, proposal.idProposition)"
-                                >
-                                  Valider ce créneau
-                                </button>
-                                <button
-                                  class="btn btn-outline btn-small"
-                                  type="button"
-                                  (click)="declineProposal(d.idDemande, proposal.idProposition)"
-                                >
-                                  Demander un autre créneau
-                                </button>
-                              </div>
-                            }
-                          </li>
+                    @if (hasDevis(d)) {
+                      <div class="rdv-block">
+                        <div class="rdv-block__head">
+                          <strong>Devis proposé</strong>
+                          @if (d.devis?.montantTotal != null) {
+                            <span>{{ d.devis?.montantTotal | number:'1.2-2' }} €</span>
+                          }
+                        </div>
+                        @if (canRequestRendezVous(d)) {
+                          <div class="field">
+                            <label for="rdv-request-{{ d.idDemande }}">Commentaire (optionnel)</label>
+                            <textarea
+                              id="rdv-request-{{ d.idDemande }}"
+                              rows="2"
+                              [ngModel]="rdvRequestComments()[d.idDemande] || ''"
+                              (ngModelChange)="updateRdvRequestComment(d.idDemande, $event)"
+                              placeholder="Ex: Disponibilités, infos complémentaires…"></textarea>
+                          </div>
+                          <div class="actions">
+                            <button
+                              class="btn btn-small"
+                              type="button"
+                              (click)="requestRendezVous(d)">
+                              Accepter le devis & demander un rendez-vous
+                            </button>
+                            <button
+                              class="btn btn-outline btn-small"
+                              type="button"
+                              (click)="archiveDemande(d)">
+                              Archiver ce devis
+                            </button>
+                          </div>
+                        } @else {
+                          <p class="dashboard__state">
+                            Ce devis est déjà traité ou un rendez-vous est en cours.
+                          </p>
                         }
-                      </ul>
-                    </div>
-                  }
+                      </div>
+                    }
+
+                    @if (rendezVousInfo(d); as rdv) {
+                      <div class="rdv-block">
+                        <div class="rdv-block__head">
+                          <strong>Rendez-vous lié</strong>
+                          <span class="badge" [class]="badgeClassForRdv(rdv.codeStatut)">
+                            {{ rdv.libelleStatut || rdv.codeStatut }}
+                          </span>
+                        </div>
+                        <div class="row">
+                          <span>Début</span>
+                          <span>{{ rdv.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                        <div class="row">
+                          <span>Fin</span>
+                          <span>{{ rdv.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                        <div class="actions">
+                        @if (canDownloadIcs(rdv) && !isCancelledDemande(d)) {
+                          <button class="btn btn-outline btn-small" type="button" (click)="downloadRdvIcs(rdv.idRdv)">
+                            Télécharger l'invitation (.ics)
+                          </button>
+                        }
+                        </div>
+                      </div>
+                    }
+
+                    @if (proposalsFor(d).length) {
+                      <div class="rdv-proposals">
+                        <div class="rdv-proposals__head">
+                          <strong>Créneaux proposés</strong>
+                          <span>Choisissez un créneau dans les 24h ou demandez une nouvelle proposition.</span>
+                        </div>
+                        <ul>
+                          @for (proposal of proposalsFor(d); track proposal.idProposition) {
+                            <li>
+                              <div>
+                                <strong>{{ proposal.dateDebut | date:'dd/MM/yyyy HH:mm' }}</strong>
+                                → {{ proposal.dateFin | date:'dd/MM/yyyy HH:mm' }}
+                                <span class="badge badge--proposal">{{ proposalStatusLabel(proposal.statut) }}</span>
+                                <small>Expire le {{ proposal.expiresAt | date:'dd/MM/yyyy HH:mm' }}</small>
+                              </div>
+                              @if (proposal.statut === 'PROPOSE') {
+                                <div class="actions">
+                                  <button
+                                    class="btn btn-small"
+                                    type="button"
+                                    (click)="acceptProposal(d.idDemande, proposal.idProposition)"
+                                  >
+                                    Valider ce créneau
+                                  </button>
+                                  <button
+                                    class="btn btn-outline btn-small"
+                                    type="button"
+                                    (click)="declineProposal(d.idDemande, proposal.idProposition)"
+                                  >
+                                    Demander un autre créneau
+                                  </button>
+                                </div>
+                              }
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                  </details>
                 </article>
               }
             </div>
@@ -642,28 +668,105 @@
                       {{ d.statutDemande?.libelle || d.statutDemande?.codeStatut || '—' }}
                     </span>
                   </header>
-                  <div class="row">
-                    <span>Créée le :</span>
-                    <span>{{ demandeDate(d) | date:'dd/MM/yyyy HH:mm' }}</span>
-                  </div>
-                  @if (d.services?.length) {
-                    <div class="services">
-                      <div class="services-head">Services réalisés</div>
-                      <ul>
-                        @for (s of d.services; track s.idService) {
-                          <li>
-                            <span class="svc-label">{{ s.libelle }}</span>
-                            <span class="svc-prix">
-                              {{ s.quantite }} × {{ s.prixUnitaire | number:'1.2-2' }} €
-                            </span>
-                          </li>
-                        }
-                      </ul>
-                      <div class="total">
-                        Total estimatif : <strong>{{ totalDemande(d) | number:'1.2-2' }} €</strong>
-                      </div>
+                  <details class="demande-details" [attr.open]="!isMobile() ? '' : null">
+                    <summary>Voir les détails</summary>
+                    <div class="row">
+                      <span>Créée le :</span>
+                      <span>{{ demandeDate(d) | date:'dd/MM/yyyy HH:mm' }}</span>
                     </div>
-                  }
+                    @if (d.services?.length) {
+                      <div class="services">
+                        <div class="services-head">Services réalisés</div>
+                        <ul>
+                          @for (s of d.services; track s.idService) {
+                            <li>
+                              <span class="svc-label">{{ s.libelle }}</span>
+                              <span class="svc-prix">
+                                {{ formatServiceQuantity(s) }} • {{ s.prixUnitaire | number:'1.2-2' }} €
+                              </span>
+                            </li>
+                          }
+                        </ul>
+                        <div class="total">
+                          Total estimatif : <strong>{{ totalDemande(d) | number:'1.2-2' }} €</strong>
+                        </div>
+                      </div>
+                      <div class="avis-section">
+                        <h4>Votre avis sur les services</h4>
+                        @if (!isDemandeTraitee(d)) {
+                          <p class="avis-section__hint">
+                            Les avis sont disponibles une fois la demande traitée.
+                          </p>
+                        } @else {
+                          <div class="avis-section__list">
+                            @for (s of d.services; track s.idService) {
+                              <div class="avis-entry">
+                                <div class="avis-entry__header">
+                                  <span class="avis-entry__service">{{ s.libelle }}</span>
+                                  @if (avisForService(d.idDemande, s.idService); as existingAvis) {
+                                    <div class="avis-entry__meta">
+                                      <app-rating-stars [rating]="existingAvis.note" [showValue]="false"></app-rating-stars>
+                                      <span class="avis-entry__date">
+                                        {{ existingAvis.creeLe | date:'dd/MM/yyyy' }}
+                                      </span>
+                                    </div>
+                                  } @else {
+                                    <span class="avis-entry__meta avis-entry__meta--empty">Pas encore d'avis</span>
+                                  }
+                                </div>
+
+                                @if (avisForService(d.idDemande, s.idService); as existingAvis) {
+                                  <p class="avis-entry__comment">
+                                    {{ existingAvis.commentaire || 'Avis sans commentaire.' }}
+                                  </p>
+                                } @else {
+                                  <form class="avis-form" (ngSubmit)="submitAvis(d.idDemande, s.idService)">
+                                    <div class="avis-form__row">
+                                      <label [for]="'note-' + d.idDemande + '-' + s.idService">Note</label>
+                                      <select
+                                        [id]="'note-' + d.idDemande + '-' + s.idService"
+                                        [ngModel]="reviewForm(d.idDemande, s.idService).note"
+                                        (ngModelChange)="updateReviewForm(d.idDemande, s.idService, { note: $event })"
+                                        [disabled]="reviewForm(d.idDemande, s.idService).submitting"
+                                        name="note-{{ d.idDemande }}-{{ s.idService }}">
+                                        @for (score of [1,2,3,4,5]; track score) {
+                                          <option [value]="score">{{ score }}</option>
+                                        }
+                                      </select>
+                                    </div>
+                                    <div class="avis-form__row">
+                                      <label [for]="'commentaire-' + d.idDemande + '-' + s.idService">Commentaire</label>
+                                      <textarea
+                                        [id]="'commentaire-' + d.idDemande + '-' + s.idService"
+                                        rows="3"
+                                        [ngModel]="reviewForm(d.idDemande, s.idService).commentaire"
+                                        (ngModelChange)="updateReviewForm(d.idDemande, s.idService, { commentaire: $event })"
+                                        [disabled]="reviewForm(d.idDemande, s.idService).submitting"
+                                        name="commentaire-{{ d.idDemande }}-{{ s.idService }}"
+                                        placeholder="Partagez votre expérience (facultatif)"></textarea>
+                                    </div>
+                                    <div class="avis-form__actions">
+                                      <button
+                                        class="btn btn-outline btn-small"
+                                        type="submit"
+                                        [disabled]="reviewForm(d.idDemande, s.idService).submitting">
+                                        {{ reviewForm(d.idDemande, s.idService).submitting ? 'Envoi…' : 'Publier mon avis' }}
+                                      </button>
+                                      @if (reviewForm(d.idDemande, s.idService).error) {
+                                        <span class="avis-form__error">
+                                          {{ reviewForm(d.idDemande, s.idService).error }}
+                                        </span>
+                                      }
+                                    </div>
+                                  </form>
+                                }
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </details>
                 </article>
               }
             </div>

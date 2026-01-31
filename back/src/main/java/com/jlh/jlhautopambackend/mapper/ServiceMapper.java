@@ -18,6 +18,9 @@ public class ServiceMapper {
                 .iconId(icon != null ? icon.getIdIcon() : null)
                 .iconUrl(icon != null ? icon.getUrl() : null)
                 .prixUnitaire(s.getPrixUnitaire())
+                .quantiteMode(s.getQuantiteMode())
+                .prixMode(s.getPrixMode())
+                .tailleLot(s.getTailleLot())
                 .quantiteMax(s.getQuantiteMax())
                 .archived(s.isArchived())
                 .build();
@@ -29,6 +32,9 @@ public class ServiceMapper {
                 .description(req.getDescription())
                 .descriptionLongue(req.getDescriptionLongue())
                 .prixUnitaire(req.getPrixUnitaire())
+                .quantiteMode(req.getQuantiteMode())
+                .prixMode(req.getPrixMode())
+                .tailleLot(req.getTailleLot())
                 .quantiteMax(req.getQuantiteMax())
                 .archived(false)
                 .build();

@@ -2,6 +2,7 @@ package com.jlh.jlhautopambackend.controllers;
 
 import com.jlh.jlhautopambackend.dto.*;
 import com.jlh.jlhautopambackend.repository.AdministrateurRepository;
+import com.jlh.jlhautopambackend.services.AvisServiceService;
 import com.jlh.jlhautopambackend.services.RendezVousService;
 import com.jlh.jlhautopambackend.services.support.AuthenticatedClientResolver;
 import com.jlh.jlhautopambackend.services.ServiceService;
@@ -21,15 +22,18 @@ public class ServiceController {
 
     private final ServiceService service;
     private final RendezVousService rendezVousService;
+    private final AvisServiceService avisService;
     private final AuthenticatedClientResolver clientResolver;
     private final AdministrateurRepository adminRepository;
 
     public ServiceController(ServiceService service,
                              RendezVousService rendezVousService,
+                             AvisServiceService avisService,
                              AuthenticatedClientResolver clientResolver,
                              AdministrateurRepository adminRepository) {
         this.service = service;
         this.rendezVousService = rendezVousService;
+        this.avisService = avisService;
         this.clientResolver = clientResolver;
         this.adminRepository = adminRepository;
     }
@@ -44,6 +48,18 @@ public class ServiceController {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/avis")
+    public org.springframework.data.domain.Page<AvisServiceResponse> listAvisByService(
+            @PathVariable Integer id,
+            org.springframework.data.domain.Pageable pageable) {
+        return avisService.findApprovedByService(id, pageable);
+    }
+
+    @GetMapping("/{id}/avis/stats")
+    public ServiceAvisStatsResponse getAvisStats(@PathVariable Integer id) {
+        return avisService.getServiceStats(id);
     }
 
     @PostMapping

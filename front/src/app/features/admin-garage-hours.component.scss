@@ -1,0 +1,229 @@
+@use '../../styles/variables' as v;
+
+.admin-hours {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    margin: 0 0 0.3rem;
+  }
+
+  &__lead {
+    margin: 0;
+    color: rgba(v.$color-primary, 0.7);
+  }
+
+  &__notice {
+    padding: 0.8rem 1rem;
+    border-radius: v.$border-radius-small;
+    background: rgba(248, 215, 218, 0.2);
+    color: #7a1e27;
+    margin: 0;
+  }
+
+  &__tips {
+    padding: 1rem 1.2rem;
+    border-radius: v.$border-radius-small;
+    background: rgba(v.$color-quaternary, 0.6);
+    border: 1px solid rgba(v.$color-secondary, 0.12);
+    margin: 0;
+
+    ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.2rem;
+      color: rgba(v.$color-primary, 0.75);
+      display: grid;
+      gap: 0.4rem;
+    }
+  }
+
+  &__tips-title {
+    margin: 0;
+    font-weight: 600;
+    color: v.$color-primary;
+  }
+
+  &__state {
+    margin: 0;
+    color: rgba(v.$color-primary, 0.7);
+
+    &--error {
+      color: #b3261e;
+    }
+  }
+
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.1rem;
+  }
+
+  &__card {
+    background: #fff;
+    border-radius: v.$border-radius-small;
+    padding: 1rem;
+    box-shadow: v.$shadow-small-light;
+    border: 1px solid rgba(v.$color-secondary, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  &__meta {
+    margin: 0.25rem 0 0;
+    color: rgba(v.$color-primary, 0.6);
+    font-size: 0.9rem;
+  }
+
+  &__badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(v.$color-sixt, 0.16);
+    color: v.$color-sixt;
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    &.is-closed {
+      background: rgba(v.$alert-color, 0.15);
+      color: v.$alert-color;
+    }
+  }
+
+  &__schedule {
+    margin: 0;
+    font-weight: 600;
+    color: v.$color-primary;
+  }
+
+  &__description {
+    margin: 0;
+    color: rgba(v.$color-primary, 0.7);
+    font-size: 0.95rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}
+
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 999;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.hours-modal {
+  background: #fff;
+  color: v.$color-secondary;
+  border-radius: v.$border-radius-high;
+  padding: 1.5rem;
+  width: min(640px, 100%);
+  box-shadow: v.$shadow-elev;
+  border: 1px solid rgba(v.$color-secondary, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__close {
+    border: none;
+    background: transparent;
+    font-size: 1.6rem;
+    cursor: pointer;
+    line-height: 1;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+
+    span {
+      color: rgba(v.$color-primary, 0.85);
+      font-weight: 600;
+    }
+
+    input,
+    select {
+      padding: 0.6rem 0.75rem;
+      border-radius: v.$border-radius-small;
+      border: 1px solid rgba(v.$color-secondary, 0.22);
+      background: rgba(v.$color-quaternary, 0.6);
+      color: v.$color-primary;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:focus {
+        outline: none;
+      }
+
+      &:focus-visible {
+        border-color: rgba(v.$color-secondary, 0.6);
+        box-shadow: 0 0 0 3px rgba(v.$color-secondary, 0.2);
+      }
+    }
+  }
+
+  &__error {
+    margin: 0;
+    color: #b3261e;
+    font-size: 0.85rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  &--confirm {
+    max-width: 400px;
+  }
+}

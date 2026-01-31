@@ -6,6 +6,9 @@ export interface ServiceItem {
   quantite: number;
   prix_unitaire?: number;
   quantite_max?: number;
+  quantiteMode?: 'UNIQUE' | 'LOT';
+  prixMode?: 'UNITAIRE' | 'LOT';
+  tailleLot?: number | null;
 }
 
 export interface DemandeDto {
@@ -58,6 +61,8 @@ export interface ClientSummaryDto {
   vehiculeEnergie?: string | null;
   adresseLigne1?: string | null;
   adresseLigne2?: string | null;
+  adresseCodePostal?: string | null;
+  adresseVille?: string | null;
   codePostal?: string | null;
   ville?: string | null;
 }
@@ -67,6 +72,9 @@ export interface DemandeServiceDto {
   libelle: string;
   prixUnitaire: number;
   quantite: number;
+  quantiteMode?: 'UNIQUE' | 'LOT';
+  prixMode?: 'UNITAIRE' | 'LOT';
+  tailleLot?: number | null;
 }
 
 export interface DemandeDocumentDto {

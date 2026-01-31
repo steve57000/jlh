@@ -39,6 +39,17 @@ public class Service {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal prixUnitaire;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "quantite_mode", nullable = false, length = 20)
+    private ServiceQuantiteMode quantiteMode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "prix_mode", nullable = false, length = 20)
+    private ServicePrixMode prixMode;
+
+    @Column(name = "taille_lot")
+    private Integer tailleLot;
+
     @Column(name = "quantite_max", nullable = false)
     private Integer quantiteMax;
 

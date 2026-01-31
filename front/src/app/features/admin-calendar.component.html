@@ -1,0 +1,299 @@
+<section class="calendar-page">
+  <header class="calendar-page__header">
+    <div>
+      <p class="calendar-page__eyebrow">Calendrier</p>
+      <h2 class="calendar-page__title">Agenda & disponibilités</h2>
+      <p class="calendar-page__hint">
+        Visualisez les créneaux libres, les rendez-vous planifiés et gérez rapidement les demandes associées.
+      </p>
+    </div>
+    <div class="calendar-page__actions">
+      <button type="button" class="btn" (click)="refresh()" [disabled]="loading()">Actualiser</button>
+    </div>
+  </header>
+
+  <section class="calendar-page__filters">
+    <label>
+      <span>Durée des créneaux</span>
+      <select [value]="slotMinutes()" (change)="setSlotMinutes(($any($event.target)).value)">
+        @for (option of slotOptions; track option) {
+          <option [value]="option">{{ option }} min</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Durée personnalisée (min)</span>
+      <input
+        type="number"
+        min="15"
+        step="5"
+        [value]="customSlotMinutes() ?? ''"
+        (input)="setCustomSlotMinutes(($any($event.target)).value)"
+        placeholder="Ex: 75"
+      />
+    </label>
+    <label>
+      <span>Période (du)</span>
+      <input type="date" [value]="dateFilterStart() ?? ''" (change)="setDateFilter('start', ($any($event.target)).value)" />
+    </label>
+    <label>
+      <span>au</span>
+      <input type="date" [value]="dateFilterEnd() ?? ''" (change)="setDateFilter('end', ($any($event.target)).value)" />
+    </label>
+    <label>
+      <span>Type</span>
+      <select [value]="typeFilter()" (change)="setTypeFilter(($any($event.target)).value)">
+        <option value="Tous">Tous</option>
+        <option value="Libre">Disponible</option>
+        <option value="Reserve">Réservé</option>
+        <option value="Indisponible">Indisponible</option>
+      </select>
+    </label>
+    <button type="button" class="btn btn-outline" (click)="refresh()">Actualiser la vue</button>
+  </section>
+
+  @if (loading()) {
+    <div class="calendar-page__state" aria-live="polite">Chargement du calendrier…</div>
+  } @else if (error()) {
+    <div class="calendar-page__state calendar-page__state--error">{{ error() }}</div>
+  } @else {
+    <div class="calendar-layout">
+      <section class="calendar-panel calendar-panel--scheduler">
+        <header class="scheduler__header">
+          <div>
+            <h3>Planificateur {{ rangeLabel() }}</h3>
+            <p class="muted">Visualisez les créneaux et rendez-vous sur une grille horaire inspirée du scheduler.</p>
+          </div>
+          <div class="scheduler__legend">
+            <span class="legend-item legend-item--free">Disponible</span>
+            <span class="legend-item legend-item--reserved">Réservé</span>
+            <span class="legend-item legend-item--blocked">Indisponible</span>
+            <span class="legend-item legend-item--rdv">Rendez-vous</span>
+          </div>
+        </header>
+        @if (!filteredRangeDays().length) {
+          <p class="calendar-page__state">Aucun créneau ou rendez-vous sur la période.</p>
+        } @else {
+          <div
+            #schedulerScroll
+            class="scheduler-scroll"
+            [class.is-dragging]="isDragging()"
+            (pointerdown)="onSchedulerPointerDown($event)"
+            (pointermove)="onSchedulerPointerMove($event)"
+            (pointerup)="onSchedulerPointerUp($event)"
+            (pointerleave)="onSchedulerPointerUp($event)"
+            (pointercancel)="onSchedulerPointerUp($event)"
+          >
+            <div
+              class="scheduler-grid"
+              [style.--minute-height.px]="minuteHeight"
+              [style.--time-step]="slotMinutes()"
+            >
+              <div class="scheduler-grid__times">
+                <div class="scheduler-grid__time scheduler-grid__time--header"></div>
+                @for (time of schedulerTimes(); track time) {
+                  <div class="scheduler-grid__time">{{ formatTimeLabel(time) }}</div>
+                }
+              </div>
+              <div class="scheduler-grid__days">
+                @for (day of filteredRangeDays(); track day.date) {
+                  <div class="scheduler-day">
+                    <div class="scheduler-day__header">
+                      <span>{{ day.date | date:'EEE d MMM' }}</span>
+                      @if (isDayClosed(day)) {
+                        <span class="scheduler-day__closed">Fermé</span>
+                      } @else {
+                        <span class="scheduler-day__count">{{ day.slots.length }} créneaux · {{ day.rendezVous.length }} RDV</span>
+                      }
+                    </div>
+                    <div class="scheduler-day__body" [style.height.px]="schedulerBodyHeight()">
+                      @for (entry of buildDayEntries(day); track entry.id) {
+                        @if (entry.type === 'rdv') {
+                          <button
+                            type="button"
+                            class="scheduler-entry scheduler-entry--rdv"
+                            [style.top.px]="entryTop(entry)"
+                            [style.height.px]="entryHeight(entry)"
+                            (pointerdown)="$event.stopPropagation()"
+                            (click)="onEntryClick(entry)"
+                          >
+                            <span class="scheduler-entry__time">
+                              {{ formatTimeLabel(entry.startMinutes) }} – {{ formatTimeLabel(entry.endMinutes) }}
+                            </span>
+                            <span class="scheduler-entry__label">{{ entry.label }}</span>
+                            <span class="badge" [class]="statusBadgeClass(entry.status)">
+                              {{ entry.status }}
+                            </span>
+                          </button>
+                        } @else {
+                          @if (normalizeStatus(entry.status) === 'Reserve' && entry.payload) {
+                            <button
+                              type="button"
+                              class="scheduler-entry scheduler-entry--slot scheduler-entry--reserved"
+                              [style.top.px]="entryTop(entry)"
+                              [style.height.px]="entryHeight(entry)"
+                              (pointerdown)="$event.stopPropagation()"
+                              (click)="onEntryClick(entry)"
+                            >
+                              <span class="scheduler-entry__time">
+                                {{ formatTimeLabel(entry.startMinutes) }} – {{ formatTimeLabel(entry.endMinutes) }}
+                              </span>
+                              <span class="scheduler-entry__label">{{ slotEntryStatusLabel(entry.status) }}</span>
+                            </button>
+                          } @else {
+                            <div
+                              class="scheduler-entry scheduler-entry--slot"
+                              [class.scheduler-entry--free]="entry.status === 'Libre'"
+                              [class.scheduler-entry--reserved]="normalizeStatus(entry.status) === 'Reserve'"
+                              [class.scheduler-entry--blocked]="entry.status === 'Indisponible'"
+                              [style.top.px]="entryTop(entry)"
+                              [style.height.px]="entryHeight(entry)"
+                            >
+                              <span class="scheduler-entry__time">
+                                {{ formatTimeLabel(entry.startMinutes) }} – {{ formatTimeLabel(entry.endMinutes) }}
+                              </span>
+                              <span class="scheduler-entry__label">{{ slotEntryStatusLabel(entry.status) }}</span>
+                            </div>
+                          }
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </section>
+    </div>
+  }
+</section>
+
+@if (showDetailsModal()) {
+  <div class="calendar-modal calendar-modal--full">
+    <div class="calendar-modal__content" role="dialog" aria-modal="true">
+      <header>
+        <h3>Détails du rendez-vous</h3>
+        <button type="button" class="btn btn-ghost btn-small" (click)="closeDetailsModal(); closeRdvDetails()">Fermer</button>
+      </header>
+      @if (selectedRdv(); as selected) {
+        <p class="muted">Type : {{ selected.demandeType }} • {{ selected.clientLabel }}</p>
+        <div class="detail-grid">
+          <label>
+            <span>Début</span>
+            <input
+              type="datetime-local"
+              [value]="rdvDraft()?.dateDebut"
+              (change)="updateDraftField('dateDebut', ($any($event.target)).value)"
+            />
+          </label>
+          <label>
+            <span>Fin</span>
+            <input
+              type="datetime-local"
+              [value]="rdvDraft()?.dateFin"
+              (change)="updateDraftField('dateFin', ($any($event.target)).value)"
+            />
+          </label>
+        </div>
+        <label class="detail-comment">
+          <span>Note interne</span>
+          <textarea
+            rows="3"
+            [value]="rdvDraft()?.commentaire"
+            (input)="updateDraftField('commentaire', ($any($event.target)).value)"
+          ></textarea>
+        </label>
+        <div class="detail-actions">
+          <button type="button" class="btn" (click)="saveNote()" [disabled]="rdvSaving()">Enregistrer la note</button>
+          <button type="button" class="btn btn-outline" (click)="navigateToDemande(selected)">Voir la demande</button>
+        </div>
+        <div class="detail-actions detail-actions--secondary">
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="updateStatus('Reporte')"
+            [disabled]="rdvSaving() || !canModifySelectedRdv()"
+          >
+            Reporter
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            (click)="updateStatus('Annule')"
+            [disabled]="rdvSaving() || !canModifySelectedRdv()"
+          >
+            Annuler
+          </button>
+        </div>
+        @if (!canModifySelectedRdv()) {
+          <p class="muted">Ce rendez-vous est déjà annulé.</p>
+        }
+        @if (rdvFeedback()) {
+          <p class="feedback" [class.feedback--error]="rdvFeedback() !== 'Rendez-vous mis à jour.'">
+            {{ rdvFeedback() }}
+          </p>
+        }
+      } @else {
+        <p class="calendar-page__state">Aucun rendez-vous sélectionné.</p>
+      }
+    </div>
+  </div>
+}
+
+@if (showDemandeModal()) {
+  <div class="calendar-modal">
+    <div class="calendar-modal__content" role="dialog" aria-modal="true">
+      <header>
+        <h3>Demande de rendez-vous</h3>
+        <button type="button" class="btn btn-ghost btn-small" (click)="closeDemandeModal()">Fermer</button>
+      </header>
+      @if (selectedDemande(); as demande) {
+        <div class="calendar-modal__body">
+          <p><strong>Demande #{{ demande.id_demande }}</strong> — {{ demande.type_libelle || demande.code_type }}</p>
+          <p class="muted">
+            Statut : {{ demande.statut_libelle || demande.code_statut }}
+          </p>
+          <p>
+            Client : {{ demande.client?.prenom }} {{ demande.client?.nom }}
+            @if (demande.client?.telephone) {
+              • {{ demande.client?.telephone }}
+            }
+          </p>
+          @if (demande.rendezVous) {
+            <p>
+              Rendez-vous : {{ demande.rendezVous.dateDebut | date:'dd/MM HH:mm' }}
+              – {{ demande.rendezVous.dateFin | date:'HH:mm' }}
+            </p>
+            @if (demande.rendezVous.commentaire) {
+              <p class="muted">Note : {{ demande.rendezVous.commentaire }}</p>
+            }
+          }
+        </div>
+        <div class="calendar-modal__actions">
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="updateStatus('Reporte')"
+            [disabled]="rdvSaving() || !canModifySelectedRdv()"
+          >
+            Reporter le rendez-vous
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            (click)="updateStatus('Annule')"
+            [disabled]="rdvSaving() || !canModifySelectedRdv()"
+          >
+            Annuler le rendez-vous
+          </button>
+        </div>
+        @if (!canModifySelectedRdv()) {
+          <p class="muted">Ce rendez-vous est déjà annulé.</p>
+        }
+      } @else {
+        <p class="calendar-page__state">Aucune demande trouvée.</p>
+      }
+    </div>
+  </div>
+}

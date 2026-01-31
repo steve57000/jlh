@@ -80,8 +80,13 @@ public class DemandeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('CLIENT')")
-    public ResponseEntity<?> createForClient(Authentication auth, @Valid @RequestBody DemandeRequest req) {
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
+    public ResponseEntity<?> create(Authentication auth, @Valid @RequestBody DemandeRequest req) {
+        if (isAdmin(auth)) {
+            DemandeResponse created = service.create(req);
+            URI uri = URI.create("/api/demandes/" + created.getIdDemande());
+            return ResponseEntity.created(uri).body(created);
+        }
         Client client = requireClient(auth);
         try {
             DemandeResponse created = service.createForClient(client.getIdClient(), req);
@@ -188,21 +193,25 @@ public class DemandeController {
 
     // ★ NOUVEAU : submit = passer Brouillon → En_attente (client-owner)
     @PatchMapping("/{id}/submit")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<DemandeResponse> submit(Authentication auth, @PathVariable Integer id) {
-        Client client = requireClient(auth);
-
-        // Vérifie ownership (le service.update fera la maj proprement)
         var opt = service.findById(id);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         var d = opt.get();
-        if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
-            return ResponseEntity.status(403).build();
-        }
-        assertDemandeEditableForClient(d);
+        String actorRole = resolveActorRole(auth);
+        String actorEmail = auth != null ? auth.getName() : null;
 
-        return service.submitDemande(id, client.getEmail(), "CLIENT")
-                .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
+        if (!isAdmin(auth)) {
+            Client client = requireClient(auth);
+            if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
+                return ResponseEntity.status(403).build();
+            }
+            assertDemandeEditableForClient(d);
+            actorEmail = client.getEmail();
+        }
+
+        return service.submitDemande(id, actorEmail, actorRole)
+                .map(resp -> isAdmin(auth) ? ResponseEntity.ok(resp) : ResponseEntity.ok(filterTimelineForClient(resp)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -227,11 +236,16 @@ public class DemandeController {
     }
 
     @PatchMapping("/{id}/archive")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<DemandeResponse> archive(
             Authentication auth,
             @PathVariable Integer id
     ) {
+        if (isAdmin(auth)) {
+            return service.update(id, DemandeRequest.builder().codeStatut("Annulee").build())
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        }
         Client client = requireClient(auth);
         try {
             return service.archiveDemande(id, client.getIdClient(), client.getEmail())
@@ -272,44 +286,48 @@ public class DemandeController {
     }
 
     @PatchMapping("/{id}/immatriculation")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<DemandeResponse> changeImmatriculation(
             @PathVariable Integer id,
             @RequestBody Map<String, String> body,
             Authentication auth
     ) {
         String immatriculation = body.get("immatriculation");
-        Client client = requireClient(auth);
         var opt = service.findById(id);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         var d = opt.get();
-        if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
-            return ResponseEntity.status(403).build();
+        if (!isAdmin(auth)) {
+            Client client = requireClient(auth);
+            if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
+                return ResponseEntity.status(403).build();
+            }
+            assertDemandeEditableForClient(d);
         }
-        assertDemandeEditableForClient(d);
 
         var req = new DemandeRequest();
         req.setImmatriculation(immatriculation);
         return service.update(id, req)
-                .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
+                .map(resp -> isAdmin(auth) ? ResponseEntity.ok(resp) : ResponseEntity.ok(filterTimelineForClient(resp)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}/client")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<DemandeResponse> updateClientInfo(
             @PathVariable Integer id,
             @RequestBody DemandeClientUpdateRequest body,
             Authentication auth
     ) {
-        Client client = requireClient(auth);
         var opt = service.findById(id);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         var d = opt.get();
-        if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
-            return ResponseEntity.status(403).build();
+        if (!isAdmin(auth)) {
+            Client client = requireClient(auth);
+            if (d.getClient() == null || !client.getIdClient().equals(d.getClient().getIdClient())) {
+                return ResponseEntity.status(403).build();
+            }
+            assertDemandeEditableForClient(d);
         }
-        assertDemandeEditableForClient(d);
 
         var req = new DemandeRequest();
         req.setImmatriculation(body.getImmatriculation());
@@ -322,8 +340,28 @@ public class DemandeController {
         req.setAdresseCodePostal(body.getAdresseCodePostal());
         req.setAdresseVille(body.getAdresseVille());
         return service.update(id, req)
-                .map(resp -> ResponseEntity.ok(filterTimelineForClient(resp)))
+                .map(resp -> isAdmin(auth) ? ResponseEntity.ok(resp) : ResponseEntity.ok(filterTimelineForClient(resp)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    private boolean isAdmin(Authentication auth) {
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority())
+                        || "ROLE_MANAGER".equals(granted.getAuthority()));
+    }
+
+    private String resolveActorRole(Authentication auth) {
+        if (auth == null || auth.getAuthorities() == null) {
+            return "SYSTEM";
+        }
+        return auth.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority()))
+                ? "MANAGER"
+                : auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))
+                        ? "ADMIN"
+                        : "CLIENT";
     }
 
 }

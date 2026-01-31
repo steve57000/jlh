@@ -71,6 +71,9 @@ public interface DemandeMapper {
     @Mapping(target = "prixUnitaire", source = "prixUnitaireService")
     @Mapping(target = "prixUnitaireService", source = "prixUnitaireService")
     @Mapping(target = "quantite", source = "quantite")
+    @Mapping(target = "quantiteMode", source = "quantiteModeService")
+    @Mapping(target = "prixMode", source = "prixModeService")
+    @Mapping(target = "tailleLot", source = "tailleLotService")
     @Mapping(target = "quantiteMax", source = "service.quantiteMax")
     @Mapping(target = "privateNoteService", ignore = true)
     @Mapping(target = "dateHeureService", ignore = true)
@@ -95,6 +98,15 @@ public interface DemandeMapper {
 
         if (target.getQuantiteMax() == null && source.getService() != null)
             target.setQuantiteMax(source.getService().getQuantiteMax());
+
+        if (target.getQuantiteMode() == null && source.getService() != null)
+            target.setQuantiteMode(source.getService().getQuantiteMode());
+
+        if (target.getPrixMode() == null && source.getService() != null)
+            target.setPrixMode(source.getService().getPrixMode());
+
+        if (target.getTailleLot() == null && source.getService() != null)
+            target.setTailleLot(source.getService().getTailleLot());
     }
 
     // ----------- TYPE / STATUT -----------

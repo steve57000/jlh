@@ -18,6 +18,9 @@ public class DemandeServiceDto {
     private Integer quantite;
     private BigDecimal prixUnitaire;
     private BigDecimal prixUnitaireService;
+    private com.jlh.jlhautopambackend.modeles.ServiceQuantiteMode quantiteMode;
+    private com.jlh.jlhautopambackend.modeles.ServicePrixMode prixMode;
+    private Integer tailleLot;
     private Integer quantiteMax;
     private String privateNoteService;
     private Instant dateHeureService;

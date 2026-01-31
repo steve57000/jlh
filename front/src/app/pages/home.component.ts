@@ -1,12 +1,14 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 
 import { PromotionService } from '../services/promotion.service';
 import { ServicesService } from '../services/services.service';
 import { MediaUrlService } from '../services/media-url.service';
+import { AvisServicesService } from '../services/avis-services.service';
 
 import { PromotionModel } from '../modeles/promotion.model';
 import { ServiceDto } from '../modeles/service.model';
+import type { AvisServiceDto } from '../modeles/avis-service.model';
 
 import { PromotionsSliderComponent } from '../features/promotions-slider.component';
 import { IntroAccueilComponent } from '../features/intro-accueil.component';
@@ -14,75 +16,14 @@ import { SectionCarousselComponent } from '../features/section-caroussel.compone
 import {MetiersPictosComponent} from '../features/metiers-pictos.component';
 
 import { BrandsComponent } from '../shared/brands/brands.component';
+import { RatingStarsComponent } from '../shared/rating-stars/rating-stars.component';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 type MetiersPicto = {
   img: string;
   label: string;
   description: string;
 };
-
-// const DEFAULT_METIERS_PICTOS: MetiersPicto[] = [
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-pneu.png',
-//     label: 'Pneumatiques',
-//     description: `Montage, équilibrage et réparation de pneumatiques été, hiver ou 4 saisons pour toutes marques de véhicules.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-hybride.png',
-//     label: 'Véhicules hybrides',
-//     description: `Interventions sécurisées sur les chaînes de traction et batteries haute tension grâce à nos techniciens habilités.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-geometrie.png',
-//     label: 'Géométrie',
-//     description: `Réglage précis du parallélisme et du carrossage pour préserver vos pneus et garantir une tenue de route optimale.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-freinage.png',
-//     label: 'Freinage',
-//     description: `Contrôle et remplacement des plaquettes, disques et liquides afin d’assurer un freinage réactif et sécurisant.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-embrayage.png',
-//     label: 'Embrayage',
-//     description: `Diagnostic et remplacement des embrayages, volants moteurs et butées pour une transmission souple et fiable.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-echappement.png',
-//     label: 'Échappement',
-//     description: `Inspection, réparation et remplacement des lignes d’échappement et filtres à particules pour un moteur sain.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-distribution.png',
-//     label: 'Distribution',
-//     description: `Remplacement de courroies ou de chaînes de distribution selon les préconisations constructeur.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-climatisation.png',
-//     label: 'Climatisation',
-//     description: `Entretien complet du circuit : recharge, nettoyage, contrôle d’étanchéité et désinfection de l’habitacle.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-amortisseur.png',
-//     label: 'Amortisseurs',
-//     description: `Remplacement des amortisseurs, ressorts et biellettes pour une conduite confortable et maîtrisée.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-pre_controle.png',
-//     label: 'Pré-contrôle technique',
-//     description: `Préparation complète au contrôle technique avec diagnostic des points de sécurité et corrections nécessaires.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-revision_constructeur.png',
-//     label: 'Révision constructeur',
-//     description: `Révisions certifiées respectant le carnet d’entretien constructeur et l’utilisation de pièces d’origine ou équivalentes.`
-//   },
-//   {
-//     img: '/icons/pictos-metiers/picto-metier-vidange.png',
-//     label: 'Vidange',
-//     description: `Vidanges moteur avec huiles adaptées, remplacement des filtres et remise à zéro des indicateurs d’entretien.`
-//   },
-// ];
 
 @Component({
   selector: 'app-home',
@@ -94,12 +35,18 @@ type MetiersPicto = {
     IntroAccueilComponent,
     SectionCarousselComponent,
     MetiersPictosComponent,
-    BrandsComponent
+    BrandsComponent,
+    RatingStarsComponent,
+    DatePipe
   ]
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   promotions: PromotionModel[] = [];
+  latestAvis: AvisServiceDto[] = [];
+  avisLoading = false;
+  avisError = false;
+  readonly minAvisDisplay = 3;
 
   activeIndexMetiers = 0;
   activeIndexAgrements = 0;
@@ -108,14 +55,54 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private agrementsInterval: any = null;
   private metiersObserver: IntersectionObserver | null = null;
   private agrementsObserver: IntersectionObserver | null = null;
+  private avisObserver: IntersectionObserver | null = null;
+  private avisLoadHandled = false;
+  private pendingAvisServices: ServiceDto[] | null = null;
+  private readonly fallbackAvis: AvisServiceDto[] = [
+    {
+      idAvis: -1,
+      demandeId: 0,
+      serviceId: 0,
+      serviceLibelle: 'Révision',
+      clientId: 0,
+      clientNomPrenom: 'Camille D.',
+      note: 5,
+      commentaire: 'Accueil impeccable et service rapide, je recommande sans hésiter.',
+      creeLe: '2024-03-05T09:00:00.000Z'
+    },
+    {
+      idAvis: -2,
+      demandeId: 0,
+      serviceId: 0,
+      serviceLibelle: 'Pneumatiques',
+      clientId: 0,
+      clientNomPrenom: 'Julien M.',
+      note: 5,
+      commentaire: 'Très bon conseil et montage impeccable. Merci à toute l’équipe.',
+      creeLe: '2024-02-18T12:00:00.000Z'
+    },
+    {
+      idAvis: -3,
+      demandeId: 0,
+      serviceId: 0,
+      serviceLibelle: 'Entretien',
+      clientId: 0,
+      clientNomPrenom: 'Amina K.',
+      note: 4,
+      commentaire: 'Travail sérieux et délais respectés, je suis satisfaite.',
+      creeLe: '2024-01-22T16:30:00.000Z'
+    }
+  ];
 
   @ViewChild('sectionMetiers', { static: false }) sectionMetiersRef!: ElementRef;
   @ViewChild('sectionAgrements', { static: false }) sectionAgrementsRef!: ElementRef;
+  @ViewChild('sectionAvis', { static: false }) sectionAvisRef!: ElementRef;
 
   constructor(
     private promoService: PromotionService,
     private servicesService: ServicesService,
     private mediaUrl: MediaUrlService,
+    private avisService: AvisServicesService,
     @Inject(PLATFORM_ID) private platformId: Object // <-- pour SSR
   ) {}
 
@@ -123,7 +110,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     {
       title: 'HYBRIDE',
       content: `Votre centre JLH Auto PAM est habilité à effectuer des prestations sur les véhicules hybride !
-      Les voitures hybrides sont similaires aux véhicules thermiques en termes de pneumatiques, d'éclairage,
+       Les voitures hybrides sont similaires aux véhicules thermiques en termes de pneumatiques, d'éclairage,
       de système de freinage ou encore de suspensions. Néanmoins elles nécessitent une véritable habilitation
       pour s'assurer que les prestations sont réalisées de manière conforme et sécurisée. Les experts JLH AUTO PAM sont formés et agréés d'une habilitation BRL ou BOL,
       ce qui leur permet de réaliser toute type de prestation sur votre véhicule hybride : entretien, réparation, pré-contrôle technique et interventions.`,
@@ -131,13 +118,24 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     },
     {
       title: 'RÉVISION CONSTRUCTEUR',
-      content: `Votre centre JLH Auto PAM est habilité à effectuer des prestations sur les véhicules hybride ! Les voitures hybrides sont similaires aux véhicules thermiques en termes de pneumatiques, d'éclairage, de système de freinage ou encore de suspensions. Néanmoins elles nécessitent une véritable habilitation pour s'assurer que les prestations sont réalisées de manière conforme et sécurisée. Les experts Point S sont formés et agréés d'une habilitation BRL ou BOL, ce qui leur permet de réaliser toute type de prestation sur votre véhicule hybride : entretien, réparation, pré-contrôle technique et interventions.`,
+      content: `  La révision est une étape essentielle pour veiller au bon entretien de votre véhicule.
+       Selon les préconisations des constructeurs, elle est à faire tous les 20 000 kms.
+       Chez Point S, pas de stress on s'occupe de tout ! Notre centre agréé se charge de respecter le cahier d’entretien selon les recommandations de votre constructeur.
+        Dites adieu aux révisions trop coûteuses… Faites confiance à notre équipe Point S, pour la révision de votre voiture tout en préservant votre garantie constructeur !`,
       color: 'light'
     }
   ];
 
   metiersPictos: MetiersPicto[] = [];
 
+  get displayAvis(): AvisServiceDto[] {
+    const avis = this.latestAvis ?? [];
+    if (avis.length >= this.minAvisDisplay) {
+      return avis.slice(0, this.minAvisDisplay);
+    }
+    const needed = this.minAvisDisplay - avis.length;
+    return avis.concat(this.fallbackAvis.slice(0, needed));
+  }
 
   ngOnInit() {
     this.promoService.getPromotions().subscribe(data => this.promotions = data || []);
@@ -145,15 +143,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       next: services => {
         const fromServices = this.buildMetiersFromServices(services || []);
         this.metiersPictos = fromServices.length > 0 ? fromServices : this.getDefaultMetiersPictos();
+        this.deferLoadHomeAvis(services || []);
       },
       error: () => {
         this.metiersPictos = this.getDefaultMetiersPictos();
+        this.latestAvis = [];
+        this.avisError = true;
       }
     });
   }
 
   ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return; // <-- Empêche le code côté serveur
+    if (!this.canAutoRotateAgrements()) return;
 
     // Observer agréments
     this.agrementsObserver = new IntersectionObserver(
@@ -169,6 +171,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.sectionAgrementsRef?.nativeElement) {
       this.agrementsObserver.observe(this.sectionAgrementsRef.nativeElement);
     }
+
+    if (this.pendingAvisServices) {
+      this.setupAvisObserver(this.pendingAvisServices);
+    }
   }
 
   ngOnDestroy() {
@@ -176,6 +182,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clearAgrementsSlide();
     if (this.metiersObserver) this.metiersObserver.disconnect();
     if (this.agrementsObserver) this.agrementsObserver.disconnect();
+    if (this.avisObserver) this.avisObserver.disconnect();
   }
 
   private buildMetiersFromServices(services: ServiceDto[]): MetiersPicto[] {
@@ -205,6 +212,127 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private resolveIcon(url: string): string | null {
     return this.mediaUrl.resolve(url);
+  }
+
+  private loadHomeAvis(services: ServiceDto[]) {
+    const candidates = services
+      .filter(svc => svc.idService !== null && svc.idService !== undefined && !Number.isNaN(Number(svc.idService)))
+      .slice(0, 8);
+    if (!candidates.length) {
+      this.latestAvis = [];
+      this.avisLoading = false;
+      return;
+    }
+
+    this.avisLoading = true;
+    this.avisError = false;
+
+    const minAvis = this.minAvisDisplay;
+    const maxAvis = this.minAvisDisplay;
+    const pageSize = 8;
+    const primaryServiceCount = 5;
+
+    let hadError = false;
+    const fetchAvisForServices = (servicesToFetch: ServiceDto[]) => forkJoin(
+      servicesToFetch.map(candidate =>
+        this.avisService.getAvisByService(Number(candidate.idService), {
+          page: 0,
+          size: pageSize,
+          sort: 'creeLe,desc'
+        }).pipe(
+          map(response => (Array.isArray(response) ? response : response.content ?? [])),
+          catchError(() => {
+            hadError = true;
+            return of([] as AvisServiceDto[]);
+          })
+        )
+      )
+    ).pipe(map(avisGroups => avisGroups.flat()));
+
+    const primaryServices = candidates.slice(0, primaryServiceCount);
+    const fallbackServices = candidates.slice(primaryServiceCount, primaryServiceCount + 2);
+
+    fetchAvisForServices(primaryServices).pipe(
+      switchMap(primaryAvis => {
+        if (primaryAvis.length >= minAvis || !fallbackServices.length) {
+          return of(primaryAvis);
+        }
+        return fetchAvisForServices(fallbackServices).pipe(
+          map(extraAvis => primaryAvis.concat(extraAvis))
+        );
+      })
+    ).subscribe({
+      next: collected => {
+        this.latestAvis = collected
+          .slice()
+          .sort((a, b) => {
+            const tsA = a?.creeLe ? new Date(a.creeLe).getTime() : 0;
+            const tsB = b?.creeLe ? new Date(b.creeLe).getTime() : 0;
+            return tsB - tsA;
+          })
+          .slice(0, maxAvis);
+        this.avisLoading = false;
+        this.avisError = hadError;
+      },
+      error: () => {
+        this.latestAvis = [];
+        this.avisLoading = false;
+        this.avisError = true;
+      }
+    });
+  }
+
+  private canAutoRotateAgrements(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    if (window.matchMedia('(max-width: 768px)').matches) return false;
+    return true;
+  }
+
+  private deferLoadHomeAvis(services: ServiceDto[]) {
+    if (!isPlatformBrowser(this.platformId)) {
+      this.loadHomeAvis(services);
+      return;
+    }
+
+    this.pendingAvisServices = services;
+    this.setupAvisObserver(services);
+  }
+
+  private setupAvisObserver(services: ServiceDto[]) {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.avisLoadHandled) return;
+
+    const schedule = () => {
+      if (this.avisLoadHandled) return;
+      this.avisLoadHandled = true;
+      this.loadHomeAvis(services);
+    };
+
+    if (this.avisObserver) {
+      this.avisObserver.disconnect();
+      this.avisObserver = null;
+    }
+
+    if (this.sectionAvisRef?.nativeElement) {
+      this.avisObserver = new IntersectionObserver(
+        entries => {
+          if (entries[0]?.isIntersecting) {
+            schedule();
+            this.avisObserver?.disconnect();
+            this.avisObserver = null;
+          }
+        },
+        { rootMargin: '200px 0px', threshold: 0.2 }
+      );
+      this.avisObserver.observe(this.sectionAvisRef.nativeElement);
+    }
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(schedule, { timeout: 5000 });
+    }
+
+    setTimeout(schedule, 4000);
   }
   clearMetiersSlide() {
     if (this.metiersInterval) {

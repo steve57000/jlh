@@ -84,7 +84,7 @@ public class DevisController {
     }
 
     @PostMapping("/{id}/rendezvous")
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public ResponseEntity<RendezVousResponse> createRendezVous(
             @PathVariable Integer id,
             @Valid @RequestBody RendezVousRequest req,

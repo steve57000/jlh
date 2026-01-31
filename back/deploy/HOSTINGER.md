@@ -108,7 +108,7 @@ Dans tous les cas, gardez un sous-domaine dédié :
 
 Si vous déployez depuis **deux repos distincts** :
 
-1. **Repo backend** : build l'image → push sur un registre (tag `:prod` ou SHA).
+1. **Repo backend** : build l'image → push sur un registre (tag `:prod` ou SHA, évitez `:latest` si votre registre rend ce tag immuable).
 2. **Repo frontend** : build l'image SSR → push sur un registre (tag `:prod` ou SHA).
 3. **Sur le VPS** : utilisez un `docker-compose.hostinger.yml` qui référence
    l’image backend (même sans code source présent).

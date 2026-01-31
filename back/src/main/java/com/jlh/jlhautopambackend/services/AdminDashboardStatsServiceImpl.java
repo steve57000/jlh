@@ -10,6 +10,7 @@ import com.jlh.jlhautopambackend.modeles.Demande;
 import com.jlh.jlhautopambackend.modeles.DemandeService;
 import com.jlh.jlhautopambackend.modeles.Devis;
 import com.jlh.jlhautopambackend.modeles.RendezVous;
+import com.jlh.jlhautopambackend.modeles.ServicePrixMode;
 import com.jlh.jlhautopambackend.repository.DemandeRepository;
 import com.jlh.jlhautopambackend.repository.DemandeServiceRepository;
 import com.jlh.jlhautopambackend.repository.DevisRepository;
@@ -242,6 +243,16 @@ public class AdminDashboardStatsServiceImpl implements AdminDashboardStatsServic
             return BigDecimal.ZERO;
         }
         int qty = service.getQuantite() != null ? service.getQuantite() : 1;
+        ServicePrixMode mode = service.getPrixModeService() != null
+                ? service.getPrixModeService()
+                : ServicePrixMode.UNITAIRE;
+        if (mode == ServicePrixMode.LOT) {
+            int lotSize = service.getTailleLotService() != null ? service.getTailleLotService() : 1;
+            if (lotSize > 0) {
+                int lots = qty / lotSize;
+                return service.getPrixUnitaireService().multiply(BigDecimal.valueOf(lots));
+            }
+        }
         return service.getPrixUnitaireService().multiply(BigDecimal.valueOf(qty));
     }
 
