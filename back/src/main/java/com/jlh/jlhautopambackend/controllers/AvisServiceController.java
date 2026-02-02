@@ -49,28 +49,37 @@ public class AvisServiceController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('CLIENT','ADMIN','MANAGER')")
     public Page<AvisServiceResponse> list(
             @RequestParam(required = false) Integer serviceId,
             @RequestParam(required = false) Integer demandeId,
             @RequestParam(required = false) Integer clientId,
             @RequestParam(required = false) String statut,
             Pageable pageable) {
+
+        // ✅ Cas 1 : filtre serviceId
         if (serviceId != null) {
             if (statut != null) {
                 return service.findByService(serviceId, parseStatut(statut), pageable);
             }
-            return service.findByService(serviceId, pageable);
+            // si pas de statut : par défaut APPROVED (public)
+            return service.findByService(serviceId, AvisServiceStatut.APPROVED, pageable);
         }
+
+        // ✅ Cas 2 : filtre demandeId
         if (demandeId != null) {
             return service.findByDemande(demandeId, pageable);
         }
+
+        // ✅ Cas 3 : filtre clientId
         if (clientId != null) {
             return service.findByClient(clientId, pageable);
         }
-        throw new org.springframework.web.server.ResponseStatusException(
-                org.springframework.http.HttpStatus.BAD_REQUEST,
-                "Un filtre serviceId, demandeId ou clientId est requis.");
+
+        // ✅ Cas 4 : aucun filtre => tous les avis APPROVED (public)
+        if (statut != null) {
+            return service.findApproved(pageable); // tu peux ignorer "statut" ou vérifier qu'il vaut APPROVED
+        }
+        return service.findApproved(pageable);
     }
 
     @GetMapping("/{id}")

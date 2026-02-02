@@ -13,6 +13,10 @@ import org.springframework.data.domain.Pageable;
 public interface AvisServiceService {
     AvisServiceResponse create(Integer clientId, AvisServiceRequest request);
 
+    Page<AvisServiceResponse> findApproved(Pageable pageable);
+
+    Page<AvisServiceResponse> findAll(Pageable pageable);
+
     List<AvisServiceResponse> findByService(Integer serviceId);
 
     List<AvisServiceResponse> findByDemande(Integer demandeId);

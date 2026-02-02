@@ -15,6 +15,10 @@ import org.springframework.stereotype.Repository;
 public interface AvisServiceRepository extends JpaRepository<AvisService, Long> {
     boolean existsByDemande_IdDemandeAndService_IdService(Integer demandeId, Integer serviceId);
 
+    Page<AvisService> findByStatut(AvisServiceStatut statut, Pageable pageable);
+
+    Page<AvisService> findAll(Pageable pageable);
+
     List<AvisService> findByService_IdService(Integer serviceId);
 
     Page<AvisService> findByService_IdService(Integer serviceId, Pageable pageable);

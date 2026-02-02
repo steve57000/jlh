@@ -48,6 +48,20 @@ public class AvisServiceServiceImpl implements AvisServiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<AvisServiceResponse> findApproved(Pageable pageable) {
+        return avisRepository.findByStatut(AvisServiceStatut.APPROVED, pageable)
+                .map(mapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AvisServiceResponse> findAll(Pageable pageable) {
+        return avisRepository.findAll(pageable)
+                .map(mapper::toResponse);
+    }
+
+    @Override
     @Transactional
     public AvisServiceResponse create(Integer clientId, AvisServiceRequest request) {
         if (clientId == null) {
