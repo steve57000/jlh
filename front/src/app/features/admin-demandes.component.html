@@ -557,45 +557,72 @@
                   />
                 </label>
                 <label>
-                  <span>Durée</span>
-                  <select
+                  <span>Durée (min)</span>
+                  <input
+                    type="number"
+                    min="30"
+                    max="720"
+                    step="15"
                     [value]="calendarSlotMinutes()"
                     (change)="updateCalendarSlotMinutes(($any($event.target)).value)"
-                  >
-                    <option value="30">30 min</option>
-                    <option value="45">45 min</option>
-                    <option value="60">60 min</option>
-                  </select>
+                  />
                 </label>
               </div>
               @if (calendarLoading()) {
                 <p class="muted">Chargement des disponibilités…</p>
               } @else if (calendarError()) {
                 <p class="feedback feedback--error">{{ calendarError() }}</p>
-              } @else if (!calendarSlots().length) {
+              } @else if (!calendarDays().length) {
                 <p class="muted">Aucun créneau calculé pour la période.</p>
               } @else {
-                <ul class="calendar-availability__list">
-                  @for (slot of calendarSlots(); track slot.dateDebut) {
-                    <li>
-                      <div>
-                        <strong>{{ slot.dateDebut | date:'dd/MM HH:mm' }}</strong>
-                        → {{ slot.dateFin | date:'HH:mm' }}
-                        <span class="badge badge--availability" [class]="slot.codeStatut">
-                          {{ getCalendarSlotLabel(slot) }}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-small"
-                        [disabled]="slot.codeStatut !== 'Libre'"
-                        (click)="applyCalendarSlot(slot)"
-                      >
-                        Proposer
-                      </button>
-                    </li>
+                <div class="calendar-availability__legend">
+                  <span class="calendar-status" [ngStyle]="calendarStatusStyle('available')">Disponible</span>
+                  <span class="calendar-status" [ngStyle]="calendarStatusStyle('limited')">Créneaux limités</span>
+                  <span class="calendar-status" [ngStyle]="calendarStatusStyle('full')">Complet</span>
+                  <span class="calendar-status" [ngStyle]="calendarStatusStyle('closed')">Fermé</span>
+                </div>
+                <div class="calendar-availability__days">
+                  @for (day of calendarDays(); track day.date) {
+                    <button
+                      type="button"
+                      class="calendar-day"
+                      [class.is-selected]="day.date === selectedCalendarDay()"
+                      [ngStyle]="calendarStatusStyle(day.status)"
+                      (click)="selectCalendarDay(day.date)"
+                    >
+                      <span class="calendar-day__label">{{ day.label }}</span>
+                    </button>
                   }
-                </ul>
+                </div>
+                <div class="calendar-availability__slots">
+                  @if (!selectedCalendarDay()) {
+                    <p class="muted">Sélectionnez un jour pour afficher les créneaux.</p>
+                  } @else if (!calendarSlots().length) {
+                    <p class="muted">Aucun créneau disponible pour ce jour.</p>
+                  } @else {
+                    <ul class="calendar-availability__list">
+                      @for (slot of calendarSlots(); track slot.dateDebut) {
+                        <li>
+                          <div>
+                            <strong>{{ slot.dateDebut | date:'dd/MM HH:mm' }}</strong>
+                            → {{ slot.dateFin | date:'HH:mm' }}
+                            <span class="badge badge--availability" [class]="slot.codeStatut">
+                              {{ getCalendarSlotLabel(slot) }}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            class="btn btn-ghost btn-small"
+                            [disabled]="slot.codeStatut !== 'Libre'"
+                            (click)="applyCalendarSlot(slot)"
+                          >
+                            Proposer
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
               }
             </div>
 
