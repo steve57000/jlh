@@ -536,12 +536,11 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
             return false;
         }
         String rdvStatut = rendezVous.getStatut().getCodeStatut();
-        String target = STATUT_EN_ATTENTE;
-        if ("Confirme".equals(rdvStatut)) {
-            target = STATUT_TRAITEE;
-        } else if ("Annule".equals(rdvStatut)) {
-            target = STATUT_ANNULEE;
-        }
+        String target = "Confirme".equals(rdvStatut)
+                ? STATUT_TRAITEE
+                : "Annule".equals(rdvStatut)
+                        ? STATUT_ANNULEE
+                        : STATUT_EN_ATTENTE;
         String current = demande.getStatutDemande() != null ? demande.getStatutDemande().getCodeStatut() : null;
         if (target.equals(current)) {
             return false;
