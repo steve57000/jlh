@@ -7,6 +7,7 @@ import com.jlh.jlhautopambackend.repository.DemandeRepository;
 import com.jlh.jlhautopambackend.repository.DemandeTimelineRepository;
 import com.jlh.jlhautopambackend.repository.StatutDemandeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -99,6 +100,7 @@ public class DemandeTimelineServiceImpl implements DemandeTimelineService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DemandeTimelineEntryDto logAdminEvent(Integer demandeId,
                                                  DemandeTimelineRequest request,
                                                  String actorEmail) {
@@ -154,22 +156,26 @@ public class DemandeTimelineServiceImpl implements DemandeTimelineService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logStatusChange(Demande demande, StatutDemande newStatut, String previousCode, String actorEmail, String actorRole) {
         saveStatusEvent(demande, newStatut, previousCode, actorEmail, actorRole, null, null, false);
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DemandeTimelineEntryDto logClientComment(Demande demande, String commentaire, String actorEmail) {
         DemandeTimeline saved = saveCommentEvent(demande, commentaire, actorEmail, "CLIENT", true);
         return timelineMapper.toDto(saved, userService);
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logMontantValidation(Demande demande, BigDecimal montant, String commentaire, String actorEmail, String actorRole) {
         saveMontantEvent(demande, montant, commentaire, actorEmail, actorRole, null);
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logRendezVousEvent(Demande demande, RendezVous rendezVous, String commentaire, String actorEmail, String actorRole) {
         saveRendezVousEvent(demande, rendezVous, commentaire, actorEmail, actorRole, null);
     }
