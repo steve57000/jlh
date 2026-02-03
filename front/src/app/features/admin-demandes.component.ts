@@ -308,12 +308,24 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     return JSON.stringify(this.normalize(baseline)) !== JSON.stringify(this.normalize(current));
   });
 
-  readonly isLockedForEdit = computed(() => {
+  readonly isDemandLockedForEdit = computed(() => {
     const draft = this.draft();
     if (!draft) {
       return false;
     }
-    return draft.code_statut === 'Traitee' || draft.code_statut === 'Annulee';
+    const rdvStatut = draft.rendezVous?.codeStatut;
+    return draft.code_statut === 'Traitee'
+      || draft.code_statut === 'Annulee'
+      || rdvStatut === 'Confirme';
+  });
+
+  readonly isRdvLockedForEdit = computed(() => {
+    const draft = this.draft();
+    if (!draft) {
+      return false;
+    }
+    const rdvStatut = draft.rendezVous?.codeStatut;
+    return draft.code_statut === 'Annulee' || rdvStatut === 'Annule';
   });
 
   ngOnInit() {
