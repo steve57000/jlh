@@ -139,6 +139,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         RendezVous saved = repo.save(ent);
         syncCreneauStatusFromRendezVous(saved);
         syncDemandeStatutFromRendezVous(saved, admin != null ? admin.getEmail() : null);
+        syncDevisFromRendezVous(saved);
         timelineService.logRendezVousEvent(demande, saved, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
         return mapper.toResponse(saved);
     }
@@ -170,6 +171,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         RendezVous saved = repo.save(ent);
         syncCreneauStatusFromRendezVous(saved);
         syncDemandeStatutFromRendezVous(saved, admin != null ? admin.getEmail() : null);
+        syncDevisFromRendezVous(saved);
         timelineService.logRendezVousEvent(demande, saved, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
         return mapper.toResponse(saved);
     }
@@ -197,6 +199,7 @@ public class RendezVousServiceImpl implements RendezVousService {
         RendezVous saved = repo.save(ent);
         syncCreneauStatusFromRendezVous(saved);
         syncDemandeStatutFromRendezVous(saved, admin != null ? admin.getEmail() : null);
+        syncDevisFromRendezVous(saved);
         timelineService.logRendezVousEvent(demande, saved, "Rendez-vous planifié", admin.getEmail(), "ADMIN");
         return mapper.toResponse(saved);
     }
@@ -228,6 +231,7 @@ public class RendezVousServiceImpl implements RendezVousService {
             if (updated.getDemande() != null) {
                 syncDemandeStatutFromRendezVous(updated,
                         updated.getAdministrateur() != null ? updated.getAdministrateur().getEmail() : null);
+                syncDevisFromRendezVous(updated);
                 timelineService.logRendezVousEvent(updated.getDemande(), updated, "Rendez-vous mis à jour",
                         updated.getAdministrateur() != null ? updated.getAdministrateur().getEmail() : null, "ADMIN");
             }
@@ -398,6 +402,28 @@ public class RendezVousServiceImpl implements RendezVousService {
         demande.setStatutDemande(statut);
         Demande saved = demandeRepo.save(demande);
         timelineService.logStatusChange(saved, statut, current, actorEmail, "ADMIN");
+    }
+
+    private void syncDevisFromRendezVous(RendezVous rendezVous) {
+        if (rendezVous == null) {
+            return;
+        }
+        Demande demande = rendezVous.getDemande();
+        if (demande == null) {
+            return;
+        }
+        Devis devis = demande.getDevis();
+        if (devis == null) {
+            return;
+        }
+        Integer rdvId = rendezVous.getIdRdv();
+        if (rdvId == null) {
+            return;
+        }
+        if (devis.getRendezVousId() == null || !rdvId.equals(devis.getRendezVousId())) {
+            devis.setRendezVousId(rdvId);
+            devisRepository.save(devis);
+        }
     }
 
     private void syncCreneauStatusFromRendezVous(RendezVous rendezVous) {
