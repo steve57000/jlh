@@ -509,6 +509,40 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     this.rdvProposalFeedbackType.set('success');
   }
 
+  getCalendarSlotLabel(slot: CreneauCalendarEntryDto) {
+    const base = this.calendarSlotBaseLabel(slot.codeStatut);
+    const total = slot.totalCount ?? null;
+    const available = slot.availableCount ?? null;
+    const reserved = slot.reservedCount ?? null;
+    const unavailable = slot.unavailableCount ?? null;
+    if (!total || total <= 0) {
+      return slot.libelleStatut || base;
+    }
+    if (slot.codeStatut === 'Libre' && available !== null) {
+      return `${base} (${available}/${total})`;
+    }
+    if (slot.codeStatut === 'Reserve' && reserved !== null) {
+      return `${base} (${reserved}/${total})`;
+    }
+    if (slot.codeStatut === 'Indisponible' && unavailable !== null) {
+      return `${base} (${unavailable}/${total})`;
+    }
+    return `${base} (0/${total})`;
+  }
+
+  private calendarSlotBaseLabel(code: string) {
+    switch (code) {
+      case 'Libre':
+        return 'Disponible';
+      case 'Reserve':
+        return 'Réservé';
+      case 'Indisponible':
+        return 'Indisponible';
+      default:
+        return code;
+    }
+  }
+
   addProposalSlot() {
     const current = this.rdvProposalDraft();
     if (current.length >= 3) {

@@ -16,4 +16,8 @@ public class CreneauCalendarEntryDto {
     private Instant dateFin;
     private String codeStatut;
     private String libelleStatut;
+    private Integer totalCount;
+    private Integer availableCount;
+    private Integer reservedCount;
+    private Integer unavailableCount;
 }

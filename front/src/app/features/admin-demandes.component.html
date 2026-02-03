@@ -582,7 +582,7 @@
                         <strong>{{ slot.dateDebut | date:'dd/MM HH:mm' }}</strong>
                         → {{ slot.dateFin | date:'HH:mm' }}
                         <span class="badge badge--availability" [class]="slot.codeStatut">
-                          {{ slot.libelleStatut || slot.codeStatut }}
+                          {{ getCalendarSlotLabel(slot) }}
                         </span>
                       </div>
                       <button
