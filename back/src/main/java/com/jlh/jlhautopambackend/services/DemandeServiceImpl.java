@@ -508,6 +508,11 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         if (demande == null || response == null) {
             return response;
         }
+        boolean statutSynced = syncStatutFromRendezVousIfNeeded(demande);
+        if (statutSynced && demande.getTypeDemande() != null
+                && !TYPE_RENDEZ_VOUS.equals(demande.getTypeDemande().getCodeType())) {
+            response.setStatutDemande(mapper.toDto(demande.getStatutDemande()));
+        }
         if (response.getClient() != null && demande.getImmatriculation() != null) {
             response.getClient().setImmatriculation(demande.getImmatriculation());
         }
@@ -520,6 +525,33 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
             response.setRendezVous(rendezVousMapper.toResponse(rendezVous));
         }
         return response;
+    }
+
+    private boolean syncStatutFromRendezVousIfNeeded(Demande demande) {
+        if (demande == null) {
+            return false;
+        }
+        RendezVous rendezVous = demande.getRendezVous();
+        if (rendezVous == null || rendezVous.getStatut() == null) {
+            return false;
+        }
+        String rdvStatut = rendezVous.getStatut().getCodeStatut();
+        String target = STATUT_EN_ATTENTE;
+        if ("Confirme".equals(rdvStatut)) {
+            target = STATUT_TRAITEE;
+        } else if ("Annule".equals(rdvStatut)) {
+            target = STATUT_ANNULEE;
+        }
+        String current = demande.getStatutDemande() != null ? demande.getStatutDemande().getCodeStatut() : null;
+        if (target.equals(current)) {
+            return false;
+        }
+        StatutDemande statut = statutRepo.findById(target)
+                .orElseThrow(() -> new IllegalStateException("StatutDemande introuvable: " + target));
+        demande.setStatutDemande(statut);
+        Demande saved = repository.save(demande);
+        timelineService.logStatusChange(saved, statut, current, "system", "SYSTEM");
+        return true;
     }
 
     private void applyServiceUpdates(Demande demande, List<com.jlh.jlhautopambackend.dto.DemandeServiceDto> services) {
