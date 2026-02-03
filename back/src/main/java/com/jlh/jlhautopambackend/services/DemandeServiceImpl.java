@@ -23,6 +23,7 @@ import com.jlh.jlhautopambackend.repository.TypeDemandeRepository;
 import com.jlh.jlhautopambackend.utils.IcsUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.List;
@@ -533,6 +534,9 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         }
         RendezVous rendezVous = demande.getRendezVous();
         if (rendezVous == null || rendezVous.getStatut() == null) {
+            return false;
+        }
+        if (TransactionSynchronizationManager.isCurrentTransactionReadOnly()) {
             return false;
         }
         String rdvStatut = rendezVous.getStatut().getCodeStatut();
