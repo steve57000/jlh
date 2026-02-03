@@ -115,11 +115,9 @@ public class CreneauServiceImpl implements CreneauService {
         ZonedDateTime endZdt = end.atZone(zoneId);
 
         List<Creneau> existing = repository.findOverlapping(start, end);
-        Map<SlotKey, Creneau> creneauBySlot = existing.stream()
-                .collect(Collectors.toMap(
-                        c -> new SlotKey(c.getDateDebut(), c.getDateFin()),
-                        c -> c,
-                        (a, b) -> a
+        Map<SlotKey, List<Creneau>> creneauxBySlot = existing.stream()
+                .collect(Collectors.groupingBy(
+                        c -> new SlotKey(c.getDateDebut(), c.getDateFin())
                 ));
 
         List<GarageOpeningHour> openingHours = openingHourRepository.findAll();
@@ -147,16 +145,22 @@ public class CreneauServiceImpl implements CreneauService {
                     boolean withinOpening = hasOpenings && openings.stream()
                             .anyMatch(range -> !cursor.isBefore(range.start())
                                     && !next.isAfter(range.end()));
-                    Creneau matched = creneauBySlot.get(new SlotKey(slotStart, slotEnd));
-                    StatutCreneau statut = withinOpening
-                            ? resolveSlotStatus(matched)
-                            : resolveStatut(STATUT_INDISPONIBLE);
+                    List<Creneau> matched = creneauxBySlot
+                            .getOrDefault(new SlotKey(slotStart, slotEnd), List.of());
+                    SlotAvailability availability = withinOpening
+                            ? resolveSlotAvailability(matched)
+                            : SlotAvailability.closed(resolveStatut(STATUT_INDISPONIBLE));
+                    StatutCreneau statut = availability.statut();
                     result.add(CreneauCalendarEntryDto.builder()
-                            .idCreneau(matched != null ? matched.getIdCreneau() : null)
+                            .idCreneau(resolveSlotId(matched))
                             .dateDebut(slotStart)
                             .dateFin(slotEnd)
                             .codeStatut(statut.getCodeStatut())
                             .libelleStatut(statut.getLibelle())
+                            .totalCount(availability.totalCount())
+                            .availableCount(availability.availableCount())
+                            .reservedCount(availability.reservedCount())
+                            .unavailableCount(availability.unavailableCount())
                             .build());
                 }
             }
@@ -168,15 +172,31 @@ public class CreneauServiceImpl implements CreneauService {
                 .toList();
     }
 
-    private StatutCreneau resolveSlotStatus(Creneau creneau) {
-        if (creneau == null || creneau.getStatut() == null) {
-            return resolveStatut(STATUT_LIBRE);
+    private SlotAvailability resolveSlotAvailability(List<Creneau> creneaux) {
+        if (creneaux == null || creneaux.isEmpty()) {
+            return SlotAvailability.open(resolveStatut(STATUT_LIBRE), 0, 0, 0, 0);
         }
-        String code = creneau.getStatut().getCodeStatut();
-        if (STATUT_RESERVE.equals(code) || STATUT_INDISPONIBLE.equals(code)) {
-            return creneau.getStatut();
+        int total = creneaux.size();
+        int reserved = (int) creneaux.stream()
+                .filter(creneau -> isStatut(creneau, STATUT_RESERVE))
+                .count();
+        int unavailable = (int) creneaux.stream()
+                .filter(creneau -> isStatut(creneau, STATUT_INDISPONIBLE))
+                .count();
+        int available = total - reserved - unavailable;
+        if (available > 0) {
+            return SlotAvailability.open(resolveStatut(STATUT_LIBRE), total, available, reserved, unavailable);
         }
-        return resolveStatut(STATUT_LIBRE);
+        if (reserved > 0) {
+            return SlotAvailability.open(resolveStatut(STATUT_RESERVE), total, available, reserved, unavailable);
+        }
+        return SlotAvailability.open(resolveStatut(STATUT_INDISPONIBLE), total, available, reserved, unavailable);
+    }
+
+    private boolean isStatut(Creneau creneau, String code) {
+        return creneau != null
+                && creneau.getStatut() != null
+                && code.equals(creneau.getStatut().getCodeStatut());
     }
 
     private StatutCreneau resolveStatut(String code) {
@@ -249,4 +269,40 @@ public class CreneauServiceImpl implements CreneauService {
     private record TimeRange(LocalTime start, LocalTime end) { }
 
     private record SlotKey(Instant start, Instant end) { }
+
+    private record SlotAvailability(
+            StatutCreneau statut,
+            Integer totalCount,
+            Integer availableCount,
+            Integer reservedCount,
+            Integer unavailableCount
+    ) {
+        private static SlotAvailability open(StatutCreneau statut,
+                                             Integer total,
+                                             Integer available,
+                                             Integer reserved,
+                                             Integer unavailable) {
+            return new SlotAvailability(statut, total, available, reserved, unavailable);
+        }
+
+        private static SlotAvailability closed(StatutCreneau statut) {
+            return new SlotAvailability(statut, 0, 0, 0, 0);
+        }
+    }
+
+    private Integer resolveSlotId(List<Creneau> creneaux) {
+        if (creneaux == null || creneaux.isEmpty()) {
+            return null;
+        }
+        return creneaux.stream()
+                .filter(creneau -> isStatut(creneau, STATUT_RESERVE))
+                .map(Creneau::getIdCreneau)
+                .filter(id -> id != null && id > 0)
+                .min(Integer::compareTo)
+                .or(() -> creneaux.stream()
+                        .map(Creneau::getIdCreneau)
+                        .filter(id -> id != null && id > 0)
+                        .min(Integer::compareTo))
+                .orElse(null);
+    }
 }
