@@ -198,6 +198,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DemandeResponse> findByClientId(Integer clientId) {
         return repository.findByClient_IdClientOrderByDateDemandeDesc(clientId)
                 .stream()
@@ -509,10 +510,23 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         if (demande == null || response == null) {
             return response;
         }
-        boolean statutSynced = syncStatutFromRendezVousIfNeeded(demande);
+        boolean readOnlyTx = TransactionSynchronizationManager.isCurrentTransactionReadOnly();
+        String derivedStatut = deriveStatutCodeFromRendezVous(demande);
+        boolean statutSynced = !readOnlyTx && syncStatutFromRendezVousIfNeeded(demande);
         if (statutSynced && demande.getTypeDemande() != null
                 && !TYPE_RENDEZ_VOUS.equals(demande.getTypeDemande().getCodeType())) {
             response.setStatutDemande(mapper.toDto(demande.getStatutDemande()));
+        } else if (readOnlyTx && derivedStatut != null && demande.getTypeDemande() != null
+                && !TYPE_RENDEZ_VOUS.equals(demande.getTypeDemande().getCodeType())) {
+            String current = response.getStatutDemande() != null ? response.getStatutDemande().getCodeStatut() : null;
+            if (!derivedStatut.equals(current)) {
+                StatutDemande statut = statutRepo.findById(derivedStatut).orElse(null);
+                if (statut != null) {
+                    response.setStatutDemande(mapper.toDto(statut));
+                } else {
+                    response.setStatutDemande(new com.jlh.jlhautopambackend.dto.StatutDemandeDto(derivedStatut, derivedStatut));
+                }
+            }
         }
         if (response.getClient() != null && demande.getImmatriculation() != null) {
             response.getClient().setImmatriculation(demande.getImmatriculation());
@@ -526,6 +540,24 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
             response.setRendezVous(rendezVousMapper.toResponse(rendezVous));
         }
         return response;
+    }
+
+    private String deriveStatutCodeFromRendezVous(Demande demande) {
+        if (demande == null) {
+            return null;
+        }
+        RendezVous rendezVous = demande.getRendezVous();
+        if (rendezVous == null || rendezVous.getStatut() == null) {
+            return null;
+        }
+        String rdvStatut = rendezVous.getStatut().getCodeStatut();
+        if ("Confirme".equals(rdvStatut)) {
+            return STATUT_TRAITEE;
+        }
+        if ("Annule".equals(rdvStatut)) {
+            return STATUT_ANNULEE;
+        }
+        return STATUT_EN_ATTENTE;
     }
 
     private boolean syncStatutFromRendezVousIfNeeded(Demande demande) {
