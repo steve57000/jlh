@@ -36,6 +36,29 @@ ng build
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
+## Package manager and install troubleshooting
+
+This project is managed with **pnpm** (via Corepack).
+
+Recommended clean install:
+
+```bash
+corepack enable
+corepack use pnpm@10.28.2
+rm -rf node_modules package-lock.json
+pnpm install --frozen-lockfile
+```
+
+If you see a Windows `EPERM` rename error while Corepack/pnpm is moving packages to `node_modules/.ignored`, it usually means one of these is locking files in `node_modules`:
+
+- running Angular dev server/tests
+- VS Code TypeScript server
+- antivirus indexing
+
+Close those processes, delete `node_modules`, and retry the install.
+
+Avoid mixing `npm install` and `pnpm install` in the same working tree to prevent dependency-tree conflicts.
+
 ## Render deployment (SSR)
 
 This app is configured for Angular SSR. On Render, deploy it as a **Web Service** (not a static site) and run the Node server that is generated during the build.
