@@ -388,6 +388,47 @@ class DemandeServiceImplTest {
         verifyNoMoreInteractions(clientRepo, typeRepo, statutRepo, mapper, timelineService);
     }
 
+
+    @Test
+    void testRequestRendezVous_ShouldAllowTraiteeWhenDevisExists() {
+        StatutDemande traitee = StatutDemande.builder().codeStatut("Traitee").libelle("Traitée").build();
+        Demande demande = Demande.builder()
+                .idDemande(42)
+                .client(client)
+                .statutDemande(traitee)
+                .build();
+        DemandeResponse mapped = DemandeResponse.builder().idDemande(42).build();
+        Devis devis = Devis.builder().idDevis(11).demande(demande).build();
+
+        when(repository.findById(42)).thenReturn(Optional.of(demande));
+        when(devisRepository.findByDemande_IdDemande(42)).thenReturn(Optional.of(devis));
+        when(mapper.toResponse(demande, userService)).thenReturn(mapped);
+
+        Optional<DemandeResponse> result = service.requestRendezVous(42, 100, "Besoin d'un créneau", "john@example.com");
+
+        assertTrue(result.isPresent());
+        assertEquals(42, result.get().getIdDemande());
+        verify(timelineService).logClientComment(demande, "Besoin d'un créneau", "john@example.com");
+    }
+
+    @Test
+    void testRequestRendezVous_ShouldRejectTraiteeWhenNoDevis() {
+        StatutDemande traitee = StatutDemande.builder().codeStatut("Traitee").libelle("Traitée").build();
+        Demande demande = Demande.builder()
+                .idDemande(43)
+                .client(client)
+                .statutDemande(traitee)
+                .build();
+
+        when(repository.findById(43)).thenReturn(Optional.of(demande));
+        when(devisRepository.findByDemande_IdDemande(43)).thenReturn(Optional.empty());
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.requestRendezVous(43, 100, null, "john@example.com"));
+
+        assertEquals("La demande est déjà clôturée.", ex.getMessage());
+    }
+
     @Test
     void testDelete_WhenExists() {
         when(repository.existsById(4)).thenReturn(true);

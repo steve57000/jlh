@@ -269,7 +269,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         return repository.findById(id)
                 .map(existing -> {
                     assertClientOwnership(existing, clientId);
-                    assertDemandeOpenForClient(existing);
+                    assertDemandeOpenForClient(existing, true);
                     if (existing.getRendezVous() != null) {
                         throw new IllegalStateException("Un rendez-vous existe déjà pour cette demande.");
                     }
@@ -296,7 +296,7 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         return repository.findById(id)
                 .map(existing -> {
                     assertClientOwnership(existing, clientId);
-                    assertDemandeOpenForClient(existing);
+                    assertDemandeOpenForClient(existing, false);
                     if (existing.getRendezVous() != null) {
                         throw new IllegalStateException("La demande est déjà liée à un rendez-vous.");
                     }
@@ -636,13 +636,20 @@ public class DemandeServiceImpl implements DemandeWorkflowService {
         }
     }
 
-    private void assertDemandeOpenForClient(Demande demande) {
+    private void assertDemandeOpenForClient(Demande demande, boolean allowTraiteeForDevisRdvRequest) {
         if (demande == null) {
             throw new IllegalArgumentException("Demande introuvable.");
         }
         String statut = demande.getStatutDemande() != null ? demande.getStatutDemande().getCodeStatut() : null;
-        if (STATUT_TRAITEE.equals(statut) || STATUT_ANNULEE.equals(statut)) {
+        if (STATUT_ANNULEE.equals(statut)) {
             throw new IllegalStateException("La demande est déjà clôturée.");
+        }
+        if (STATUT_TRAITEE.equals(statut)) {
+            boolean hasDevis = demande.getIdDemande() != null
+                    && devisRepository.findByDemande_IdDemande(demande.getIdDemande()).isPresent();
+            if (!allowTraiteeForDevisRdvRequest || !hasDevis) {
+                throw new IllegalStateException("La demande est déjà clôturée.");
+            }
         }
     }
 }
