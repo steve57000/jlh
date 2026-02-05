@@ -293,18 +293,22 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return false;
     }
     if (draft.code_type === 'Devis') {
-<<<<<<< dev2/fix-client-quote-approval-and-scheduling-issues
       return this.hasPriceValidation(draft)
         || this.hasSavedQuotePrices(draft)
         || this.hasClientRendezVousRequest(draft);
-=======
-      return this.hasPriceValidation(draft);
->>>>>>> main
+      return this.hasPriceValidation(draft)
+        || this.hasSavedQuotePrices(draft)
+        || this.hasClientRendezVousRequest(draft);
     }
     return draft.code_type === 'Service' || draft.code_type === 'RendezVous';
   }
 
-<<<<<<< dev2/fix-client-quote-approval-and-scheduling-issues
+  private hasSavedQuotePrices(draft: DemandeWithServices): boolean {
+    const services = draft.services ?? [];
+    if (!services.length) {
+      return false;
+    }
+    return services.some(service => service?.prix_unitaire != null && Number.isFinite(Number(service.prix_unitaire)));
   private hasSavedQuotePrices(draft: DemandeWithServices): boolean {
     return this.devisTotal(draft) > 0;
   }
@@ -313,14 +317,10 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     return (draft.timeline ?? []).some(entry => {
       const role = (entry?.createdByRole ?? '').toUpperCase();
       const isClient = role.includes('CLIENT');
-      const commentaire = (entry?.commentaire ?? '').toLowerCase();
-      const askedRendezVous = commentaire.includes('rendez-vous') || commentaire.includes('rendez vous');
-      return isClient && askedRendezVous;
+      return isClient && entry?.type === 'COMMENTAIRE';
     });
   }
 
-=======
->>>>>>> main
   devisTotal(draft: DemandeWithServices): number {
     return (draft.services ?? []).reduce((sum, service) => {
       const unit = Number(service?.prix_unitaire ?? 0);
