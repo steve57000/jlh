@@ -518,6 +518,12 @@ SELECT setval(
 );
 
 SELECT setval(
+    pg_get_serial_sequence('rendez_vous', 'id_rdv'),
+    COALESCE((SELECT MAX(id_rdv) FROM rendez_vous), 1),
+    true
+);
+
+SELECT setval(
     pg_get_serial_sequence('demande_timeline', 'id_timeline'),
     COALESCE((SELECT MAX(id_timeline) FROM demande_timeline), 1),
     true
