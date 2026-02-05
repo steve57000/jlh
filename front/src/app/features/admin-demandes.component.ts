@@ -293,13 +293,18 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return false;
     }
     if (draft.code_type === 'Devis') {
+<<<<<<< dev2/fix-client-quote-approval-and-scheduling-issues
       return this.hasPriceValidation(draft)
         || this.hasSavedQuotePrices(draft)
         || this.hasClientRendezVousRequest(draft);
+=======
+      return this.hasPriceValidation(draft);
+>>>>>>> main
     }
     return draft.code_type === 'Service' || draft.code_type === 'RendezVous';
   }
 
+<<<<<<< dev2/fix-client-quote-approval-and-scheduling-issues
   private hasSavedQuotePrices(draft: DemandeWithServices): boolean {
     return this.devisTotal(draft) > 0;
   }
@@ -314,6 +319,8 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     });
   }
 
+=======
+>>>>>>> main
   devisTotal(draft: DemandeWithServices): number {
     return (draft.services ?? []).reduce((sum, service) => {
       const unit = Number(service?.prix_unitaire ?? 0);
