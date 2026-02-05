@@ -70,6 +70,10 @@ public class DemandeTimelineController {
     public ResponseEntity<Void> validatePrice(@PathVariable Integer demandeId,
                                               @Valid @RequestBody DemandeTimelineRequest request,
                                               Authentication auth) {
+        if (auth == null || auth.getAuthorities() == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_MANAGER".equals(a.getAuthority()));
         String actorRole = auth.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority()))
