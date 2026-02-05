@@ -19,6 +19,8 @@ import { VEHICLE_ENERGY_OPTIONS } from '../shared/vehicle-energy-options';
 import { forkJoin } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { GarageHoursService } from '../services/garage-hours.service';
+import { GarageHourDto } from '../modeles/garage-hours.model';
 
 type TypeFilterValue = 'Tous' | DemandeWithServices['code_type'] | string;
 type StatutFilterValue = 'Tous' | DemandeWithServices['code_statut'] | string;
@@ -64,6 +66,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   private readonly rendezVousApi = inject(RendezVousService);
   private readonly rdvPropositionsApi = inject(RendezVousPropositionsService);
   private readonly calendarApi = inject(CreneauxCalendarService);
+  private readonly garageHoursApi = inject(GarageHoursService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -149,6 +152,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   calendarError = signal<string | null>(null);
   calendarSlotsRaw = signal<CreneauCalendarEntryDto[]>([]);
   selectedCalendarDay = signal<string | null>(null);
+  garageHours = signal<GarageHourDto[]>([]);
   private focusDemandeId = signal<number | null>(null);
 
   filtered = computed(() => {
@@ -359,6 +363,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadLookups();
     this.loadServicesCatalog();
+    this.loadGarageHours();
     this.reload();
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -369,6 +374,13 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
           this.openFocusDemande();
         }
       });
+  }
+
+  private loadGarageHours() {
+    this.garageHoursApi.listPublic().subscribe({
+      next: rows => this.garageHours.set(Array.isArray(rows) ? rows : []),
+      error: () => this.garageHours.set([])
+    });
   }
 
   get canDeleteDemandes(): boolean {
@@ -591,7 +603,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   }
 
   applyCalendarSlot(slot: CreneauCalendarEntryDto) {
-    if (slot.codeStatut !== 'Libre') return;
+    if (!this.isSlotProposable(slot)) return;
     const draft = this.rdvProposalDraft();
     const targetIndex = draft.findIndex(item => !item.dateDebut && !item.dateFin);
     const index = targetIndex === -1 ? draft.length : targetIndex;
@@ -648,7 +660,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
   }
 
   selectCalendarDay(date: string) {
-    this.selectedCalendarDay.set(date);
+    this.selectedCalendarDay.set(this.selectedCalendarDay() === date ? null : date);
   }
 
   private ensureCalendarSelection() {
@@ -658,9 +670,101 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return;
     }
     const current = this.selectedCalendarDay();
-    if (!current || !days.some(day => day.date === current)) {
-      this.selectedCalendarDay.set(days[0].date);
+    if (current && !days.some(day => day.date === current)) {
+      this.selectedCalendarDay.set(null);
     }
+  }
+
+  isSlotProposable(slot: CreneauCalendarEntryDto): boolean {
+    return slot.codeStatut === 'Libre' && this.isSlotWithinOpeningHours(slot);
+  }
+
+  private isSlotWithinOpeningHours(slot: CreneauCalendarEntryDto): boolean {
+    const start = new Date(slot.dateDebut);
+    const end = new Date(slot.dateFin);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return false;
+    }
+
+    const openings = this.resolveOpeningRangesForDate(start);
+    if (!openings.length) {
+      return false;
+    }
+
+    const startMinutes = start.getHours() * 60 + start.getMinutes();
+    const endMinutes = end.getHours() * 60 + end.getMinutes();
+    return openings.some(range => startMinutes >= range.start && endMinutes <= range.end);
+  }
+
+  private resolveOpeningRangesForDate(date: Date): Array<{ start: number; end: number }> {
+    const dayIso = this.formatDateOnly(date);
+    const dayKey = this.dayOfWeekToApiKey(date);
+    const allHours = this.garageHours();
+
+    const exceptional = allHours.filter(hour => hour.scope === 'EXCEPTIONAL' && this.isDateInExceptionalRange(dayIso, hour));
+    const relevant = exceptional.length
+      ? exceptional
+      : allHours.filter(hour => hour.scope === 'ANNUAL' && hour.dayOfWeek === dayKey);
+
+    if (!relevant.length || relevant.some(hour => hour.status === 'CLOSED')) {
+      return [];
+    }
+
+    return relevant
+      .flatMap(hour => this.toMinuteRanges(hour))
+      .filter((range): range is { start: number; end: number } => range !== null);
+  }
+
+  private isDateInExceptionalRange(dayIso: string, hour: GarageHourDto): boolean {
+    if (hour.exceptionalType === 'SINGLE_DAY') {
+      return !!hour.exceptionalDate && hour.exceptionalDate === dayIso;
+    }
+    if (hour.exceptionalType === 'PERIOD') {
+      if (!hour.exceptionalStartDate || !hour.exceptionalEndDate) {
+        return false;
+      }
+      return dayIso >= hour.exceptionalStartDate && dayIso <= hour.exceptionalEndDate;
+    }
+    return false;
+  }
+
+  private toMinuteRanges(hour: GarageHourDto): Array<{ start: number; end: number } | null> {
+    if (hour.status !== 'OPEN') {
+      return [];
+    }
+    const first = this.toMinuteRange(hour.startTime, hour.endTime);
+    if (hour.openingType === 'SPLIT') {
+      return [first, this.toMinuteRange(hour.startTime2, hour.endTime2)];
+    }
+    return [first];
+  }
+
+  private toMinuteRange(start?: string | null, end?: string | null): { start: number; end: number } | null {
+    const startMinutes = this.parseMinutes(start);
+    const endMinutes = this.parseMinutes(end);
+    if (startMinutes === null || endMinutes === null || startMinutes >= endMinutes) {
+      return null;
+    }
+    return { start: startMinutes, end: endMinutes };
+  }
+
+  private parseMinutes(value?: string | null): number | null {
+    if (!value) {
+      return null;
+    }
+    const [hoursRaw, minutesRaw] = value.split(':');
+    const hours = Number(hoursRaw);
+    const minutes = Number(minutesRaw);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+      return null;
+    }
+    return hours * 60 + minutes;
+  }
+
+  private dayOfWeekToApiKey(date: Date): string {
+    const day = date.getDay();
+    const mapping = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    return mapping[day] ?? 'MONDAY';
   }
 
   private isClosedSlot(slot: CreneauCalendarEntryDto): boolean {
