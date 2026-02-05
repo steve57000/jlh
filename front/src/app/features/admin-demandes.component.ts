@@ -296,6 +296,9 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return this.hasPriceValidation(draft)
         || this.hasSavedQuotePrices(draft)
         || this.hasClientRendezVousRequest(draft);
+      return this.hasPriceValidation(draft)
+        || this.hasSavedQuotePrices(draft)
+        || this.hasClientRendezVousRequest(draft);
     }
     return draft.code_type === 'Service' || draft.code_type === 'RendezVous';
   }
@@ -306,6 +309,8 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       return false;
     }
     return services.some(service => service?.prix_unitaire != null && Number.isFinite(Number(service.prix_unitaire)));
+  private hasSavedQuotePrices(draft: DemandeWithServices): boolean {
+    return this.devisTotal(draft) > 0;
   }
 
   private hasClientRendezVousRequest(draft: DemandeWithServices): boolean {
