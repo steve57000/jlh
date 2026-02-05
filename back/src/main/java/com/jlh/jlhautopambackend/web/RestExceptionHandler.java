@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -72,9 +73,19 @@ public class RestExceptionHandler {
     // 409 - contraintes d’unicité, FK, etc.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<?> handleDup(DataIntegrityViolationException ex) {
-        // On peut affiner selon le message SQL, mais gardons un mapping simple et utile côté front
+        String rootCause = NestedExceptionUtils.getMostSpecificCause(ex).getMessage();
+        log.warn("Data integrity violation detected: {}", rootCause, ex);
+
         Map<String, Object> resp = body("Conflit de données");
-        resp.put("errors", Map.of("email", "déjà utilisé"));
+
+        if (rootCause != null && rootCause.contains("demande_pkey")) {
+            resp.put("errors", Map.of(
+                    "demande", "Conflit d'identifiant sur la table demande (sequence possiblement désynchronisée)."
+            ));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+        }
+
+        resp.put("errors", Map.of("database", "Contrainte d'intégrité violée"));
         return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
     }
 

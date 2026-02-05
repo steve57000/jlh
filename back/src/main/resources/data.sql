@@ -503,3 +503,10 @@ INSERT INTO avis_service (
       (2, 15, 4, 2, 4, 'Freinage remis à neuf, très satisfait.',      '2025-03-15 09:30:00', 'APPROVED'),
       (3, 16, 8, 3, 5, 'Climatisation impeccable après intervention.', '2024-11-09 11:15:00', 'APPROVED')
 ON CONFLICT DO NOTHING;
+
+-- Resynchronise la sequence après les insertions avec identifiants forcés
+SELECT setval(
+    pg_get_serial_sequence('demande', 'id_demande'),
+    COALESCE((SELECT MAX(id_demande) FROM demande), 1),
+    true
+);
