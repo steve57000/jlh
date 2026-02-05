@@ -504,9 +504,21 @@ INSERT INTO avis_service (
       (3, 16, 8, 3, 5, 'Climatisation impeccable après intervention.', '2024-11-09 11:15:00', 'APPROVED')
 ON CONFLICT DO NOTHING;
 
--- Resynchronise la sequence après les insertions avec identifiants forcés
+-- Resynchronise les séquences après les insertions avec identifiants forcés
 SELECT setval(
     pg_get_serial_sequence('demande', 'id_demande'),
     COALESCE((SELECT MAX(id_demande) FROM demande), 1),
+    true
+);
+
+SELECT setval(
+    pg_get_serial_sequence('devis', 'id_devis'),
+    COALESCE((SELECT MAX(id_devis) FROM devis), 1),
+    true
+);
+
+SELECT setval(
+    pg_get_serial_sequence('demande_timeline', 'id_timeline'),
+    COALESCE((SELECT MAX(id_timeline) FROM demande_timeline), 1),
     true
 );
