@@ -487,7 +487,16 @@
           </section>
         }
 
-        @if ((draft.code_type === 'RendezVous' || draft.code_type === 'Service') && rdvForm(); as rdv) {
+        @if (draft.code_type === 'Devis' && !canManageRendezVous(draft)) {
+          <section class="details-block details-block--editable details-block--locked">
+            <h4>Créneaux et rendez-vous</h4>
+            <p class="muted">
+              La planification sera disponible dès que le devis est validé, ou après une demande de rendez-vous du client.
+            </p>
+          </section>
+        }
+
+        @if (canManageRendezVous(draft) && rdvForm(); as rdv) {
           <section class="details-block details-block--editable" [class.details-block--locked]="isDemandLockedForEdit()">
             <h4>Créneaux proposés au client</h4>
             <p class="muted">

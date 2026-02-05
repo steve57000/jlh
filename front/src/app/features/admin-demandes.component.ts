@@ -288,6 +288,34 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     return (draft.timeline ?? []).some(entry => entry?.type === 'MONTANT' && entry.montantValide != null);
   }
 
+  canManageRendezVous(draft: DemandeWithServices | null | undefined): boolean {
+    if (!draft) {
+      return false;
+    }
+    if (draft.code_type === 'Devis') {
+      return this.hasPriceValidation(draft)
+        || this.hasSavedQuotePrices(draft)
+        || this.hasClientRendezVousRequest(draft);
+    }
+    return draft.code_type === 'Service' || draft.code_type === 'RendezVous';
+  }
+
+  private hasSavedQuotePrices(draft: DemandeWithServices): boolean {
+    const services = draft.services ?? [];
+    if (!services.length) {
+      return false;
+    }
+    return services.some(service => service?.prix_unitaire != null && Number.isFinite(Number(service.prix_unitaire)));
+  }
+
+  private hasClientRendezVousRequest(draft: DemandeWithServices): boolean {
+    return (draft.timeline ?? []).some(entry => {
+      const role = (entry?.createdByRole ?? '').toUpperCase();
+      const isClient = role.includes('CLIENT');
+      return isClient && entry?.type === 'COMMENTAIRE';
+    });
+  }
+
   devisTotal(draft: DemandeWithServices): number {
     return (draft.services ?? []).reduce((sum, service) => {
       const unit = Number(service?.prix_unitaire ?? 0);
@@ -677,7 +705,8 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
 
   submitProposalSlots() {
     const demandeId = this.selectedId();
-    if (demandeId == null) return;
+    const draft = this.draft();
+    if (demandeId == null || !this.canManageRendezVous(draft)) return;
     const payload = this.buildProposalPayload();
     if (!payload) {
       return;
@@ -751,14 +780,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
       }))
       .filter(slot => slot.dateDebut && slot.dateFin) as { dateDebut: string; dateFin: string }[];
 
-    const existingSlots = this.rdvProposals()
-      .filter(proposal => proposal.statut === 'PROPOSE' && this.isProposalActive(proposal))
-      .map(proposal => ({
-        dateDebut: proposal.dateDebut,
-        dateFin: proposal.dateFin
-      }));
-
-    const slots = [...existingSlots, ...draftSlots].reduce((acc, slot) => {
+    const slots = [...draftSlots].reduce((acc, slot) => {
       const key = `${slot.dateDebut}|${slot.dateFin}`;
       if (!acc.some(item => `${item.dateDebut}|${item.dateFin}` === key)) {
         acc.push(slot);
@@ -779,14 +801,6 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     }
 
     return { propositions: slots };
-  }
-
-  private isProposalActive(proposal: RendezVousProposition): boolean {
-    if (!proposal.expiresAt) {
-      return true;
-    }
-    const expiresAt = new Date(proposal.expiresAt).getTime();
-    return Number.isFinite(expiresAt) && expiresAt > Date.now();
   }
 
   updateDraft(mutator: (draft: DemandeWithServices) => void) {
@@ -1425,6 +1439,12 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     }
 
     const draft = this.draft();
+    if (!this.canManageRendezVous(draft)) {
+      this.rdvFeedback.set('Validez le devis avant de planifier un rendez-vous.');
+      this.rdvFeedbackType.set('error');
+      this.toast.error('Erreur', "Validez d'abord le devis.");
+      return;
+    }
     const existingRdv = draft?.rendezVous ?? null;
     const existingStart = existingRdv?.dateDebut ? this.parseDateInput(this.formatDateInput(existingRdv.dateDebut)) : null;
     const existingEnd = existingRdv?.dateFin ? this.parseDateInput(this.formatDateInput(existingRdv.dateFin)) : null;
