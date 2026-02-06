@@ -17,6 +17,8 @@ public interface AvisServiceService {
 
     Page<AvisServiceResponse> findAll(Pageable pageable);
 
+    Page<AvisServiceResponse> findByStatut(AvisServiceStatut statut, Pageable pageable);
+
     List<AvisServiceResponse> findByService(Integer serviceId);
 
     List<AvisServiceResponse> findByDemande(Integer demandeId);
