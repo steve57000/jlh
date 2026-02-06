@@ -75,10 +75,12 @@ public class AvisServiceController {
             return service.findByClient(clientId, pageable);
         }
 
-        // ✅ Cas 4 : aucun filtre => tous les avis APPROVED (public)
+        // ✅ Cas 4 : filtre statut global (utile pour modération admin)
         if (statut != null) {
-            return service.findApproved(pageable); // tu peux ignorer "statut" ou vérifier qu'il vaut APPROVED
+            return service.findByStatut(parseStatut(statut), pageable);
         }
+
+        // ✅ Cas 5 : aucun filtre => tous les avis APPROVED (public)
         return service.findApproved(pageable);
     }
 

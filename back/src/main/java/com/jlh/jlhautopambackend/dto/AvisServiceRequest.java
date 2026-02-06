@@ -18,6 +18,9 @@ public class AvisServiceRequest {
     private Integer demandeId;
 
     @NotNull
+    private Integer serviceId;
+
+    @NotNull
     @Min(1)
     @Max(5)
     private Integer note;

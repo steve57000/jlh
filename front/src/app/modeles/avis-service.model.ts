@@ -19,6 +19,7 @@ export interface AvisServiceDto {
   note: number;
   statut?: string | null;
   commentaire?: string | null;
+  motifRefus?: string | null;
   creeLe: string;
   client?: AvisServiceClientDto | null;
 }
@@ -31,6 +32,7 @@ export interface AvisServiceStatsDto {
 
 export interface AvisServiceCreatePayload {
   demandeId: number;
+  serviceId: number;
   note: number;
   commentaire?: string | null;
 }
@@ -55,4 +57,10 @@ export interface SpringPagedModel<T> {
     totalElements?: number;
     totalPages?: number;
   };
+}
+
+
+export interface AvisServiceModerationPayload {
+  statut: "APPROVED" | "REJECTED";
+  motifRefus?: string | null;
 }
