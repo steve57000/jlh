@@ -156,7 +156,8 @@ public class SecurityConfig {
                 .filter(value -> !value.isEmpty())
                 .collect(Collectors.toList());
         cfg.setAllowedOriginPatterns(originPatterns);
-        // Alternative souple si besoin : cfg.setAllowedOriginPatterns(List.of("http://localhost:*"));
+        // Alternative souple si besoin :
+        // cfg.setAllowedOriginPatterns(List.of("http://localhost:*"));
 
         cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         cfg.setAllowedHeaders(List.of(
