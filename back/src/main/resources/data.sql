@@ -211,53 +211,53 @@ ON CONFLICT DO NOTHING;
 --     - Annule   => creneau Libre (ne bloque pas)
 -- ==================================================
 
--- 2026-07-01 09:00-10:00
+-- 2025-07-01 09:00-10:00
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (101,'2026-07-01 09:00:00','2026-07-01 10:00:00','Reserve'), -- admin 1 (RDV confirmé)
-    (102,'2026-07-01 09:00:00','2026-07-01 10:00:00','Libre'),   -- admin 2
-    (103,'2026-07-01 09:00:00','2026-07-01 10:00:00','Libre')    -- admin 3
+    (101,'2025-07-01 09:00:00','2025-07-01 10:00:00','Reserve'), -- admin 1 (RDV confirmé)
+    (102,'2025-07-01 09:00:00','2025-07-01 10:00:00','Libre'),   -- admin 2
+    (103,'2025-07-01 09:00:00','2025-07-01 10:00:00','Libre')    -- admin 3
 ON CONFLICT DO NOTHING;
 
--- 2026-07-01 10:00-11:00
+-- 2025-07-01 10:00-11:00
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (104,'2026-07-01 10:00:00','2026-07-01 11:00:00','Reserve'), -- admin 1 (RDV confirmé)
-    (105,'2026-07-01 10:00:00','2026-07-01 11:00:00','Libre'),
-    (106,'2026-07-01 10:00:00','2026-07-01 11:00:00','Libre')
+    (104,'2025-07-01 10:00:00','2025-07-01 11:00:00','Reserve'), -- admin 1 (RDV confirmé)
+    (105,'2025-07-01 10:00:00','2025-07-01 11:00:00','Libre'),
+    (106,'2025-07-01 10:00:00','2025-07-01 11:00:00','Libre')
 ON CONFLICT DO NOTHING;
 
--- 2026-07-01 11:00-12:00 (créneau initialement prévu pour le RDV reporté => doit être LIBRE après report)
+-- 2025-07-01 11:00-12:00 (créneau initialement prévu pour le RDV reporté => doit être LIBRE après report)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (107,'2026-07-01 11:00:00','2026-07-01 12:00:00','Libre'), -- admin 1 (libéré après report)
-    (108,'2026-07-01 11:00:00','2026-07-01 12:00:00','Libre'),
-    (109,'2026-07-01 11:00:00','2026-07-01 12:00:00','Libre')
+    (107,'2025-07-01 11:00:00','2025-07-01 12:00:00','Libre'), -- admin 1 (libéré après report)
+    (108,'2025-07-01 11:00:00','2025-07-01 12:00:00','Libre'),
+    (109,'2025-07-01 11:00:00','2025-07-01 12:00:00','Libre')
 ON CONFLICT DO NOTHING;
 
--- 2026-07-03 09:00-10:00 (nouveau créneau du RDV reporté)
+-- 2025-07-03 09:00-10:00 (nouveau créneau du RDV reporté)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (130,'2026-07-03 09:00:00','2026-07-03 10:00:00','Reserve'), -- admin 1 (RDV reporté)
-    (131,'2026-07-03 09:00:00','2026-07-03 10:00:00','Libre'),
-    (132,'2026-07-03 09:00:00','2026-07-03 10:00:00','Libre')
+    (130,'2025-07-03 09:00:00','2025-07-03 10:00:00','Reserve'), -- admin 1 (RDV reporté)
+    (131,'2025-07-03 09:00:00','2025-07-03 10:00:00','Libre'),
+    (132,'2025-07-03 09:00:00','2025-07-03 10:00:00','Libre')
 ON CONFLICT DO NOTHING;
 
--- 2026-07-01 14:00-15:00 (admin 1 indispo)
+-- 2025-07-01 14:00-15:00 (admin 1 indispo)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (110,'2026-07-01 14:00:00','2026-07-01 15:00:00','Indisponible'),
-    (111,'2026-07-01 14:00:00','2026-07-01 15:00:00','Libre'),
-    (112,'2026-07-01 14:00:00','2026-07-01 15:00:00','Libre')
+    (110,'2025-07-01 14:00:00','2025-07-01 15:00:00','Indisponible'),
+    (111,'2025-07-01 14:00:00','2025-07-01 15:00:00','Libre'),
+    (112,'2025-07-01 14:00:00','2025-07-01 15:00:00','Libre')
 ON CONFLICT DO NOTHING;
 
--- 2026-07-02 09:00-10:00 (admin 1 indispo)
+-- 2025-07-02 09:00-10:00 (admin 1 indispo)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (113,'2026-07-02 09:00:00','2026-07-02 10:00:00','Indisponible'),
-    (114,'2026-07-02 09:00:00','2026-07-02 10:00:00','Libre'),
-    (115,'2026-07-02 09:00:00','2026-07-02 10:00:00','Libre')
+    (113,'2025-07-02 09:00:00','2025-07-02 10:00:00','Indisponible'),
+    (114,'2025-07-02 09:00:00','2025-07-02 10:00:00','Libre'),
+    (115,'2025-07-02 09:00:00','2025-07-02 10:00:00','Libre')
 ON CONFLICT DO NOTHING;
 
--- 2026-07-02 10:00-11:00 (RDV annulé => créneau Libre)
+-- 2025-07-02 10:00-11:00 (RDV annulé => créneau Libre)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (116,'2026-07-02 10:00:00','2026-07-02 11:00:00','Libre'), -- admin 1 (RDV annulé)
-    (117,'2026-07-02 10:00:00','2026-07-02 11:00:00','Libre'),
-    (118,'2026-07-02 10:00:00','2026-07-02 11:00:00','Libre')
+    (116,'2025-07-02 10:00:00','2025-07-02 11:00:00','Libre'), -- admin 1 (RDV annulé)
+    (117,'2025-07-02 10:00:00','2025-07-02 11:00:00','Libre'),
+    (118,'2025-07-02 10:00:00','2025-07-02 11:00:00','Libre')
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
@@ -278,12 +278,12 @@ ON CONFLICT DO NOTHING;
 -- 7) Demandes
 -- ==================================================
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut) VALUES
-    (1, 1, '2026-06-20 08:15:00', 'Devis',      'Traitee'),
-    (2, 2, '2026-06-19 09:30:00', 'Devis',      'Traitee'),
-    (3, 3, '2026-06-18 10:45:00', 'RendezVous', 'Traitee'),
-    (4, 4, '2026-06-17 11:00:00', 'RendezVous', 'En_attente'),
-    (5, 5, '2026-06-16 12:00:00', 'Devis',      'Annulee'),
-    (6, 1, '2026-06-15 13:00:00', 'RendezVous', 'Annulee')
+    (1, 1, '2025-06-20 08:15:00', 'Devis',      'Traitee'),
+    (2, 2, '2025-06-19 09:30:00', 'Devis',      'Traitee'),
+    (3, 3, '2025-06-18 10:45:00', 'RendezVous', 'Traitee'),
+    (4, 4, '2025-06-17 11:00:00', 'RendezVous', 'En_attente'),
+    (5, 5, '2025-06-16 12:00:00', 'Devis',      'Annulee'),
+    (6, 1, '2025-06-15 13:00:00', 'RendezVous', 'Annulee')
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
@@ -321,8 +321,8 @@ ON CONFLICT DO NOTHING;
 -- 9) Devis
 -- ==================================================
 INSERT INTO devis (id_devis, id_demande, date_devis, montant_total, id_rdv) VALUES
-    (1, 1, '2026-06-21 14:00:00', 138.90, 5),
-    (2, 2, '2026-06-20 15:00:00', 129.90, NULL)
+    (1, 1, '2025-06-21 14:00:00', 138.90, 5),
+    (2, 2, '2025-06-20 15:00:00', 129.90, NULL)
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
@@ -334,7 +334,7 @@ INSERT INTO rendez_vous (
       -- RDV confirmé : Claire
       (1, 3, 1, 101, 'Confirme', 'Contrôle général avant départ en vacances.', NULL, NULL, NULL),
 
-      -- RDV reporté : David -> NOUVELLE DATE 2026-07-03 09:00 (id_creneau=130)
+      -- RDV reporté : David -> NOUVELLE DATE 2025-07-03 09:00 (id_creneau=130)
       (2, 4, 1, 130, 'Reporte',  'Demande de vérification du freinage. (Reporté au 03/07 09:00)', NULL, NULL, NULL),
 
       -- RDV annulé : Alice -> créneau doit rester Libre (id_creneau=116)
@@ -354,7 +354,7 @@ INSERT INTO demande_document (
     (1, 1, 'devis_jlh_autopam_test.pdf',
      'documents/2b6409c4-8973-4446-ad79-d7a716a61006_devis_jlh_autopam_test.pdf',
      'application/pdf', 20480, TRUE,
-     'Michael', 'ADMIN', '2026-06-20 09:00:00')
+     'Michael', 'ADMIN', '2025-06-20 09:00:00')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO demande_timeline (
@@ -363,27 +363,27 @@ INSERT INTO demande_timeline (
     document_id, document_nom, document_url,
     rendezvous_id, rendezvous_statut_code, rendezvous_statut_libelle, rendezvous_date_debut, rendezvous_date_fin
 ) VALUES
-      (1, 1, 'MONTANT', '2026-06-20 08:30:00', 'test@admin.fr', 'ADMIN', TRUE,
+      (1, 1, 'MONTANT', '2025-06-20 08:30:00', 'test@admin.fr', 'ADMIN', TRUE,
        'En_attente', 'En attente', 'Création du devis', 138.90,
        NULL, NULL, NULL,
        NULL, NULL, NULL, NULL, NULL),
 
-      (2, 1, 'DOCUMENT', '2026-06-20 09:00:00', 'test@admin.fr', 'ADMIN', TRUE,
+      (2, 1, 'DOCUMENT', '2025-06-20 09:00:00', 'test@admin.fr', 'ADMIN', TRUE,
        NULL, NULL, 'Ajout du contrôle technique', NULL,
        1, 'devis_jlh_autopam_test.pdf', 'uploads/documents/devis_jlh_autopam_test',
        NULL, NULL, NULL, NULL, NULL),
 
-      (3, 1, 'RENDEZVOUS', '2026-07-01 10:00:00', 'test@admin.fr', 'ADMIN', TRUE,
+      (3, 1, 'RENDEZVOUS', '2025-07-01 10:00:00', 'test@admin.fr', 'ADMIN', TRUE,
        NULL, NULL, 'Rendez-vous confirmé suite au devis', NULL,
        NULL, NULL, NULL,
-       5, 'Confirme', 'Confirmé', '2026-07-01 10:00:00', '2026-07-01 11:00:00')
+       5, 'Confirme', 'Confirmé', '2025-07-01 10:00:00', '2025-07-01 11:00:00')
 ON CONFLICT DO NOTHING;
 
 -- ==================================================
 -- 12) Cas de test ICS pour Alice (client1)
 -- ==================================================
 INSERT INTO demande (id_demande, id_client, date_demande, code_type, code_statut)
-VALUES (7, 1, '2026-06-25 09:00:00', 'RendezVous', 'En_attente')
+VALUES (7, 1, '2025-06-25 09:00:00', 'RendezVous', 'En_attente')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO demande_service (
@@ -396,11 +396,11 @@ VALUES (7, 11, 1,
         129.90)
 ON CONFLICT DO NOTHING;
 
--- 2026-10-02 09:00-10:00 : 3 créneaux, un seul réservé (admin 1)
+-- 2025-10-02 09:00-10:00 : 3 créneaux, un seul réservé (admin 1)
 INSERT INTO creneau (id_creneau, date_debut, date_fin, code_statut) VALUES
-    (201, '2026-10-02 09:00:00', '2026-10-02 10:00:00', 'Reserve'),
-    (202, '2026-10-02 09:00:00', '2026-10-02 10:00:00', 'Libre'),
-    (203, '2026-10-02 09:00:00', '2026-10-02 10:00:00', 'Libre')
+    (201, '2025-10-02 09:00:00', '2025-10-02 10:00:00', 'Reserve'),
+    (202, '2025-10-02 09:00:00', '2025-10-02 10:00:00', 'Libre'),
+    (203, '2025-10-02 09:00:00', '2025-10-02 10:00:00', 'Libre')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO disponibilite (id_admin, id_creneau) VALUES
