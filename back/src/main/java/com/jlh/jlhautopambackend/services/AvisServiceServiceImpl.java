@@ -79,10 +79,14 @@ public class AvisServiceServiceImpl implements AvisServiceService {
         if (services.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Aucun service n'est associé à cette demande.");
         }
-        com.jlh.jlhautopambackend.modeles.Service service = services.get(0).getService();
-        if (service == null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Service introuvable.");
-        }
+        com.jlh.jlhautopambackend.modeles.Service service = services.stream()
+                .map(DemandeService::getService)
+                .filter(s -> s != null && request.getServiceId().equals(s.getIdService()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Le service indiqué n'est pas associé à cette demande."
+                ));
         if (avisRepository.existsByDemande_IdDemandeAndService_IdService(demande.getIdDemande(), service.getIdService())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Un avis existe déjà pour ce service.");
         }
